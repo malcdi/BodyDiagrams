@@ -1,0 +1,53 @@
+
+/* CSS for tagged class*/
+.tagged {
+  position: absolute;
+  border: 1px white solid;  
+}
+.tagged_name {
+  position: absolute;
+  background-color: white;  
+}
+
+/* CSS for tagger class*/
+.tagger {
+  position: absolute;
+  border: 2px red solid;
+}
+.parent {
+  position: relative;
+  display: inline-block;
+}
+.menu {
+	background-color: #99ffda;
+}
+
+/*jquery css*/
+
+a.photo-tagger-tag { 
+	background-image: url( './transparent.gif' ) ;
+	border: 1px solid red ;
+	display: block ;
+	height: 1px ;
+	position: absolute ;
+	width: 1px ;
+	z-index: 100 ;
+	zoom: 1 ;
+} 
+a.photo-tagger-selected-tag { 
+	border-color: black ;
+	z-index: 200 ;
+} 
+div.photo-tagger-message { 
+	background-color: #212121 ;
+	border: 1px solid #000000 ;
+	color: #F0F0F0 ;
+	display: none ;
+	font-family: verdana ;
+	font-size: 12px ;
+	margin-top: 4px ;
+	padding: 5px 10px 5px 10px ;
+	position: absolute ;
+	white-space: nowrap ;
+	z-index: 200 ;
+} 

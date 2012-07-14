@@ -1,0 +1,141 @@
+
+<table>
+  <tr>
+	  <td>
+		<p> Drag your mouse on the photo to define a region</p>
+		<div class="photo-container">
+		  <img id="body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" alt="no photo"></img>
+		  <canvas id="canvas" width="300" height="300" style="position:absolute; top:100px; background-color:transparent; border: 1px solid black;"></canvas>
+		  <div id="tags"></div>
+		  <div id="tagging"></div>
+		</div>
+		<ul id="menu-container">
+				<li class="menu" id="1">1</li>
+				<li class="menu" id="2">2</li>
+				<li class="menu" id="3">3</li>
+		
+				<li class="menu" id="4">4</li>
+				<li class="menu" id="5">5</li>
+				<li class="menu" id="6">6</li>
+		
+				<li class="menu" id="7">7</li>
+				<li class="menu" id="8">8</li>
+				<li class="menu" id="9">9</li>
+		</ul>
+	  </td>
+	  <td>
+	  	<div id="view_change" onmouseup="change_view()"><img src="/assets/icon.png" alt="no photo"></img></div>
+	  	<input id="view_id" type="hidden" value='<%=@cur_view.id%>'>
+	  	<div id="coord"></div>​
+	  </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+
+/********** utils ******************/
+// Thanks to http://stackoverflow.com/questions/55677/how-do-i-get-the-coordinates-of-a-mouse-click-on-a-canvas-element/4430498#4430498
+	function fixPosition(e, gCanvasElement){
+		var x;
+		var y;
+		if (e.pageX || e.pageY) { 
+			x = e.pageX;
+			y = e.pageY;
+		}
+		else { 
+			x = e.clientX + document.body.scrollLeft +
+					document.documentElement.scrollLeft;
+			y = e.clientY + document.body.scrollTop +
+					document.documentElement.scrollTop;
+		} 
+		x -= gCanvasElement.offsetLeft;
+		y -= gCanvasElement.offsetTop;
+		return {x: x, y:y};
+	}
+
+	var views = {0:"/assets/front.png", 1:"/assets/right.png", 2:"/assets/back.png", 3:"/assets/left.png"};	
+	view_side_num='<%=@cur_view.view_side%>'
+	
+	// When the DOM is ready, initialize the scripts.
+	jQuery(function( $ ){
+		// Set up the photo tagger.
+		$( "div.photo-container" ).photoTagger({
+			
+			// The API urls.
+			loadURL: "/main/get_tags",
+			saveURL: "/main/post_tag",
+			deleteURL: "/main/remove_tags",
+			
+			// Default to turned on.
+			// isTagCreationEnabled: false,
+			
+			// This will allow us to clean the response from 
+			// a ColdFusion server (it will convert the 
+			// uppercase keys to lowercase keys expected by
+			// the photoTagger plugin.
+			cleanAJAXResponse: cleanColdFusionJSONResponse
+		});
+		
+		var canvas = document.getElementById('canvas'),
+			coord = document.getElementById('coord'),
+			ctx = canvas.getContext('2d');
+		var offset={x:canvas.offsetParent.offsetLeft, y:canvas.offsetParent.offsetTop}; //get the offset 
+		
+		/*********** handle mouse events on canvas **************/
+		var mousedown = false;
+		ctx.strokeStyle = '#0000FF';
+		ctx.lineWidth = 5;
+		 
+		canvas.onmousedown = function(e){
+			//var pos = fixPosition(e, canvas);
+			var pos={x: e.offsetX, y:e.offsetY};
+			mousedown = true;
+		
+			ctx.beginPath();
+			ctx.moveTo(pos.x, pos.y);
+			return false;
+		};
+		
+		canvas.onmousemove = function(e){
+			var pos={x: e.offsetX, y:e.offsetY};
+			coord.innerHTML = '(' + pos.x + ',' + pos.y + ')';
+			if (mousedown) {
+				console.log("x:"+pos.x + "  y:"+pos.y);
+				ctx.lineTo(pos.x, pos.y);
+				ctx.stroke();
+			}
+		};
+		
+		canvas.onmouseup = function(e){
+			console.log("UP");
+			//ctx.closePath();
+			mousedown = false;
+		};
+			
+	});
+
+	function change_view(){
+		view_side_num=(view_side_num+1)%4;
+		$.ajax({
+			method: "get",
+			url: "/main/get_view",
+			data: {
+				view_num: view_side_num
+			},
+			dataType: "json",
+			cache: false,
+			success: function( response ){
+				//$( "div.photo-container" ).deleteAllTags();
+				document.getElementById("body_view").src='/assets/'+response["img_name"];	
+				document.getElementById("view_id").value=response["id"];
+				//$( "div.photo-container" ).loadTags();
+			}		
+		});
+	}
+
+	$(function() {
+		$( ".menu" ).button();
+	});
+			  
+</script>
+

@@ -8,6 +8,39 @@
 // object and translate the jQuery function name.
 (function( window, $ ){
 
+
+  function tagMouseDown( event, self){
+  	// Get the target of the click (if it is an 
+  	// existing tag, we have some more logic).
+  	var target = $( event.target );
+  	// Check to see if new tag creation is enabled. 
+  	// We only want to let the user draw new tags in
+  	// this state such that new tags are not randomly
+  	// being created. Also, we don't want the user to
+  	// start a tag ON an existing tag (this helps us
+  	// with the delete dble-click).
+  	if ( self.isTagCreationEnabled &&
+  			!target.is( "a." + self.getFullClassName( "tag" )+".ui-draggable.ui-resizable") &&
+  			!target.is( "div.ui-resizable-handle")) {
+  		
+  		if(self.menu_container.css("display")!="none" && this.pendingTag!=null){
+  			this.pendingTag.remove();
+  			this.pendingTag=null;
+  		}
+  		
+  		// The user is going to start drawing. Cancel 
+  		// the default event to make sure the browser 
+  		// does not try to select the IMG object.
+  		event.preventDefault();
+  		// Set up the container for manual tag 
+  		// creation (by the user).
+  		self.setupPendingTagCreation(
+  			event.clientX, 
+  			event.clientY 
+  		);
+  	}
+  }
+  
 	// Define the controller class that's going to be doing 
 	// the heavy lifitng in the photo tagging system. Each 
 	// photo that is getting tagged will be associated with
@@ -27,7 +60,7 @@
 		this.menu_container.hide();
 		this.view_id_container= document.getElementById("view_id");
 		
-		this.menu_container.children().click( function() {
+		$(".menu").click( function() {
 				self.menu_container.hide();
 				// Create a tag based on our pending tag. We
 				// know everything BUT the ID at this point.
@@ -37,7 +70,8 @@
 					self.pendingTag.position().top, 
 					self.pendingTag.width(), 
 					self.pendingTag.height(), 
-					this.id	
+					this.id,
+					$("#annotate").val()
 				);
 				// Save this tag (to the server).
 				self.saveTag( tag );
@@ -150,40 +184,7 @@
 		// Bind to the mouse down even on the container. If the 
 		// user clicks down, they *probably* want to start drawing
 		// a new tag hotspot.
-		this.container.mousedown(
-			function( event ){
-				// Get the target of the click (if it is an 
-				// existing tag, we have some more logic).
-				var target = $( event.target );
-				// Check to see if new tag creation is enabled. 
-				// We only want to let the user draw new tags in
-				// this state such that new tags are not randomly
-				// being created. Also, we don't want the user to
-				// start a tag ON an existing tag (this helps us
-				// with the delete dble-click).
-				if ( self.isTagCreationEnabled &&
-						!target.is( "a." + self.getFullClassName( "tag" )+".ui-draggable.ui-resizable") &&
-						!target.is( "div.ui-resizable-handle")) {
-					
-					if(self.menu_container.css("display")!="none" && this.pendingTag!=null){
-						this.pendingTag.remove();
-						this.pendingTag=null;
-					}
-					
-					// The user is going to start drawing. Cancel 
-					// the default event to make sure the browser 
-					// does not try to select the IMG object.
-					event.preventDefault();
-					// Set up the container for manual tag 
-					// creation (by the user).
-					self.setupPendingTagCreation(
-						event.clientX, 
-						event.clientY 
-					);
-
-				}
-			}
-		);
+		this.listenMouseDown();
 
 /*
 		// Bind to the dragstart event (Internet Explorer) to
@@ -228,7 +229,7 @@
 
 
 		// I add a tag to the 
-		addTag: function(id, x, y, width, height, p_t ){
+		addTag: function(id, x, y, width, height, p_t , txt){
 			var self = this;
 
 			// Create the physical tag.
@@ -237,6 +238,7 @@
 			// Associate the appropriate data with the tag.
 			tag.data( "id", id );
 			tag.data( "pain_type", p_t );
+			tag.data( "annotate", txt );
 
 			// Bind the mouse over event on this tag (will show 
 			// the associated message).
@@ -498,7 +500,7 @@
 			var tagPosition = tag.position();
 
 			// Set the tag message.
-			this.message.text( tag.data( "pain_type" ) );
+			this.message.text( tag.data( "pain_type" )+" : "+ tag.data( "annotate" ));
 
 			// Position and show the message.
 			this.message
@@ -675,7 +677,8 @@
 								tagData.origin_y,
 								tagData.width,
 								tagData.height,
-								tagData.pain_type
+								tagData.pain_type,
+								tagData.annotate
 							);
 
 						}
@@ -747,10 +750,8 @@
 
 
 		// I save the given tag.
-		saveTag: function( tag 
-			){
+		saveTag: function( tag){
 			var self = this;
-console.log("save!   "+tag.data( "id" ));
 			// Get the tag position.
 			var position = tag.position();
 
@@ -762,6 +763,7 @@ console.log("save!   "+tag.data( "id" ));
 				tag.width(),
 				tag.height(),
 				tag.data( "pain_type" ),
+				tag.data( "annotate" ),
 
 				// If the AJAX response comes back successfully,
 				// associate the given ID.
@@ -773,7 +775,7 @@ console.log("save!   "+tag.data( "id" ));
 
 
 		// I save the given tag record.
-		saveTagRecord: function(id, origin_x, origin_y, width, height, pain_type, onSuccess ){
+		saveTagRecord: function(id, origin_x, origin_y, width, height, pain_type, annotate, onSuccess ){
 			var self = this;
 
 			// Delete the record using the API.
@@ -787,6 +789,7 @@ console.log("save!   "+tag.data( "id" ));
 					width: width,
 					height: height,
 					pain_type: pain_type,
+					annotate: annotate,
 					view_id: this.view_id_container.value
 				},
 				dataType: "json",
@@ -829,9 +832,8 @@ console.log("save!   "+tag.data( "id" ));
 				localPosition.left,
 				localPosition.top
 			);
-
-			// Now that we are drawing a tag, let's bind 
-			// the mousemove event to the container. This
+		
+			// bind the mousemove event to the container. This
 			// will allow the user to resize the pending
 			// tag hotpsot as they move their mouse.
 			this.container.bind(
@@ -844,7 +846,7 @@ console.log("save!   "+tag.data( "id" ));
 					);
 				}
 			);
-
+			
 			// Now that we have started drawing, we're 
 			// going to need a way to STOP drawing. If 
 			// the user mouses-up, then finalize drawing.
@@ -855,8 +857,25 @@ console.log("save!   "+tag.data( "id" ));
 					self.teardownPendingTagCreation();
 				}
 			);
+			
 		},
 
+		listenMouseDown: function(){
+			var self=this;
+			// Bind to the mouse down even on the container. If the 
+			// user clicks down, they *probably* want to start drawing
+			// a new tag hotspot.
+			this.container.bind(
+				"mousedown",
+				function(event){
+					tagMouseDown( event, self);
+				}
+			);
+		},
+		
+		ignoreMouseDown: function(){
+			this.container.unbind("mousedown");
+		},
 
 		// I show the tags associated with this photo.
 		showTags: function(){
@@ -868,10 +887,7 @@ console.log("save!   "+tag.data( "id" ));
 		teardownPendingTagCreation: function(){
 			var self = this;
 			
-			// Since we are done with the drawing, we no longer
-			// need to keep track of the move movements. Unbind
-			// any mouse up and mouse move events on container.
-			// events related to tagging.
+			// Unbind any mouse up and mouse move events.
 			this.container.unbind( "mouseup.photoTagger" );
 			this.container.unbind( "mousemove.photoTagger" );
 
@@ -1083,7 +1099,6 @@ console.log("save!   "+tag.data( "id" ));
 		// Check to see what kind of plugin application we are 
 		// going to perform.
 		if (typeof( arguments[ 0 ] ) == "string"){
-
 			// We're invoking a method on elements with an 
 			// existing photo tagger instance.
 			return(

@@ -22,6 +22,7 @@ class MainController < ApplicationController
 		@tag.width=params[:width]
 		@tag.height=params[:height]
 		@tag.pain_type=params[:pain_type]
+		@tag.annotate=params[:annotate]
 		@tag.view_id=params[:view_id]
 		if @tag.valid?
 			@tag.save()

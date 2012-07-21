@@ -2,12 +2,17 @@
 <table>
   <tr>
 	  <td>
-		<p> Drag your mouse on the photo to define a region</p>
+		<p> Drag your mouse on the photo to define a region ..... <br/> !Fix this; the width of this text defines where the radio buttons align!</p>
 		<div class="photo-container">
-		  <img id="body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" alt="no photo"></img>
-		  <canvas id="canvas" width="330" height="750" style="position:absolute; top:0px; background-color:transparent; border: 1px solid black;"></canvas>
-		  <div id="tags"></div>
-		  <div id="tagging"></div>
+			<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
+		  		<img id="body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" 
+						alt="no photo" style="position:relative;"></img>
+			</div>
+		  	<canvas id="canvas" width="330" height="750" 
+					style="position:absolute; top:0px; background-color:transparent; border: 1px solid black;">
+			</canvas>
+		  	<div id="tags"></div>
+		  	<div id="tagging"></div>
 		</div>
 		<ul id="menu-container">
 				<li class="menu" id="1" style="color:#FFFFB2">Mild</li>
@@ -37,6 +42,7 @@
 	  	<div id="free_or_region">
 	  		<input type="radio" id="free" name="free_or_region" /><label for="free">Free Hand</label>
 	  		<input type="radio" id="region" name="free_or_region" checked="checked" /><label for="region">By Region</label>
+			<input type="radio" id="zoom" name="free_or_region"/><label for="region">Zoom (click, drag, and release over a region to zoom)</label>
 	  	</div>
 		<div id="symptom_selection_panel">
 			<input type="radio" id="pain" name="symptom_selection" checked="checked" /><label for="pain">pain</label><br/>
@@ -44,6 +50,9 @@
 			<input type="radio" id="tingling" name="symptom_selection" /><label for="tingling">tingling</label><br/>
 			<input type="radio" id="itchiness" name="symptom_selection" /><label for="itchiness">itchiness</label><br/>
 			<input type="radio" id="no symptom" name="symptom_selection" /><label for="no symptom">no symptom</label><br/>
+		</div>
+		<div id="zoom button">
+			<button onclick="resetZoom()">Reset Zoom</button>
 		</div>
 	  </td>
   </tr>
@@ -103,6 +112,8 @@ jQuery(function( $ ){
 	});
 	photo_tagger= $( "div.photo-container" ).data("photoTagger");
 	
+	drawBodyImageOntoCanvas('/assets/front.png');
+	
 	/* Free Hand */
 	var canvas = document.getElementById('canvas'),
 		coord = document.getElementById('coord');
@@ -118,14 +129,23 @@ jQuery(function( $ ){
 		function(){
 			if($('input[name=free_or_region]:checked')[0].id=="free"){
 				photo_tagger.ignoreMouseDown();		
+				zoomIgnoreMouseDown();
 				freeHandListenMouseDown();
+			}
+			//for zooming
+			else if($('input[name=free_or_region]:checked')[0].id=="zoom"){
+				freeHandIgnoreMouseDown();
+				photo_tagger.ignoreMouseDown();
+				zoomListenMouseDown();
 			}
 			else{
 				photo_tagger.listenMouseDown();
 				freeHandIgnoreMouseDown();
+				zoomIgnoreMouseDown();
 			}
 		}
 	);
+	
 	//color changing / pain hierarchy
 	$("#symptom_selection_panel").change(
 		function(){
@@ -144,9 +164,23 @@ jQuery(function( $ ){
 		)
 });
 
+//DM: drawing the image onto the canvas instead of having it as a background, so that we can save the image + annotations
+function drawBodyImageOntoCanvas(imgName){
+	//var img = new Image();
+	//img.onload = function(){
+    //      ctx.drawImage(img,0,0);
+	//	};
+	//img.src=imgName;
+	console.log("drawBodyImageOntoCanvas is a stub right now");
+}
+
 /* save the information */
+//DM: is it saving? if so, where?
 function change_view(){
 	view_side_num=(view_side_num+1)%4;
+	ctx.clearRect(0,0,330,700); //DM: clear the existing canvas marks for the new view
+	
+	//DM: my ajax is not too good. I'm not sure what the code below is doing.
 	$.ajax({
 		method: "get",
 		url: "/main/get_view",
@@ -162,6 +196,7 @@ function change_view(){
 			//$( "div.photo-container" ).loadTags();
 		}		
 	});
+	drawBodyImageOntoCanvas(views[view_side_num]);//DM: Draw the body image on the canvas so that we can save the whole image
 }
 
 function freeHandIgnoreMouseDown(){
@@ -198,8 +233,69 @@ function freeHandListenMouseDown(){
 		"mouseup", 
 		function(e){
 			mousedown = false;
+		var strDataURI = canvas.toDataURL();
+		console.log("saving canvas to URL:" + strDataURI);
 	});
 
+}
+	
+//DM: Zoom function
+function resetZoom(){
+	d = document.getElementById("body_view");
+	d.style.left=0;
+	d.style.top=0;
+	d.width=330;
+	console.log("Translating to " + left + ", " + top + ", " + width);
+}
+
+function zoomWidth(left, top, width){
+	d = document.getElementById("body_view");
+	d.style.left=-(left/width * 330)+"px";
+	d.style.top=-(top/width * 330)+"px";
+	d.width=(330/width*330);
+	console.log("Translating to " + left + ", " + top + ", " + width);
+}
+
+function zoomListenMouseDown(){
+	var startx, starty, endx, endy;
+	$("#canvas").bind(
+		"mousedown", 
+		function(e){
+			//var pos = fixPosition(e, canvas);
+			var pos={x: e.offsetX, y:e.offsetY};
+			mousedown = true;
+			startx = pos.x;
+			starty = pos.y;
+			console.log("startx: " + startx + ", starty: " + starty);
+	});
+	
+	$("#canvas").bind(
+		"mousemove", 
+		function(e){
+			//var pos = fixPosition(e, canvas);
+			var pos={x: e.offsetX, y:e.offsetY};
+			coord.innerHTML = '(' + pos.x + ',' + pos.y + ')';
+			if (mousedown) {
+				console.log("x:"+pos.x + "  y:"+pos.y);
+				endx = pos.x;
+				endy = pos.y;
+			}
+	});
+	
+	$("#canvas").bind(
+		"mouseup", 
+		function(e){
+			mousedown = false;
+		console.log("endx: " + endx + ", endy: " + endy);
+		zoomWidth(Math.min(startx, endx), Math.min(starty, endy), Math.abs(startx - endx));
+	});
+	
+}
+
+function zoomIgnoreMouseDown(){
+	$("#canvas").unbind("mousedown");
+	$("#canvas").unbind("mousemove");
+	$("#canvas").unbind("mouseup");
 }
 			  
 </script>

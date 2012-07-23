@@ -5,8 +5,9 @@
 		<p> Drag your mouse on the photo to define a region ..... <br/> !Fix this; the width of this text defines where the radio buttons align!</p>
 		<div class="photo-container">
 			<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
-		  		<img id="body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" 
-						alt="no photo" style="position:relative;"></img>
+		  		<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
+				<!--<img id="body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" 
+						alt="no photo" style="position:relative;"></img>-->
 			</div>
 		  	<canvas id="canvas" width="330" height="750" 
 					style="position:absolute; top:0px; background-color:transparent; border: 1px solid black;">
@@ -54,11 +55,20 @@
 		<div id="zoom button">
 			<button onclick="resetZoom()">Reset Zoom</button>
 		</div>
+		<div id="zoom_canvas_div" style="background-color:transparent;width:330px;height:400px;position:absolute;overflow:hidden">
+			<img id="zoom_body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" 
+					alt="no photo" style="position:relative;"></img>
+		</div>
+		<canvas id="zoom_canvas" width="330" height="400"
+				style="position:absolute; background-color:transparent; border: 1px solid red;">
+		</canvas>
+		
 	  </td>
   </tr>
 </table>
 
 <script type="text/javascript">
+//DM: comments from 7/22/12: TODO: remove magic numbers and replace them with constants. 330 is the width of our canvas boxes, 337 is the actual image width etc. Obviously there's much more todo, too :-)
 
 //DM: from colorbrewer; update soon
 var colors = ['#e41a1c', '#377EB8', '#4DAF4A', '#984EA3', '#FF7F00'];
@@ -86,7 +96,8 @@ function fixPosition(e, gCanvasElement){
 	return {x: x, y:y};
 }
 
-var views = {0:"/assets/front.png", 1:"/assets/right.png", 2:"/assets/back.png", 3:"/assets/left.png"};	
+var views = {0:"/assets/front.png", 1:"/assets/right.png", 2:"/assets/back.png", 3:"/assets/left.png"};
+var viewsDataURLS = {0:null,1:null,2:null,3:null};
 view_side_num='<%=@cur_view.view_side%>'
 var photo_tagger;
 var mousedown = false;
@@ -112,17 +123,28 @@ jQuery(function( $ ){
 	});
 	photo_tagger= $( "div.photo-container" ).data("photoTagger");
 	
-	drawBodyImageOntoCanvas('/assets/front.png');
+	drawBodyImageOntoCanvas(0);
 	
 	/* Free Hand */
 	var canvas = document.getElementById('canvas'),
 		coord = document.getElementById('coord');
 	ctx = canvas.getContext('2d');
-	var offset={x:canvas.offsetParent.offsetLeft, y:canvas.offsetParent.offsetTop}; //get the offset 
+	//DM: don't think this is ever used?
+	//var offset={x:canvas.offsetParent.offsetLeft, y:canvas.offsetParent.offsetTop}; //get the offset 
+	ctx.lineWidth = 2;
 	
-	ctx.strokeStyle = colors[0];
-	ctx.lineWidth = 5;
+	/* DM: Amy's Free Hand mirrored for the zoom canvas*/
+	var zoom_canvas = document.getElementById('zoom_canvas'),
+		coord = document.getElementById('coord');
+	zoom_ctx = zoom_canvas.getContext('2d');
+	zoom_ctx.lineWidth = 5;
 	 
+	/* DM: Scale mappings between zoom canvas and normal canvas. These are the default mappings */
+	zoom_to_main_left_offset = 0;
+	zoom_to_main_top_offset = 0;
+	zoom_to_main_scale_factor_width = 1; //1:1 is our original scale
+	zoom_to_main_scale_factor_height=1;
+	
 	/* Other UI */
 	$( "#menu-container" ).children().button();
 	$("#free_or_region").change(
@@ -151,33 +173,53 @@ jQuery(function( $ ){
 		function(){
 			if($('input[name=symptom_selection]:checked')[0].id=="pain"){
 				ctx.strokeStyle = colors[0];
+				zoom_ctx.strokeStyle = colors[0];
 			} else if($('input[name=symptom_selection]:checked')[0].id=="numbness"){
 				ctx.strokeStyle = colors[1];
+				zoom_ctx.strokeStyle = colors[1];
 			} else if($('input[name=symptom_selection]:checked')[0].id=="tingling"){
 				ctx.strokeStyle = colors[2];
+				zoom_ctx.strokeStyle = colors[2];
 			} else if($('input[name=symptom_selection]:checked')[0].id=="itchiness"){
 				ctx.strokeStyle = colors[3];
+				zoom_ctx.strokeStyle = colors[3];
 			} else if($('input[name=symptom_selection]:checked')[0].id=="no symptom"){
 				ctx.strokeStyle = colors[4];
+				zoom_ctx.strokeStyle = colors[4];
 			}	
 		}
 		)
 });
 
 //DM: drawing the image onto the canvas instead of having it as a background, so that we can save the image + annotations
-function drawBodyImageOntoCanvas(imgName){
-	//var img = new Image();
-	//img.onload = function(){
-    //      ctx.drawImage(img,0,0);
-	//	};
-	//img.src=imgName;
-	console.log("drawBodyImageOntoCanvas is a stub right now");
+function drawBodyImageOntoCanvas(imgNum){
+
+	if(viewsDataURLS[imgNum]==null){
+		var img = new Image();
+		img.onload = function(){
+	    	ctx.drawImage(img,0,0);
+			var imgDURL = canvas.toDataURL();
+			viewsDataURLS[imgNum] = imgDURL;
+		};
+		img.src=views[imgNum];
+	}
+	else{
+		var img = new Image();
+		img.onload = function(){
+          	ctx.drawImage(img,0,0);
+		};
+		img.src=viewsDataURLS[imgNum];
+	}
 }
 
 /* save the information */
 //DM: is it saving? if so, where?
 function change_view(){
+	var imgDURL = canvas.toDataURL(); //DM: save the current canvas
+	viewsDataURLS[view_side_num] = imgDURL;
+	
 	view_side_num=(view_side_num+1)%4;
+	
 	ctx.clearRect(0,0,330,700); //DM: clear the existing canvas marks for the new view
 	
 	//DM: my ajax is not too good. I'm not sure what the code below is doing.
@@ -191,12 +233,12 @@ function change_view(){
 		cache: false,
 		success: function( response ){
 			//$( "div.photo-container" ).deleteAllTags();
-			document.getElementById("body_view").src='/assets/'+response["img_name"];	
+			//document.getElementById("body_view").src='/assets/'+response["img_name"];	 //DM: drawing image directly onto canvas for saving
 			document.getElementById("view_id").value=response["id"];
 			//$( "div.photo-container" ).loadTags();
 		}		
 	});
-	drawBodyImageOntoCanvas(views[view_side_num]);//DM: Draw the body image on the canvas so that we can save the whole image
+	drawBodyImageOntoCanvas(view_side_num);//DM: Draw the body image on the canvas so that we can save the whole image
 }
 
 function freeHandIgnoreMouseDown(){
@@ -206,6 +248,8 @@ function freeHandIgnoreMouseDown(){
 }
 
 function freeHandListenMouseDown(){
+	var zoom_offset={x:zoom_canvas.offsetLeft, y:zoom_canvas.offsetTop};
+
 	$("#canvas").bind(
 		"mousedown", 
 		function(e){
@@ -233,27 +277,87 @@ function freeHandListenMouseDown(){
 		"mouseup", 
 		function(e){
 			mousedown = false;
-		var strDataURI = canvas.toDataURL();
-		console.log("saving canvas to URL:" + strDataURI);
+		//var strDataURI = canvas.toDataURL();
+		//console.log("saving canvas to URL:" + strDataURI);
 	});
 
+	//DM: mirror for the zoom canvas
+	$("#zoom_canvas").bind(
+		"mousedown", 
+		function(e){
+			//var pos = fixPosition(e, canvas);
+			var pos={x: e.offsetX, y:e.offsetY};
+			var main_pos={x:pos.x * zoom_to_main_scale_factor_width + zoom_to_main_left_offset, y:pos.y * zoom_to_main_scale_factor_width + zoom_to_main_top_offset};
+			mousedown = true;
+			
+			zoom_ctx.beginPath();
+			zoom_ctx.moveTo(pos.x, pos.y);
+
+			ctx.beginPath();
+			ctx.moveTo(main_pos.x, main_pos.y);
+	});
+	
+	$("#zoom_canvas").bind(
+		"mousemove", 
+		function(e){
+			console.log("in zoom_canvas mousemove");
+			//var pos = fixPosition(e, canvas);
+			var pos={x: e.offsetX, y:e.offsetY};
+			var main_pos={x:pos.x * zoom_to_main_scale_factor_width + zoom_to_main_left_offset, y:pos.y * zoom_to_main_scale_factor_width + zoom_to_main_top_offset};
+			coord.innerHTML = '(' + pos.x + ',' + pos.y + ')';
+			if (mousedown) {
+				console.log("x:"+pos.x + "  y:"+pos.y + " | | " + "x:"+main_pos.x + "y:"+main_pos.y);
+
+				zoom_ctx.lineTo(pos.x, pos.y);
+				zoom_ctx.stroke();
+				
+				ctx.lineTo(main_pos.x, main_pos.y);
+				ctx.stroke();
+			}
+	});
+	
+	$("#zoom_canvas").bind(
+		"mouseup", 
+		function(e){
+			mousedown = false;
+		ctx.closePath();
+		//var strDataURI = canvas.toDataURL();
+		//console.log("saving canvas to URL:" + strDataURI);
+	});
 }
 	
 //DM: Zoom function
 function resetZoom(){
-	d = document.getElementById("body_view");
+	d = document.getElementById("zoom_body_view");
 	d.style.left=0;
 	d.style.top=0;
-	d.width=330;
-	console.log("Translating to " + left + ", " + top + ", " + width);
+	d.width=337;
+	
+	zoom_to_main_left_offset = 0;
+	zoom_to_main_top_offset = 0;
+	zoom_to_main_scale_factor_width=1;
+	zoom_to_main_scale_factor_height=1;
+	
+	zoom_ctx.clearRect(0,0,330,400)
 }
 
-function zoomWidth(left, top, width){
-	d = document.getElementById("body_view");
-	d.style.left=-(left/width * 330)+"px";
-	d.style.top=-(top/width * 330)+"px";
-	d.width=(330/width*330);
-	console.log("Translating to " + left + ", " + top + ", " + width);
+function zoomWidth(left, top, width, height){
+	
+	d = document.getElementById("zoom_body_view");
+	d.style.left=-(left/width * 337)+"px";
+	d.style.top=-(top/width * 337)+"px";
+	d.width=(337/width*337);
+	
+	console.log("Translating to " + left + ", " + top + ", " + width + " in zoom window.");
+	
+	//DM: also need to adjust several scales. translateCoordinateMappings should be called after this function.
+}
+
+function translateCoordinateMappings(left, top, width){
+	zoom_to_main_left_offset = left;
+	zoom_to_main_top_offset = top;
+	zoom_to_main_scale_factor_width = width/337; //1:1 is our original scale
+	zoom_to_main_scale_factor_height = zoom_to_main_scale_factor_width * 330/400; //remove these magic numbers!!!
 }
 
 function zoomListenMouseDown(){
@@ -287,7 +391,8 @@ function zoomListenMouseDown(){
 		function(e){
 			mousedown = false;
 		console.log("endx: " + endx + ", endy: " + endy);
-		zoomWidth(Math.min(startx, endx), Math.min(starty, endy), Math.abs(startx - endx));
+		zoomWidth(Math.min(startx, endx), Math.min(starty, endy), Math.abs(startx - endx), Math.abs(starty - endy));
+		translateCoordinateMappings(Math.min(startx, endx), Math.min(starty, endy), Math.abs(startx - endx));
 	});
 	
 }

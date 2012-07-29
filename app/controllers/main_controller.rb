@@ -1,4 +1,20 @@
 class MainController < ApplicationController
+	def app
+		@tag = Tag.new
+		#temporary.. to be changed
+		@cur_view=View.find(:all)[0]
+	end
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	def draw
 		@tag = Tag.new
 		#temporary.. to be changed
@@ -21,7 +37,6 @@ class MainController < ApplicationController
 		@tag.origin_y=params[:origin_y]
 		@tag.width=params[:width]
 		@tag.height=params[:height]
-		@tag.pain_type=params[:pain_type]
 		@tag.annotate=params[:annotate]
 		@tag.view_id=params[:view_id]
 		if @tag.valid?

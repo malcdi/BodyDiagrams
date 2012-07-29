@@ -6,8 +6,8 @@
 		<div class="photo-container">
 			<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
 		  		<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
-				<!--<img id="body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" 
-						alt="no photo" style="position:relative;"></img>-->
+				<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+						alt="no photo" style="position:relative;"></img>
 			</div>
 		  	<canvas id="canvas" width="330" height="750" 
 					style="position:absolute; top:0px; background-color:transparent; border: 1px solid black;">
@@ -56,7 +56,7 @@
 			<button onclick="resetZoom()">Reset Zoom</button>
 		</div>
 		<div id="zoom_canvas_div" style="background-color:transparent;width:330px;height:400px;position:absolute;overflow:hidden">
-			<img id="zoom_body_view" src="/assets/<%=@cur_view.img_name %>" onmousedown="event.preventDefault();" 
+			<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png"  %>" onmousedown="event.preventDefault();" 
 					alt="no photo" style="position:relative;"></img>
 		</div>
 		<canvas id="zoom_canvas" width="330" height="400"

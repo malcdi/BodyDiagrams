@@ -191,26 +191,7 @@ jQuery(function( $ ){
 		)
 });
 
-//DM: drawing the image onto the canvas instead of having it as a background, so that we can save the image + annotations
-function drawBodyImageOntoCanvas(imgNum){
 
-	if(viewsDataURLS[imgNum]==null){
-		var img = new Image();
-		img.onload = function(){
-	    	ctx.drawImage(img,0,0);
-			var imgDURL = canvas.toDataURL();
-			viewsDataURLS[imgNum] = imgDURL;
-		};
-		img.src=views[imgNum];
-	}
-	else{
-		var img = new Image();
-		img.onload = function(){
-          	ctx.drawImage(img,0,0);
-		};
-		img.src=viewsDataURLS[imgNum];
-	}
-}
 
 /* save the information */
 //DM: is it saving? if so, where?

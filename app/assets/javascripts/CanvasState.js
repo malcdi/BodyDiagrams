@@ -1,5 +1,10 @@
-function CanvasState(canvas) {
-
+function CanvasState(canvas, subcanvas) {
+	
+	this.isZoomCanvas=true;
+	if(subcanvas==null){
+		this.isZoomCanvas=false;
+	}
+	
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
 	if (document.defaultView && document.defaultView.getComputedStyle) {
@@ -30,6 +35,12 @@ function CanvasState(canvas) {
 	this.isResizeDrag = false;
 	this.resizeSide = -1; 
 	
+	//Zooming scale factors --> moved to main scope
+	//this.zoom_to_main_left_offset = 0;
+	//this.zoom_to_main_top_offset = 0;
+	//this.zoom_to_main_scale_factor_width = 1; //1:1 is our original scale
+	//this.zoom_to_main_scale_factor_height = 1;
+	
 	// the current selected object.
 	// In the future we could turn this into an array for multiple selection
 	this.regionSelection = null;
@@ -40,6 +51,10 @@ function CanvasState(canvas) {
 	/* registering mouse events */
 	var myState = this;
 	
+	//Handling zooming. Sorry if this is messy. Feel free to refactor :-)
+	var isZoomCanvas = this.isZoomCanvas;
+	var zoom_start_x, zoom_start_y, zoom_end_x, zoom_end_y; //captures the region we want to zoom into
+
 	//fixes a problem where double clicking causes text to get selected on the canvas
 	canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
 	
@@ -54,6 +69,14 @@ function CanvasState(canvas) {
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
+		
+		if(inZoom && !isZoomCanvas){
+			console.log("Mousedown and in zoom");
+			zoom_start_x = mx;
+			zoom_start_y = my;
+			return;
+		}
+		
 		var regionTags = myState.regionTags;
 		var l = regionTags.length;
 		for (var i = l-1; i >= 0; i--) {
@@ -81,17 +104,80 @@ function CanvasState(canvas) {
 		myState.handSelection=new FreeHandTagCanvasElem('#AAAAAA');
 		myState.handSelection.addPoint(mx,my);
 		myState.addFreeHandTagCanvasElem(myState.handSelection);
+		
+		if(isZoomCanvas){
+			
+			var otherState = subcanvas;
+			
+			if(otherState.resizeSide != -1){
+				otherState.isResizeDrag = true;
+				return;
+			}
+
+			var mxOther = mx * zoom_to_main_scale_factor_width + zoom_to_main_left_offset;
+			var myOther = my * zoom_to_main_scale_factor_height + zoom_to_main_top_offset;
+
+			var regionTags = otherState.regionTags;
+			var l = regionTags.length;
+			for (var i = l-1; i >= 0; i--) {
+				if (regionTags[i].contains(mxOther, myOther)) {
+					var mySel = regionTags[i];
+					// Keep track of where in the object we clicked
+					// so we can move it smoothly (see mousemove)
+					otherState.dragoffx = mxOther - mySel.x;
+					otherState.dragoffy = myOther - mySel.y;
+					otherState.dragging = true;
+					otherState.regionSelection = mySel;
+					otherState.needRedraw = true;
+					return;
+				}
+			}
+			// havent returned means we have failed to select anything.
+			// If there was an object selected, we deselect it
+			if (otherState.regionSelection) {
+				otherState.regionSelection = null;
+				otherState.needRedraw = true; // Need to clear the old selection border
+			}
+
+			/* Free Hand Drawing */
+			otherState.mouseDownForFreeHand = true;
+			otherState.handSelection=new FreeHandTagCanvasElem('#BBAAAA');
+			console.log("starting freehand drawing");
+			otherState.handSelection.addPoint(mxOther,myOther);
+			otherState.addFreeHandTagCanvasElem(otherState.handSelection);
+		}
+		
 	}, true);
 	
 	//Mouse Move Event--On drag
 	canvas.addEventListener('mousemove', function(e) {
+		
+		if(inZoom && !isZoomCanvas){
+			return;
+		}
+		
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
+		
+		
 		/*Free Hand Drawing*/
 		if(myState.mouseDownForFreeHand){
+			console.log("adding freehand point self: " + mx + ", " + my);
 			myState.handSelection.addPoint(mx, my);
 			myState.needRedraw=true;
+			
+			if(isZoomCanvas){ //if this is the zooming canvas, replicate the drawing on the main canvas
+				var otherState = subcanvas;
+				var mxOther = mx * zoom_to_main_scale_factor_width + zoom_to_main_left_offset;
+				var myOther = my * zoom_to_main_scale_factor_height + zoom_to_main_top_offset;
+				/*Free Hand Drawing*/
+				if(otherState.mouseDownForFreeHand){
+					console.log("adding freehand point: " + mxOther + ", " + myOther);
+					otherState.handSelection.addPoint(mxOther, myOther);
+					otherState.needRedraw=true;
+				}
+			}
 			return;
 		}
 		
@@ -175,23 +261,60 @@ function CanvasState(canvas) {
 	}, true);
 	
 	canvas.addEventListener('mouseup', function(e) {
+		
+		if(inZoom && !isZoomCanvas){
+			console.log("Mousedown and in zoom");
+			var mouse = myState.getMouse(e);
+			zoom_end_x = mouse.x;
+			zoom_end_y = mouse.y;
+			zoomPanel(zoom_start_x, zoom_start_y, zoom_end_x, zoom_end_y);
+			return;
+		}
+		
 		if(myState.mouseDownForFreeHand){
 			myState.mouseDownForFreeHand = false;
 			myState.needRedraw=true;
+			
+			if(isZoomCanvas){ //if this is the zoom canvas, turn off mouse listening for the main canvas, too
+				var otherState = subcanvas;
+				if(otherState.mouseDownForFreeHand){
+					console.log("mouseDownForFreehand Main: " + otherState.mouseDownForFreehand);
+					otherState.mouseDownForFreeHand = false;
+					otherState.needRedraw=true;
+				}
+			}
 			return;
 		}
 		myState.dragging = false;
 		myState.isResizeDrag = false;
 		myState.resizeSide = -1;
+		
 	}, true);
-	
+		
 	// double click for making new regionTags
 	canvas.addEventListener('dblclick', function(e) {
+		
+		if(inZoom){
+			return;
+		}
+		
 		var mouse = myState.getMouse(e);
 		myState.regionSelection=new RegionTagCanvasElem(mouse.x - 10, mouse.y - 10, 20, 20,
  'rgba(0,255,0,.6)');
 		myState.addRegionTagCanvasElem(myState.regionSelection);
 		myState.isResizeDrag=true;
+		
+		if(isZoomCanvas){
+			console.log("mousedown in double click");
+			var xTranslate = (mouse.x * zoom_to_main_scale_factor_width + zoom_to_main_left_offset) - (10 * zoom_to_main_scale_factor_width);
+			var yTranslate = (mouse.y * zoom_to_main_scale_factor_height + zoom_to_main_top_offset) - (10 * zoom_to_main_scale_factor_width); 
+			var otherState = subcanvas;
+			otherState.regionSelection=new RegionTagCanvasElem(xTranslate, yTranslate, 20 * zoom_to_main_scale_factor_height, 20 * zoom_to_main_scale_factor_height,'rgba(255,0,0,.6)');
+			otherState.addRegionTagCanvasElem(otherState.regionSelection);
+			otherState.isResizeDrag=true;
+			console.log(otherState);
+		}
+		
 	}, true);
 	
 	/* For Resize */
@@ -228,8 +351,6 @@ CanvasState.prototype.draw = function() {
 		var regionTags = this.regionTags;
 		var freeHandTags = this.freeHandTags;
 		this.clear(ctx);
-
-		// ** Add stuff you want drawn in the background all the time here **
 
 		// draw all Tags
 		var l = regionTags.length;

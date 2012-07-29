@@ -1,25 +1,99 @@
 <table>
 	<tr>
-		<td>
+		<td width="350px">
 			<p> FREE HAND: mouse down and drag </p>
 			<p> REGION SELECT: double click & resize </p>
+			<p> ZOOM: control & select </p>
+			<button onclick="rotate(1)">Left</button> <button onclick="rotate(3)">Right</button> <button onclick="zoom()">Zoom</button>
 		</td>
 	</tr>
 	<tr>
 		<td>
-			<div class="photo-container">
 				<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
-						<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
-					<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+						<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();"
 					alt="no photo" style="position:relative;"></img>
 					<canvas id="canvas" width="330" height="750" 
 						style="position:absolute; top:0px; background-color:transparent; border: 1px solid black;">
 					</canvas>
 			</div>
 		</td>
+		<td>
+			<div class="zoom-canvas-container" style="width:330px;height:330px;position:absolute;overflow:hidden">
+			<img id="body_view_zoom" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();"
+			alt="no photo" style="position:relative;"></img>
+			<canvas id="zoomCanvas" width="330" height="330"
+				style="position:absolute; background-color:transparent; border:1px solid black;">
+			</canvas>
+			</div>
+		</td>
 	</tr>
+
 </table>
+<tr>
+
+</tr>
 
 <script type="text/javascript">
+	var views = {0:"/assets/whole_0.png", 1:"/assets/whole_1.png", 2:"/assets/whole_2.png", 3:"/assets/whole_3.png"};
+	var imgNum=0;
+	var inZoom = false;
+	
+	var zoom_to_main_left_offset = 0;
+	var zoom_to_main_top_offset = 0;
+	var zoom_to_main_scale_factor_width=1;
+	var zoom_to_main_scale_factor_height=1;
+
 	var cvState =new CanvasState(document.getElementById("canvas"));
+	var cvStateZoom = new CanvasState(document.getElementById("zoomCanvas"), cvState);
+
+	function rotate(imageDelta){
+		imgNum = (imgNum + imageDelta) % 4;
+		document.getElementById("body_view").src=views[imgNum];
+	}
+	
+	function zoom(){
+		inZoom = (inZoom == false) ? true : false;
+		console.log("inZoom: " + inZoom);
+	}
+	
+	function zoomPanel(raw_start_x, raw_start_y, raw_end_x, raw_end_y){
+		
+		var start_x = Math.min(raw_start_x, raw_end_x);
+		var start_y = Math.min(raw_start_y, raw_end_y);
+		var end_x = Math.max(raw_start_x, raw_end_x);
+		var end_y = Math.max(raw_start_y, raw_end_y);
+		var width = end_x - start_x;
+		var height = end_y - start_y;
+		
+		//reset the current image
+		d = document.getElementById("body_view_zoom");
+		d.src=views[imgNum];
+		d.style.left=0;
+		d.style.top=0;
+		d.style.width=337;
+		d.style.height=744;
+		
+		//DM: TODO: deal with height zooming!
+		//if(width > height){
+			//d = document.getElementById("body_view_zoom");
+			d.style.left=-(start_x/width * 337)+"px";
+			d.style.top=-(start_y/width * 337)+"px";
+			d.width=(337/width*337);
+			console.log("Translating WIDTH in zoom window.");
+		/*} else {
+			d = document.getElementById("body_view_zoom");
+			d.style.left=-(start_x/height * 744)+"px";
+			d.style.top=-(start_y/height * 744)+"px";
+			d.height=(744/height*744);
+			console.log("Translating HEIGHT in zoom window.");
+		}*/
+		//DM: also need to adjust several scales. translateCoordinateMappings should be called after this function.
+		
+		//set zooming scales
+		zoom_to_main_left_offset = start_x;
+		zoom_to_main_top_offset = start_y;
+		zoom_to_main_scale_factor_width = width/337; //1:1 is our original scale
+		zoom_to_main_scale_factor_height = zoom_to_main_scale_factor_width; //make it a square so that the ratio is always 1
+
+	}
 </script>

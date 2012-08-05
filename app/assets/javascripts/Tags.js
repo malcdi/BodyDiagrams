@@ -17,10 +17,13 @@ function RegionTagCanvasElem(x, y, w, h, fill) {
 	this.h = h || 1;
 	this.fill = fill || '#AAAAAA';
 }
+RegionTagCanvasElem.prototype.toJSON = function() {
+	return {"origin_x":this.x, "origin_y":this.y, "height":this.h, "width":this.w};
+}
 
 // Draws this shape to a given context
-RegionTagCanvasElem.prototype.draw = function(ctx, WIDTH, HEIGHT, thisElemOnSelect, selectionHandles) {
-	ctx.fillStyle = this.fill;
+RegionTagCanvasElem.prototype.draw = function(ctx, WIDTH, HEIGHT, thisElemOnSelect, selectionHandles, fillColor) {
+	ctx.fillStyle = fillColor;
 	// We can skip the drawing of elements that have moved off the screen:
 	if (this.x > WIDTH || this.y > HEIGHT) return; 
 	if (this.x + this.w < 0 || this.y + this.h < 0) return;
@@ -41,7 +44,6 @@ RegionTagCanvasElem.prototype.draw = function(ctx, WIDTH, HEIGHT, thisElemOnSele
 		// 0  1  2
 		// 3     4
 		// 5  6  7
-
 		// top left, middle, right
 		selectionHandles[0].x = this.x-half;
 		selectionHandles[0].y = this.y-half;
@@ -94,17 +96,26 @@ function FreeHandTagCanvasElem(fill) {
 	this.points=[];
 }
 
+FreeHandTagCanvasElem.prototype.toJSON = function() {
+	return this.points;
+}
+
 FreeHandTagCanvasElem.prototype.addPoint = function(x_t, y_t) {
-	this.points.push({x:x_t, y:y_t});
+	this.points.push([x_t, y_t]);
+}
+
+FreeHandTagCanvasElem.prototype.isValidElem = function() {
+	return (this.points.length>1);
 }
 
 // Draws this shape to a given context
-FreeHandTagCanvasElem.prototype.draw = function(ctx) {
+FreeHandTagCanvasElem.prototype.draw = function(ctx, fillColor) {
+	ctx.strokeStyle = fillColor;
 	ctx.beginPath();
 	for (var i=0; i<this.points.length; i++){
-		if (i==0) ctx.moveTo(this.points[i].x, this.points[i].y);
+		if (i==0) ctx.moveTo(this.points[i][0], this.points[i][1]);
 		else {
-			ctx.lineTo(this.points[i].x, this.points[i].y);
+			ctx.lineTo(this.points[i][0], this.points[i][1]);
 			ctx.stroke();
 		}
 	}

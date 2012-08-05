@@ -1,99 +1,83 @@
 <table>
 	<tr>
-		<td width="350px">
+		<td>
 			<p> FREE HAND: mouse down and drag </p>
 			<p> REGION SELECT: double click & resize </p>
-			<p> ZOOM: control & select </p>
-			<button onclick="rotate(1)">Left</button> <button onclick="rotate(3)">Right</button> <button onclick="zoom()">Zoom</button>
 		</td>
 	</tr>
 	<tr>
 		<td>
-				<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
-						<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();"
-					alt="no photo" style="position:relative;"></img>
+				<div id="body_image_div">
+						<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
+					<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+					alt="no photo" ></img>
 					<canvas id="canvas" width="330" height="750" 
-						style="position:absolute; top:0px; background-color:transparent; border: 1px solid black;">
+						style="position:absolute;left:10px; top:100px; background-color:transparent; border: 1px solid black;">
 					</canvas>
 			</div>
 		</td>
 		<td>
-			<div class="zoom-canvas-container" style="width:330px;height:330px;position:absolute;overflow:hidden">
-			<img id="body_view_zoom" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();"
-			alt="no photo" style="position:relative;"></img>
-			<canvas id="zoomCanvas" width="330" height="330"
-				style="position:absolute; background-color:transparent; border:1px solid black;">
-			</canvas>
+			<div id="pain_panel" style="width:330px;height:750px;">
+				<ul>
+					<li><a href="#pain_picker">Pain Picker</a></li>
+					<li><a href="#my_symptoms">My Symptoms</a></li>
+				</ul>
+				
+				<div id="pain_picker">
+					<!--TODO: 1) create tag default: Ajax requset to the server 2) on submit, commit the information, else, remove all. -->
+						<ul style="list-style:none;">
+							<li>Describe Your Annotation: </li>
+							<li><textarea cols="25" id="tag_annotate" name="tag[annotate]" rows="4"></textarea></li>
+							<li>Pain Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li>
+							<li> Pain Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li>
+							<li> <button type="button" id="tagDone">Done!</button> </li>
+						</ul>
+				</div>
+				
+				<div id="my_symptoms" onmouseup="callThis">
 			</div>
 		</td>
 	</tr>
-
-</table>
-<tr>
-
-</tr>
-
+	</table>
+	
 <script type="text/javascript">
-	var views = {0:"/assets/whole_0.png", 1:"/assets/whole_1.png", 2:"/assets/whole_2.png", 3:"/assets/whole_3.png"};
-	var imgNum=0;
-	var inZoom = false;
-	
-	var zoom_to_main_left_offset = 0;
-	var zoom_to_main_top_offset = 0;
-	var zoom_to_main_scale_factor_width=1;
-	var zoom_to_main_scale_factor_height=1;
+	//set up canvas
+	var cvState =new CanvasState(document.getElementById("canvas"), "tagDone", packTagInfo, submitCallback);
+	function submitCallback(){
+		$("#my_symptoms").accordion("destroy");
 
-	var cvState =new CanvasState(document.getElementById("canvas"));
-	var cvStateZoom = new CanvasState(document.getElementById("zoomCanvas"), cvState);
-
-	function rotate(imageDelta){
-		imgNum = (imgNum + imageDelta) % 4;
-		document.getElementById("body_view").src=views[imgNum];
+		//append
+		var symptomLogger= $("#my_symptoms");
+		symptomLogger.append($("<h3><a href='#'>"+document.getElementById("tag_annotate").value+"</a></h3>"));
+		symptomLogger.append($("<div><div>severity: "+document.getElementById("tag_pain_severity").childNodes[0].style.left+
+													"</div><div>depth: "+document.getElementById("tag_pain_depth").childNodes[0].style.left+"</div></div>"));
+		
+		setTimeout(function(){
+			$("#my_symptoms").accordion();
+			$("#my_symptoms").accordion("resize");
+		}, 1500);
+		
+		//reset
+		document.getElementById("tag_annotate").value="";
+		document.getElementById("tag_pain_severity").childNodes[0].style.left=0;
+		document.getElementById("tag_pain_depth").childNodes[0].style.left=0;
+		alert("saved!");
 	}
-	
-	function zoom(){
-		inZoom = (inZoom == false) ? true : false;
-		console.log("inZoom: " + inZoom);
+	function packTagInfo(){
+		var annotation=document.getElementById("tag_annotate").value;
+		var severity=document.getElementById("tag_pain_severity").childNodes[0].style.left;
+		var depth=document.getElementById("tag_pain_depth").childNodes[0].style.left;
+		return {"annotate":annotation, "severity":severity, "depth":depth, "view_id":0};
 	}
-	
-	function zoomPanel(raw_start_x, raw_start_y, raw_end_x, raw_end_y){
-		
-		var start_x = Math.min(raw_start_x, raw_end_x);
-		var start_y = Math.min(raw_start_y, raw_end_y);
-		var end_x = Math.max(raw_start_x, raw_end_x);
-		var end_y = Math.max(raw_start_y, raw_end_y);
-		var width = end_x - start_x;
-		var height = end_y - start_y;
-		
-		//reset the current image
-		d = document.getElementById("body_view_zoom");
-		d.src=views[imgNum];
-		d.style.left=0;
-		d.style.top=0;
-		d.style.width=337;
-		d.style.height=744;
-		
-		//DM: TODO: deal with height zooming!
-		//if(width > height){
-			//d = document.getElementById("body_view_zoom");
-			d.style.left=-(start_x/width * 337)+"px";
-			d.style.top=-(start_y/width * 337)+"px";
-			d.width=(337/width*337);
-			console.log("Translating WIDTH in zoom window.");
-		/*} else {
-			d = document.getElementById("body_view_zoom");
-			d.style.left=-(start_x/height * 744)+"px";
-			d.style.top=-(start_y/height * 744)+"px";
-			d.height=(744/height*744);
-			console.log("Translating HEIGHT in zoom window.");
-		}*/
-		//DM: also need to adjust several scales. translateCoordinateMappings should be called after this function.
-		
-		//set zooming scales
-		zoom_to_main_left_offset = start_x;
-		zoom_to_main_top_offset = start_y;
-		zoom_to_main_scale_factor_width = width/337; //1:1 is our original scale
-		zoom_to_main_scale_factor_height = zoom_to_main_scale_factor_width; //make it a square so that the ratio is always 1
-
+	function callThis(){
+		alert("jell");
 	}
+	//set up pain panel
+	$(function() {
+		$("#my_symptoms").accordion();
+		$( "#pain_panel" ).tabs();
+		$(".pain_type_slider").slider();
+		$(".pain_type_slider").css({
+		});
+	});
 </script>

@@ -19,6 +19,7 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 	this.leftMatch = 0;
 	this.topMatch = 0;
 	this.scaleFactor = 1;
+	this.scaleFactorHeight = 1;
 
 	// Keeping track of states.
 	// the collection of things to be drawn
@@ -46,6 +47,7 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 	// In the future we could turn this into an array for multiple selection
 	this.regionSelection = null;
 	this.handSelection=null;
+	this.exportHandSelection=null;
 	this.dragoffx = 0; 
 	this.dragoffy = 0;
 	
@@ -93,9 +95,13 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 		myState.handSelection=new FreeHandTagCanvasElem('#AAAAAA');
 		myState.handSelection.addPoint(mx,my);
 		myState.addFreeHandTagCanvasElem(myState.handSelection);
-		//DM: push to bound canvas
-		//DM: TODO: handle scaling
-		boundCanvasState.addFreeHandTagCanvasElem(myState.handSelection);
+		
+		myState.exportHandSelection = new FreeHandTagCanvasElem('#AABBAA');
+		myState.exportHandSelection.addPoint(myState.translateX(mx), myState.translateY(my));
+		boundCanvasState.addFreeHandTagCanvasElem(myState.exportHandSelection);
+		// DM: push to bound canvas
+		// DM: TODO: handle scaling
+		// boundCanvasState.addFreeHandTagCanvasElem(myState.handSelection);
 	}, true);
 	
 	//Mouse Move Event--On drag
@@ -107,6 +113,9 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 		if(myState.mouseDownForFreeHand){
 			myState.handSelection.addPoint(mx, my);
 			myState.needRedraw=true;
+			
+			myState.exportHandSelection.addPoint(myState.translateX(mx), myState.translateY(my));
+			boundCanvasState.needRedraw=true;
 			return;
 		}
 		
@@ -229,38 +238,36 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 
 //DM: functions for translating to correct zooming resolution
 ZoomCanvasState.prototype.setZoomConstants = function(_left, _top, _scale){
+	//first rescale the image
+	d = document.getElementById("zoom_body_view"); //DM: todo: pass this as a parameter to the ZoomCanvasState
+	d.width=(337*_scale)+"";
+	d.style.left=-(_left*_scale)+"px";
+	d.style.top=-(_top*(d.height/750))+"px";
+	
 	//DM: variables we'll need to handle zooming and scaling
 	this.leftMatch = _left;
 	this.topMatch = _top;
 	this.scaleFactor = _scale;
-	this.rescaleImage(_left, _top, _scale);
-}
-
-ZoomCanvasState.prototype.rescaleImage = function(_left, _top, _scale, _scaleHeight){
-	console.log(_left +" " + _top + " " + _scale);
-	d = document.getElementById("zoom_body_view"); //DM: todo: pass this as a parameter to the ZoomCanvasState
-	d.width=(337*_scale)+"";
-	console.log(d.height/750);
-	console.log(-_top*d.height/750);
-	d.style.left=-(_left*_scale)+"px";
-	d.style.top=-(_top*(d.height/750))+"px";
+	this.scaleFactorHeight = d.height/750;
 }
 
 ZoomCanvasState.prototype.translateX = function(rawX){
-	var transX = this.leftMatch + this.scaleFactor * rawX;
-	console.log("translating " + rawX + " to " + transX);
+	var transX = this.leftMatch * this.scaleFactor + rawX;//how much we need to shift left
+	transX /= this.scaleFactor;
+	console.log("translating X: " + rawX + " to " + transX);
 	return(transX);
 }
 
 ZoomCanvasState.prototype.translateY = function(rawY){
-	var transY = this.topMatch + this.scaleFactor * rawY;
-	console.log("translating " + rawY + " to " + transY);
+	var transY = (this.topMatch * this.scaleFactor + rawY)/this.scaleFactor;
+	console.log("translating Y: " + rawY + " to " + transY);
 	return(transY);
 }
 
 ZoomCanvasState.prototype.scaleSize = function(rawVal){
-	console.log("scaling " + rawVal + " to " + (this.scaleFactor * rawVal));
-	return(this.scaleFactor * rawVal);
+	console.log("scaling " + rawVal + " to " + (rawVal / this.scaleFactor));
+	return(rawVal/this.scaleFactor);
+	//return(rawVal);
 }
 //DM: end functions for translating to correct zooming resolution
 

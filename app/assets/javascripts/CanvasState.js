@@ -47,8 +47,7 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 	};
 	this.getData=getData;
 	this.saveCallback=saveCallback;
-	
-	
+
 	//fixes a problem where double clicking causes text to get selected on the canvas
 	canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
 	
@@ -63,6 +62,7 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
+
 		//can only edit ones not submitted yet
 		var regionTags = myState.regionTags.tmp;
 		var l = regionTags.length;
@@ -247,6 +247,8 @@ CanvasState.prototype.draw = function() {
 		this.clear(ctx);
 		// ** Add stuff you want drawn in the background all the time here **
 
+		// ** Add stuff you want drawn in the background all the time here **
+
 		// draw all Tags
 		for (var tagId in this.regionTags) {
 			var regionTags = this.regionTags[tagId];
@@ -335,3 +337,4 @@ CanvasState.prototype.submitGraphicTagInfo = function(tagId){
 	this.freeHandTags.tmp=[];
 	this.regionTags.tmp=[];
 }
+

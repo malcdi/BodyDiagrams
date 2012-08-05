@@ -42,7 +42,9 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 	var myState = this;
 	
 	/*for submitting information to the server*/
-	};
+	//document.getElementById(tagButton).onclick=function(){
+	//	myState.submitTagInfo(myState);
+	//};
 	this.getData=getData;
 	this.saveCallback=saveCallback;
 

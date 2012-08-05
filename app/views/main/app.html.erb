@@ -18,26 +18,90 @@ canvas {
 		<td width="330px">
 			<div class="photo-container">
 				<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
-						<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
-					<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+					<img id="body_view"  src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
 					alt="no photo" style="position:relative;"></img>
 					<canvas id="canvas" width="330" height="750" >
 					</canvas>
+				</div>
 			</div>
 		</td>
-	<td>
-	<div class="zoom-photo-container">
-		<div id="zoom-body_image_div" style="width:330px;height:330px;position:absolute;overflow:hidden">
-			<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+		<td>
+			<div class="zoom-photo-container">
+				<div id="zoom-body_image_div" style="width:330px;height:330px;position:absolute;overflow:hidden">
+					<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
 			alt="no photo" style="position:relative;"></img>
-			<canvas id="zoomCanvas" width="330" height="330">
-			</canvas>
-	</div>
+					<canvas id="zoomCanvas" width="330" height="330">
+					</canvas>
+				</div>
+			</div>
+		</td>
+		<td>
+			<div id="pain_panel" style="width:330px;height:750px;">
+				<ul>
+					<li><a href="#pain_picker">Pain Picker</a></li>
+					<li><a href="#my_symptoms">My Symptoms</a></li>
+				</ul>
+				
+				<div id="pain_picker">
+						<ul style="list-style:none;">
+							<li>Describe Your Annotation: </li>
+							<li><textarea cols="25" id="tag_annotate" name="tag[annotate]" rows="4"></textarea></li>
+							<li>Pain Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li>
+							<li> Pain Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li>
+							<li> <button type="button" id="tagDone">Done!</button> </li>
+						</ul>
+				</div>
+				
+				<div id="my_symptoms" onmouseup="callThis">
+			</div>
+		</td>
 	</tr>
 </table>
-
+	
 <script type="text/javascript">
+
+	//DM: handle all the zooming events
 	var cvState =new CanvasState(document.getElementById("canvas"));
 	var zcvState = new ZoomCanvasState(document.getElementById("zoomCanvas"), cvState);
 	var zoomHandler = new ZoomHandler(cvState, zcvState);
+
+	//set up canvas
+	var cvState =new CanvasState(document.getElementById("canvas"), "tagDone", packTagInfo, submitCallback);
+	function submitCallback(){
+		$("#my_symptoms").accordion("destroy");
+
+		//append
+		var symptomLogger= $("#my_symptoms");
+		symptomLogger.append($("<h3><a href='#'>"+document.getElementById("tag_annotate").value+"</a></h3>"));
+		symptomLogger.append($("<div><div>severity: "+document.getElementById("tag_pain_severity").childNodes[0].style.left+
+													"</div><div>depth: "+document.getElementById("tag_pain_depth").childNodes[0].style.left+"</div></div>"));
+		
+		setTimeout(function(){
+			$("#my_symptoms").accordion();
+			$("#my_symptoms").accordion("resize");
+		}, 1500);
+		
+		//reset
+		document.getElementById("tag_annotate").value="";
+		document.getElementById("tag_pain_severity").childNodes[0].style.left=0;
+		document.getElementById("tag_pain_depth").childNodes[0].style.left=0;
+		alert("saved!");
+	}
+	function packTagInfo(){
+		var annotation=document.getElementById("tag_annotate").value;
+		var severity=document.getElementById("tag_pain_severity").childNodes[0].style.left;
+		var depth=document.getElementById("tag_pain_depth").childNodes[0].style.left;
+		return {"annotate":annotation, "severity":severity, "depth":depth, "view_id":0};
+	}
+	function callThis(){
+		alert("jell");
+	}
+	//set up pain panel
+	$(function() {
+		$("#my_symptoms").accordion();
+		$( "#pain_panel" ).tabs();
+		$(".pain_type_slider").slider();
+		$(".pain_type_slider").css({
+		});
+	});
 </script>

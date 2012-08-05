@@ -1,19 +1,34 @@
 class MainController < ApplicationController
 	def app
-		@tag = Tag.new
 		#temporary.. to be changed
 		@cur_view=View.find(:all)[0]
+		
 	end
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	def postGraphicTag
+		tagId=params[:tagId]
+		#saving freeHand points
+		hand=JSON.parse(params[:freeHand])
+		hand.each do |elem|
+			handTag = HandTag.new()
+			handTag.points=elem.to_s();
+			handTag.tag_id=tagId
+			handTag.save()
+		end
+		
+		#saving region points
+		region=JSON.parse(params[:region])
+		region.each do |elem|
+			regionTag = RegionTag.new()
+			regionTag.origin_x=elem["origin_x"]
+			regionTag.origin_y=elem["origin_y"]
+			regionTag.height=elem["height"]
+			regionTag.width=elem["width"]
+			regionTag.tag_id=tagId
+			regionTag.save()
+		end
+		render :text=>tagId.to_s+"good"
+	end
 	
 	def draw
 		@tag = Tag.new
@@ -26,18 +41,11 @@ class MainController < ApplicationController
 		render :text =>@cur_view.to_json
 	end
 	
-	def post_tag
-		if params[:id].to_i==-1
-			@tag = Tag.new()
-		else
-			@tag=Tag.find(params[:id])
-		end
-		
-		@tag.origin_x=params[:origin_x]
-		@tag.origin_y=params[:origin_y]
-		@tag.width=params[:width]
-		@tag.height=params[:height]
+	def postTag
+		@tag = Tag.new()
 		@tag.annotate=params[:annotate]
+		@tag.severity=params[:severity]
+		@tag.depth=params[:depth]
 		@tag.view_id=params[:view_id]
 		if @tag.valid?
 			@tag.save()

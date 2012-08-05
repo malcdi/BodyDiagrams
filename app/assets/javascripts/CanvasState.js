@@ -1,4 +1,4 @@
-function CanvasState(canvas) {
+function CanvasState(canvas, tagButton, getData, saveCallback) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
@@ -11,8 +11,9 @@ function CanvasState(canvas) {
 
 	// Keeping track of states.
 	// the collection of things to be drawn
-	this.regionTags = [];  
-	this.freeHandTags=[];
+	this.regionTags = {"tmp":[]};  
+	this.freeHandTags={"tmp":[]};
+	this.currentId=-1;
 	this.dragging = false; // Keep track of when we are dragging
 	this.needRedraw = false;
 	this.ctx = canvas.getContext('2d');
@@ -40,6 +41,13 @@ function CanvasState(canvas) {
 	/* registering mouse events */
 	var myState = this;
 	
+	/*for submitting information to the server*/
+	document.getElementById(tagButton).onclick=function(){
+		myState.submitTagInfo(myState);
+	};
+	this.getData=getData;
+	this.saveCallback=saveCallback;
+
 	//fixes a problem where double clicking causes text to get selected on the canvas
 	canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
 	
@@ -54,9 +62,11 @@ function CanvasState(canvas) {
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
-		var regionTags = myState.regionTags;
+
+		//can only edit ones not submitted yet
+		var regionTags = myState.regionTags.tmp;
 		var l = regionTags.length;
-		for (var i = l-1; i >= 0; i--) {
+		for (var i = 0; i < l; i++) {
 			if (regionTags[i].contains(mx, my)) {
 				var mySel = regionTags[i];
 				// Keep track of where in the object we clicked
@@ -69,6 +79,7 @@ function CanvasState(canvas) {
 				return;
 			}
 		}
+		
 		// havent returned means we have failed to select anything.
 		// If there was an object selected, we deselect it
 		if (myState.regionSelection) {
@@ -94,6 +105,8 @@ function CanvasState(canvas) {
 			myState.needRedraw=true;
 			return;
 		}
+		
+		if (myState.regionSelection ==null) return;
 		
 		/* Non Free Hand */
 		if (myState.dragging){
@@ -147,7 +160,7 @@ function CanvasState(canvas) {
 		}
 		
 		// if there's a selection see if we grabbed one of the selection handles
-		if (myState.regionSelection !== null && !myState.isResizeDrag) {
+		if (myState.regionSelection != null && !myState.isResizeDrag) {
 			for (var i = 0; i < 8; i++) {
 				// 0  1  2
 				// 3     4
@@ -178,6 +191,7 @@ function CanvasState(canvas) {
 		if(myState.mouseDownForFreeHand){
 			myState.mouseDownForFreeHand = false;
 			myState.needRedraw=true;
+			myState.removeInvalidFreeHandTag(myState.handSelection);
 			return;
 		}
 		myState.dragging = false;
@@ -213,36 +227,51 @@ CanvasState.prototype.clear = function(ctx){
 }
 
 CanvasState.prototype.addRegionTagCanvasElem = function(elem){
-	this.regionTags.push(elem);
+	this.regionTags.tmp.push(elem);
 	this.needRedraw=true;
 }
 
 CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
-	this.freeHandTags.push(elem);
+	this.freeHandTags.tmp.push(elem);
+}
+CanvasState.prototype.removeInvalidFreeHandTag = function(elem){
+	if(!elem.isValidElem()){
+		this.freeHandTags.tmp.pop();
+	}
 }
 
 CanvasState.prototype.draw = function() {
 	// if our state is invalid, redraw and validate!
 	if (this.needRedraw) {
 		var ctx = this.ctx;
-		var regionTags = this.regionTags;
-		var freeHandTags = this.freeHandTags;
 		this.clear(ctx);
+		// ** Add stuff you want drawn in the background all the time here **
 
 		// ** Add stuff you want drawn in the background all the time here **
 
 		// draw all Tags
-		var l = regionTags.length;
-		for (var i = 0; i < l; i++) {
-			var tagElem = regionTags[i];
-			// We can skip the drawing of elements that have moved off the screen:
-			if (tagElem.x > this.width || tagElem.y > this.height ||
-					tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
-			regionTags[i].draw(ctx, this.canvas.width, this.canvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles);
+		for (var tagId in this.regionTags) {
+			var regionTags = this.regionTags[tagId];
+			var l = regionTags.length;
+			var fillColor="#DDDDDD";
+			if(tagId=="tmp") fillColor="#F89393";
+			for (var i = 0; i < l; i++) {
+				var tagElem = regionTags[i];
+				// We can skip the drawing of elements that have moved off the screen:
+				if (tagElem.x > this.width || tagElem.y > this.height ||
+						tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
+				regionTags[i].draw(ctx, this.canvas.width, this.canvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles, fillColor);
+			}
 		}
-		var fl = freeHandTags.length;
-		for (var i = 0; i < fl; i++) {
-			freeHandTags[i].draw(ctx);
+		
+		for (var tagId in this.freeHandTags) {
+			var freeHandTags = this.freeHandTags[tagId];
+			var fillColor="#DDDDDD";
+			if(tagId=="tmp") fillColor="#F89393";
+			var fl = freeHandTags.length;
+			for (var i = 0; i < fl; i++) {
+				freeHandTags[i].draw(ctx, fillColor);
+			}
 		}
 		this.needRedraw = false;
 	}
@@ -274,3 +303,38 @@ CanvasState.prototype.getMouse = function(e) {
 	// We return a simple javascript object (a hash) with x and y defined
 	return {x: mx, y: my};
 }
+
+CanvasState.prototype.submitTagInfo = function(myState){
+	var tagData = myState.getData();
+	$.ajax({
+		type: "POST",
+		url: "postTag",
+		data: tagData
+	}).done(function( msg ) {
+		console.log( "Data Saved: " + msg);
+		myState.submitGraphicTagInfo(msg);
+	});
+}
+
+CanvasState.prototype.submitGraphicTagInfo = function(tagId){
+	this.freeHandTags.tagId=this.freeHandTags.tmp;
+	this.regionTags.tagId=this.regionTags.tmp;
+	var myState=this;
+	var graphicTags={};
+	graphicTags.tagId=tagId;
+	graphicTags.freeHand=JSON.stringify(this.freeHandTags.tagId);
+	graphicTags.region=JSON.stringify(this.regionTags.tagId);
+	$.ajax({
+		type: "POST",
+		url: "postGraphicTag",
+		data: graphicTags
+	}).done(function( msg ) {
+		console.log( "Graphic Data Saved: " + msg );
+		myState.saveCallback();
+	});
+	
+	//flush
+	this.freeHandTags.tmp=[];
+	this.regionTags.tmp=[];
+}
+

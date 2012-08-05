@@ -1,13 +1,24 @@
-function CanvasState(canvas) {
+/* ZoomStateCanvas is an extension of CanvasState. It retains the functionalities of CanvasState, but in addition,
+ * it is bound to a CanvasState object. Tags initialized on a ZoomStateCanvas are translated into the original
+ * CanvasState coordinates and pushed to the CanvasState object. ZoomStateCanvas tags should be considered transient:
+ * tags should be translated and saved permanently to the CanvasState
+ */
+
+function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
 	if (document.defaultView && document.defaultView.getComputedStyle) {
-		stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(canvas, null)['paddingLeft'], 10)      || 0;
-		stylePaddingTop  = parseInt(document.defaultView.getComputedStyle(canvas, null)['paddingTop'], 10)       || 0;
-		styleBorderLeft  = parseInt(document.defaultView.getComputedStyle(canvas, null)['borderLeftWidth'], 10)  || 0;
-		styleBorderTop   = parseInt(document.defaultView.getComputedStyle(canvas, null)['borderTopWidth'], 10)   || 0;
+		stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(zoomCanvas, null)['paddingLeft'], 10)      || 0;
+		stylePaddingTop  = parseInt(document.defaultView.getComputedStyle(zoomCanvas, null)['paddingTop'], 10)       || 0;
+		styleBorderLeft  = parseInt(document.defaultView.getComputedStyle(zoomCanvas, null)['borderLeftWidth'], 10)  || 0;
+		styleBorderTop   = parseInt(document.defaultView.getComputedStyle(zoomCanvas, null)['borderTopWidth'], 10)   || 0;
 	}
+
+	//DM: variables we'll need to handle zooming and scaling
+	this.leftMatch = 0;
+	this.topMatch = 0;
+	this.scaleFactor = 1;
 
 	// Keeping track of states.
 	// the collection of things to be drawn
@@ -15,14 +26,15 @@ function CanvasState(canvas) {
 	this.freeHandTags=[];
 	this.dragging = false; // Keep track of when we are dragging
 	this.needRedraw = false;
-	this.ctx = canvas.getContext('2d');
-	this.canvas = canvas;
+	this.ctx = zoomCanvas.getContext('2d');
+	this.zoomCanvas = zoomCanvas;
+	this.boundCanvasState = boundCanvasState;
 	
 	this.mouseDownForFreeHand=false;
 	
 	//for resizing
 	// Holds the 8 tiny boxes that will be our selection handles
-	// the selection handles will bse in this order:
+	// the selection handles will be in this order:
 	// 0  1  2
 	// 3     4
 	// 5  6  7
@@ -40,11 +52,11 @@ function CanvasState(canvas) {
 	/* registering mouse events */
 	var myState = this;
 	
-	//fixes a problem where double clicking causes text to get selected on the canvas
-	canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
+	//fixes a problem where double clicking causes text to get selected on the zoomCanvas
+	zoomCanvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
 	
 	// Up, down, and move are for dragging
-	canvas.addEventListener('mousedown', function(e) {
+	zoomCanvas.addEventListener('mousedown', function(e) {
 		
 		if(myState.resizeSide != -1){
 			myState.isResizeDrag = true;
@@ -81,10 +93,13 @@ function CanvasState(canvas) {
 		myState.handSelection=new FreeHandTagCanvasElem('#AAAAAA');
 		myState.handSelection.addPoint(mx,my);
 		myState.addFreeHandTagCanvasElem(myState.handSelection);
+		//DM: push to bound canvas
+		//DM: TODO: handle scaling
+		boundCanvasState.addFreeHandTagCanvasElem(myState.handSelection);
 	}, true);
 	
 	//Mouse Move Event--On drag
-	canvas.addEventListener('mousemove', function(e) {
+	zoomCanvas.addEventListener('mousemove', function(e) {
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
@@ -174,7 +189,7 @@ function CanvasState(canvas) {
 		
 	}, true);
 	
-	canvas.addEventListener('mouseup', function(e) {
+	zoomCanvas.addEventListener('mouseup', function(e) {
 		if(myState.mouseDownForFreeHand){
 			myState.mouseDownForFreeHand = false;
 			myState.needRedraw=true;
@@ -186,11 +201,15 @@ function CanvasState(canvas) {
 	}, true);
 	
 	// double click for making new regionTags
-	canvas.addEventListener('dblclick', function(e) {
+	zoomCanvas.addEventListener('dblclick', function(e) {
 		var mouse = myState.getMouse(e);
 		myState.regionSelection=new RegionTagCanvasElem(mouse.x - 10, mouse.y - 10, 20, 20,
  'rgba(0,255,0,.6)');
 		myState.addRegionTagCanvasElem(myState.regionSelection);
+		//DM: add to bound canvas, too. TODO: translate
+		myState.regionSelectionExport=new RegionTagCanvasElem(myState.translateX(mouse.x - 10), myState.translateY(mouse.y - 10), myState.scaleSize(20), myState.scaleSize(20),
+ 'rgba(0,0,255,.6)');
+		boundCanvasState.addRegionTagCanvasElem(myState.regionSelectionExport);
 		myState.isResizeDrag=true;
 	}, true);
 	
@@ -208,20 +227,57 @@ function CanvasState(canvas) {
 		}, myState.interval);
 }
 
-CanvasState.prototype.clear = function(ctx){
-	ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+//DM: functions for translating to correct zooming resolution
+ZoomCanvasState.prototype.setZoomConstants = function(_left, _top, _scale){
+	//DM: variables we'll need to handle zooming and scaling
+	this.leftMatch = _left;
+	this.topMatch = _top;
+	this.scaleFactor = _scale;
+	this.rescaleImage(_left, _top, _scale);
 }
 
-CanvasState.prototype.addRegionTagCanvasElem = function(elem){
+ZoomCanvasState.prototype.rescaleImage = function(_left, _top, _scale, _scaleHeight){
+	console.log(_left +" " + _top + " " + _scale);
+	d = document.getElementById("zoom_body_view"); //DM: todo: pass this as a parameter to the ZoomCanvasState
+	d.width=(337*_scale)+"";
+	console.log(d.height/750);
+	console.log(-_top*d.height/750);
+	d.style.left=-(_left*_scale)+"px";
+	d.style.top=-(_top*(d.height/750))+"px";
+}
+
+ZoomCanvasState.prototype.translateX = function(rawX){
+	var transX = this.leftMatch + this.scaleFactor * rawX;
+	console.log("translating " + rawX + " to " + transX);
+	return(transX);
+}
+
+ZoomCanvasState.prototype.translateY = function(rawY){
+	var transY = this.topMatch + this.scaleFactor * rawY;
+	console.log("translating " + rawY + " to " + transY);
+	return(transY);
+}
+
+ZoomCanvasState.prototype.scaleSize = function(rawVal){
+	console.log("scaling " + rawVal + " to " + (this.scaleFactor * rawVal));
+	return(this.scaleFactor * rawVal);
+}
+//DM: end functions for translating to correct zooming resolution
+
+ZoomCanvasState.prototype.clear = function(ctx){
+	ctx.clearRect(0, 0, this.zoomCanvas.width, this.zoomCanvas.height);
+}
+
+ZoomCanvasState.prototype.addRegionTagCanvasElem = function(elem){
 	this.regionTags.push(elem);
 	this.needRedraw=true;
 }
 
-CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
+ZoomCanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
 	this.freeHandTags.push(elem);
 }
 
-CanvasState.prototype.draw = function() {
+ZoomCanvasState.prototype.draw = function() {
 	// if our state is invalid, redraw and validate!
 	if (this.needRedraw) {
 		var ctx = this.ctx;
@@ -238,7 +294,7 @@ CanvasState.prototype.draw = function() {
 			// We can skip the drawing of elements that have moved off the screen:
 			if (tagElem.x > this.width || tagElem.y > this.height ||
 					tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
-			regionTags[i].draw(ctx, this.canvas.width, this.canvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles);
+			regionTags[i].draw(ctx, this.zoomCanvas.width, this.zoomCanvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles);
 		}
 		var fl = freeHandTags.length;
 		for (var i = 0; i < fl; i++) {
@@ -249,11 +305,11 @@ CanvasState.prototype.draw = function() {
 }
 
 // Creates an object with x and y defined,
-// set to the mouse position relative to the state's canvas
+// set to the mouse position relative to the state's zoomCanvas
 // If you wanna be super-correct this can be tricky,
 // we have to worry about padding and borders
-CanvasState.prototype.getMouse = function(e) {
-	var element = this.canvas, offsetX = 0, offsetY = 0, mx, my;
+ZoomCanvasState.prototype.getMouse = function(e) {
+	var element = this.zoomCanvas, offsetX = 0, offsetY = 0, mx, my;
 
 	// Compute the total offset
 	if (element.offsetParent !== undefined) {

@@ -11,7 +11,24 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120728213219) do
+ActiveRecord::Schema.define(:version => 20120804063547) do
+
+  create_table "hand_tags", :force => true do |t|
+    t.integer  "tag_id"
+    t.text     "points"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "region_tags", :force => true do |t|
+    t.integer  "tag_id"
+    t.integer  "origin_x"
+    t.integer  "origin_y"
+    t.integer  "width"
+    t.integer  "height"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "sessions", :force => true do |t|
     t.string   "session_id", :null => false
@@ -24,14 +41,12 @@ ActiveRecord::Schema.define(:version => 20120728213219) do
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
 
   create_table "tags", :force => true do |t|
-    t.integer "view_id"
-    t.integer "origin_x"
-    t.integer "origin_y"
-    t.integer "width"
-    t.integer "height"
-    t.string  "annotate"
-    t.integer "severity"
-    t.integer "depth"
+    t.integer  "view_id"
+    t.string   "annotate"
+    t.integer  "severity"
+    t.integer  "depth"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
   create_table "views", :force => true do |t|

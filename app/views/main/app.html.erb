@@ -5,54 +5,47 @@ canvas {
     top: 0;
     left: 0;
 }
+#step_1{
+	background-color:#fffa98;
+}
 </style>
+<div style="background-color:#fffa98;width:100%">
+<p> FREE HAND: mouse down and drag </p>
+<p> REGION SELECT: double click & resize </p>
+</div>
+<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:10px;position:absolute;">
+		<img id="body_view"  src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+		alt="no photo" style="position:relative;"></img>
+		<canvas id="canvas" width="330" height="740" >
+		</canvas>
+</div>
 
-<table>
-	<tr>
-		<td>
-			<p> FREE HAND: mouse down and drag </p>
-			<p> REGION SELECT: double click & resize </p>
-		</td>
-	</tr>
-	<tr>
-		<td>
-			<div class="photo-container">
-					<img id="body_view"  src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
-					alt="no photo" style="position:relative"></img>
-					<canvas id="canvas" width="330" height="750" style="position:absolute;left:10px; top:100px" >
-					</canvas>
-			</div>
-		</td>
-		<td>
-			<div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;position:absolute;">
-					<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
-			alt="no photo" style="position:relative;"></img>
-					<canvas id="zoomCanvas" width="330" height="520" >
-					</canvas>
-			</div>
-		</td>
-		<td>
-			<div id="pain_panel" style="width:330px;height:750px;position:absolute;top:100px;left:710px;">
-				<ul>
-					<li><a href="#pain_picker">Pain Picker</a></li>
-					<li><a href="#my_symptoms">My Symptoms</a></li>
-				</ul>
-				
-				<div id="pain_picker">
-						<ul style="list-style:none;">
-							<li>Describe Your Annotation: </li>
-							<li><textarea cols="25" id="tag_annotate" name="tag[annotate]" rows="4"></textarea></li>
-							<li>Pain Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li>
-							<li> Pain Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li>
-							<li> <button type="button" id="tagDone">Done!</button> </li>
-						</ul>
-				</div>
-				
-				<div id="my_symptoms">
-			</div>
-		</td>
-	</tr>
-</table>
+<div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;left:360px;position:absolute;">
+		<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+alt="no photo" style="position:relative;"></img>
+		<canvas id="zoomCanvas" width="330" height="520" >
+		</canvas>
+</div>
+
+<div id="pain_panel" style="width:330px;height:750px;position:absolute;top:100px;left:710px;">
+	<ul>
+		<li><a href="#pain_picker">Pain Picker</a></li>
+		<li><a href="#my_symptoms">My Symptoms</a></li>
+	</ul>
+	
+	<div id="pain_picker">
+			<ul style="list-style:none;">
+				<li>Describe Your Annotation: </li>
+				<li><textarea cols="25" id="tag_annotate" name="tag[annotate]" rows="4"></textarea></li>
+				<li>Pain Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li>
+				<li> Pain Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li>
+				<li> <button type="button" id="tagDone">Done!</button> </li>
+			</ul>
+	</div>
+	
+	<div id="my_symptoms">
+</div>
+
 	
 <script type="text/javascript">
 var zoomScale=1.0;

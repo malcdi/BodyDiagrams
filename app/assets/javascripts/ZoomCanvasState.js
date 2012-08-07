@@ -4,7 +4,7 @@
  * tags should be translated and saved permanently to the CanvasState
  */
 
-function ZoomCanvasState(zoomCanvas, boundCanvasState) {
+function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
@@ -21,18 +21,12 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 	this.scaleFactor = 1;
 	this.scaleFactorHeight = 1;
 
-	// Keeping track of states.
-	// the collection of things to be drawn
-	this.regionTags = [];  
-	this.freeHandTags=[];
 	this.dragging = false; // Keep track of when we are dragging
 	this.needRedraw = false;
 	this.ctx = zoomCanvas.getContext('2d');
 	this.zoomCanvas = zoomCanvas;
 	this.boundCanvasState = boundCanvasState;
-	
-	this.mouseDownForFreeHand=false;
-	
+		
 	//for resizing
 	// Holds the 8 tiny boxes that will be our selection handles
 	// the selection handles will be in this order:
@@ -43,10 +37,17 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 	this.isResizeDrag = false;
 	this.resizeSide = -1; 
 	
+	//saved tags
+	this.regionTags = {"tmp":[]};  
+	this.freeHandTags={"tmp":[]};
+	
 	// the current selected object.
 	// In the future we could turn this into an array for multiple selection
-	this.regionSelection = null;
-	this.handSelection=null;
+	this.heightRatio=boundCanvasState.canvas.height/boundCanvasState.canvas.width;
+	this.zoomRegionSelection = new RegionTagCanvasElem(100, 100, 100, 100*this.heightRatio, '#CCEEFF', true);
+	this.needRedraw = true;
+	this.zoomCallback=zoomCallback;
+
 	this.exportHandSelection=null;
 	this.dragoffx = 0; 
 	this.dragoffy = 0;
@@ -68,40 +69,27 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
-		var regionTags = myState.regionTags;
-		var l = regionTags.length;
-		for (var i = l-1; i >= 0; i--) {
-			if (regionTags[i].contains(mx, my)) {
-				var mySel = regionTags[i];
-				// Keep track of where in the object we clicked
-				// so we can move it smoothly (see mousemove)
-				myState.dragoffx = mx - mySel.x;
-				myState.dragoffy = my - mySel.y;
-				myState.dragging = true;
-				myState.regionSelection = mySel;
-				myState.needRedraw = true;
-				return;
-			}
-		}
-		// havent returned means we have failed to select anything.
-		// If there was an object selected, we deselect it
-		if (myState.regionSelection) {
-			myState.regionSelection = null;
-			myState.needRedraw = true; // Need to clear the old selection border
-		}
 		
+		var mySel = myState.zoomRegionSelection;
+		if (mySel.contains(mx, my)) {
+			// Keep track of where in the object we clicked
+			// so we can move it smoothly (see mousemove)
+			myState.dragoffx = mx - mySel.x;
+			myState.dragoffy = my - mySel.y;
+			myState.dragging = true;
+			myState.needRedraw = true;
+			return;
+		}
+
 		/* Free Hand Drawing */
-		myState.mouseDownForFreeHand = true;
-		myState.handSelection=new FreeHandTagCanvasElem('#AAAAAA');
-		myState.handSelection.addPoint(mx,my);
-		myState.addFreeHandTagCanvasElem(myState.handSelection);
-		
+/*
 		myState.exportHandSelection = new FreeHandTagCanvasElem('#AABBAA');
 		myState.exportHandSelection.addPoint(myState.translateX(mx), myState.translateY(my));
 		boundCanvasState.addFreeHandTagCanvasElem(myState.exportHandSelection);
 		// DM: push to bound canvas
 		// DM: TODO: handle scaling
-		// boundCanvasState.addFreeHandTagCanvasElem(myState.handSelection);
+		// boundCanvasState.addFreeHandTagCanvasElem(myState.handSelection);*/
+		
 	}, true);
 	
 	//Mouse Move Event--On drag
@@ -109,74 +97,71 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
-		/*Free Hand Drawing*/
-		if(myState.mouseDownForFreeHand){
-			myState.handSelection.addPoint(mx, my);
-			myState.needRedraw=true;
-			
-			myState.exportHandSelection.addPoint(myState.translateX(mx), myState.translateY(my));
-			boundCanvasState.needRedraw=true;
-			return;
-		}
 		
 		/* Non Free Hand */
 		if (myState.dragging){
-			myState.regionSelection.x = mx - myState.dragoffx;
-			myState.regionSelection.y = my - myState.dragoffy;  
+			myState.zoomRegionSelection.x = mx - myState.dragoffx;
+			myState.zoomRegionSelection.y = my - myState.dragoffy;  
 			myState.needRedraw = true; // Redraw flag 			
 		} else if (myState.isResizeDrag){
-			var oldx = myState.regionSelection.x;
-			var oldy = myState.regionSelection.y;
+			var oldx = myState.zoomRegionSelection.x;
+			var oldy = myState.zoomRegionSelection.y;
 			
+			//RATIO KEPT.
 			// 0  1  2
 			// 3     4
 			// 5  6  7
 			switch (myState.resizeSide) {
 				case 0:
-					myState.regionSelection.x = mx;
-					myState.regionSelection.y = my;
-					myState.regionSelection.w += oldx - mx;
-					myState.regionSelection.h += oldy - my;
+					myState.zoomRegionSelection.x = mx;
+					myState.zoomRegionSelection.y = my;
+					myState.zoomRegionSelection.w += oldx - mx;
+					myState.zoomRegionSelection.h=myState.zoomRegionSelection.w*myState.heightRatio;
 					break;
 				case 1:
-					myState.regionSelection.y = my;
-					myState.regionSelection.h += oldy - my;
+					myState.zoomRegionSelection.y = my;
+					myState.zoomRegionSelection.h += oldy - my;
+					myState.zoomRegionSelection.w=myState.zoomRegionSelection.h/myState.heightRatio;
 					break;
 				case 2:
-					myState.regionSelection.y = my;
-					myState.regionSelection.w = mx - oldx;
-					myState.regionSelection.h += oldy - my;
+					myState.zoomRegionSelection.y = my;
+					myState.zoomRegionSelection.w = mx - oldx;
+					myState.zoomRegionSelection.h=myState.zoomRegionSelection.w*myState.heightRatio;
 					break;
 				case 3:
-					myState.regionSelection.x = mx;
-					myState.regionSelection.w += oldx - mx;
+					myState.zoomRegionSelection.x = mx;
+					myState.zoomRegionSelection.w += oldx - mx;
+					myState.zoomRegionSelection.h=myState.zoomRegionSelection.w*myState.heightRatio;
 					break;
 				case 4:
-					myState.regionSelection.w = mx - oldx;
+					myState.zoomRegionSelection.w = mx - oldx;					
+					myState.zoomRegionSelection.h=myState.zoomRegionSelection.w*myState.heightRatio;
+
 					break;
 				case 5:
-					myState.regionSelection.x = mx;
-					myState.regionSelection.w += oldx - mx;
-					myState.regionSelection.h = my - oldy;
+					myState.zoomRegionSelection.x = mx;
+					myState.zoomRegionSelection.w += oldx - mx;
+					myState.zoomRegionSelection.h=myState.zoomRegionSelection.w*myState.heightRatio;
+
 					break;
 				case 6:
-					myState.regionSelection.h = my - oldy;
+					myState.zoomRegionSelection.h = my - oldy;					
+					myState.zoomRegionSelection.w=myState.zoomRegionSelection.h/myState.heightRatio;
 					break;
 				case 7:
-					myState.regionSelection.w = mx - oldx;
-					myState.regionSelection.h = my - oldy;
+					myState.zoomRegionSelection.w = mx - oldx;
+					myState.zoomRegionSelection.h=myState.zoomRegionSelection.w*myState.heightRatio;
 					break;
 			}
 			myState.needRedraw = true; // Redraw flag
 		}
 		
 		// if there's a selection see if we grabbed one of the selection handles
-		if (myState.regionSelection !== null && !myState.isResizeDrag) {
+		if (!myState.isResizeDrag) {
 			for (var i = 0; i < 8; i++) {
 				// 0  1  2
 				// 3     4
 				// 5  6  7
-				
 				var cur = myState.selectionHandles[i];
 				
 				// we dont need to use the ghost context because
@@ -188,28 +173,27 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
 					myState.needRedraw = true;
 					return;
 				}
-				
 			}
 			// not over a selection box, return to normal
 			myState.isResizeDrag = false;
 			myState.resizeSide = -1;
 			this.style.cursor='auto';
 		}
-		
 	}, true);
 	
 	zoomCanvas.addEventListener('mouseup', function(e) {
-		if(myState.mouseDownForFreeHand){
-			myState.mouseDownForFreeHand = false;
-			myState.needRedraw=true;
-			return;
-		}
 		myState.dragging = false;
 		myState.isResizeDrag = false;
 		myState.resizeSide = -1;
+		var mouse = myState.getMouse(e);
+		var mx = mouse.x;
+		var my = mouse.y;
+		if (myState.zoomRegionSelection.onZoomButton(mx, my)){
+			myState.zoomCallback(myState.zoomRegionSelection.x,myState.zoomRegionSelection.y, myState.zoomRegionSelection.w, myState.zoomRegionSelection.h);
+		}
 	}, true);
 	
-	// double click for making new regionTags
+	/*double click for making new regionTags
 	zoomCanvas.addEventListener('dblclick', function(e) {
 		var mouse = myState.getMouse(e);
 		myState.regionSelection=new RegionTagCanvasElem(mouse.x - 10, mouse.y - 10, 20, 20,
@@ -220,7 +204,7 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState) {
  'rgba(0,0,255,.6)');
 		boundCanvasState.addRegionTagCanvasElem(myState.regionSelectionExport);
 		myState.isResizeDrag=true;
-	}, true);
+	}, true);*/
 	
 	/* For Resize */
 	// set up the selection handle boxes
@@ -288,29 +272,51 @@ ZoomCanvasState.prototype.draw = function() {
 	// if our state is invalid, redraw and validate!
 	if (this.needRedraw) {
 		var ctx = this.ctx;
-		var regionTags = this.regionTags;
-		var freeHandTags = this.freeHandTags;
 		this.clear(ctx);
 
 		// ** Add stuff you want drawn in the background all the time here **
 
-		// draw all Tags
-		var l = regionTags.length;
-		for (var i = 0; i < l; i++) {
-			var tagElem = regionTags[i];
-			// We can skip the drawing of elements that have moved off the screen:
-			if (tagElem.x > this.width || tagElem.y > this.height ||
-					tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
-			regionTags[i].draw(ctx, this.zoomCanvas.width, this.zoomCanvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles);
+		// draw all SAVED Tags
+		for (var tagId in this.regionTags) {
+			var regionTags = this.regionTags[tagId];
+			var l = regionTags.length;
+			var fillColor="#FFDD22";
+			for (var i = 0; i < l; i++) {
+				var tagElem = regionTags[i];
+				// We can skip the drawing of elements that have moved off the screen:
+				if (tagElem.x > this.width || tagElem.y > this.height ||
+						tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
+				regionTags[i].draw(ctx, this.zoomCanvas.width, this.zoomCanvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles, fillColor);
+			}
 		}
-		var fl = freeHandTags.length;
-		for (var i = 0; i < fl; i++) {
-			freeHandTags[i].draw(ctx);
+		
+		for (var tagId in this.freeHandTags) {
+			var freeHandTags = this.freeHandTags[tagId];
+			var fillColor="#FFDD22";
+			var fl = freeHandTags.length;
+			for (var i = 0; i < fl; i++) {
+				freeHandTags[i].draw(ctx, fillColor);
+			}
+		}
+		
+		//zoom box		
+		var tagElem = this.zoomRegionSelection;
+		// We can skip the drawing of elements that have moved off the screen:
+		if (!(tagElem.x > this.width || tagElem.y > this.height ||
+				tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0)){
+			tagElem.draw(ctx, this.zoomCanvas.width, this.zoomCanvas.height, true, this.selectionHandles, '#CCEEFF');
 		}
 		this.needRedraw = false;
 	}
 }
-
+ZoomCanvasState.prototype.appendRegionTags=function(tagId, regionTags){
+	this.regionTags[tagId]=regionTags;
+	this.needsRedraw=true;
+}
+ZoomCanvasState.prototype.appendFreeHandTags=function(tagId, freeHandTags){
+	this.freeHandTags[tagId]=freeHandTags;
+	this.needsRedraw=true;
+}
 // Creates an object with x and y defined,
 // set to the mouse position relative to the state's zoomCanvas
 // If you wanna be super-correct this can be tricky,

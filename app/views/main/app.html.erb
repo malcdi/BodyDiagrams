@@ -15,28 +15,24 @@ canvas {
 		</td>
 	</tr>
 	<tr>
-		<td width="330px">
+		<td>
 			<div class="photo-container">
-				<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
 					<img id="body_view"  src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
-					alt="no photo" style="position:relative;"></img>
-					<canvas id="canvas" width="330" height="750" >
+					alt="no photo" style="position:relative"></img>
+					<canvas id="canvas" width="330" height="750" style="position:absolute;left:10px; top:100px" >
 					</canvas>
-				</div>
 			</div>
 		</td>
 		<td>
-			<div class="zoom-photo-container">
-				<div id="zoom-body_image_div" style="width:330px;height:330px;position:absolute;overflow:hidden">
+			<div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;position:absolute;">
 					<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
 			alt="no photo" style="position:relative;"></img>
-					<canvas id="zoomCanvas" width="330" height="330">
+					<canvas id="zoomCanvas" width="330" height="520" >
 					</canvas>
-				</div>
 			</div>
 		</td>
 		<td>
-			<div id="pain_panel" style="width:330px;height:750px;">
+			<div id="pain_panel" style="width:330px;height:750px;position:absolute;top:100px;left:710px;">
 				<ul>
 					<li><a href="#pain_picker">Pain Picker</a></li>
 					<li><a href="#my_symptoms">My Symptoms</a></li>
@@ -52,22 +48,29 @@ canvas {
 						</ul>
 				</div>
 				
-				<div id="my_symptoms" onmouseup="callThis">
+				<div id="my_symptoms">
 			</div>
 		</td>
 	</tr>
 </table>
 	
 <script type="text/javascript">
+var zoomScale=1.0;
 
 	//DM: handle all the zooming events
-	var cvState =new CanvasState(document.getElementById("canvas"));
-	var zcvState = new ZoomCanvasState(document.getElementById("zoomCanvas"), cvState);
-	var zoomHandler = new ZoomHandler(cvState, zcvState);
-
+	var cvState =new CanvasState(document.getElementById("zoomCanvas"), "tagDone", packTagInfo, submitCallback);
+	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback);
+	cvState.setViewState(0,0,1.0);
+	//var zoomHandler = new ZoomHandler(cvState, zcvState);
+	
 	//set up canvas
-	var cvState =new CanvasState(document.getElementById("canvas"), "tagDone", packTagInfo, submitCallback);
-	function submitCallback(){
+	function submitCallback(tagId, regionTags, handTags){
+		console.log("callaback:"+tagId);
+		//updating main canvas
+		zcvState.appendRegionTags(tagId, regionTags);
+		zcvState.appendFreeHandTags(tagId, handTags);
+	
+		//my_symptoms-->review..	
 		$("#my_symptoms").accordion("destroy");
 
 		//append
@@ -85,7 +88,6 @@ canvas {
 		document.getElementById("tag_annotate").value="";
 		document.getElementById("tag_pain_severity").childNodes[0].style.left=0;
 		document.getElementById("tag_pain_depth").childNodes[0].style.left=0;
-		alert("saved!");
 	}
 	function packTagInfo(){
 		var annotation=document.getElementById("tag_annotate").value;
@@ -93,8 +95,15 @@ canvas {
 		var depth=document.getElementById("tag_pain_depth").childNodes[0].style.left;
 		return {"annotate":annotation, "severity":severity, "depth":depth, "view_id":0};
 	}
-	function callThis(){
-		alert("jell");
+	//zoom called.
+	function zoomCallback(x, y, w, h){
+		var standardW=330;
+		zoomScale=standardW/w;
+		var zoomImg=document.getElementById("zoom_body_view");
+		zoomImg.style.width=standardW*zoomScale+"px";
+		zoomImg.style.left="-"+x*zoomScale+"px";
+		zoomImg.style.top="-"+y*zoomScale+"px";
+		cvState.setViewState(x,y,zoomScale);
 	}
 	//set up pain panel
 	$(function() {

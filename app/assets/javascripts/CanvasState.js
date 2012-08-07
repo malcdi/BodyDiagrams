@@ -42,9 +42,9 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 	var myState = this;
 	
 	/*for submitting information to the server*/
-	//document.getElementById(tagButton).onclick=function(){
-	//	myState.submitTagInfo(myState);
-	//};
+	document.getElementById(tagButton).onclick=function(){
+		myState.submitTagInfo(myState);
+	};
 	this.getData=getData;
 	this.saveCallback=saveCallback;
 
@@ -222,6 +222,12 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 		}, myState.interval);
 }
 
+CanvasState.prototype.setViewState = function(x, y,scale){
+	this.viewX=x;
+	this.viewY=y;
+	this.viewScale=scale;
+}
+
 CanvasState.prototype.clear = function(ctx){
 	ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 }
@@ -317,24 +323,33 @@ CanvasState.prototype.submitTagInfo = function(myState){
 }
 
 CanvasState.prototype.submitGraphicTagInfo = function(tagId){
-	this.freeHandTags.tagId=this.freeHandTags.tmp;
-	this.regionTags.tagId=this.regionTags.tmp;
+	var l = this.freeHandTags.tmp.length;
+	for (var i = 0; i < l; i++) {
+		this.freeHandTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
+	}
+	l = this.regionTags.tmp.length;
+	for (var i = 0; i < l; i++) {
+		this.regionTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
+	}
+	
 	var myState=this;
 	var graphicTags={};
 	graphicTags.tagId=tagId;
-	graphicTags.freeHand=JSON.stringify(this.freeHandTags.tagId);
-	graphicTags.region=JSON.stringify(this.regionTags.tagId);
+	graphicTags.freeHand=JSON.stringify(this.freeHandTags.tmp);
+	graphicTags.region=JSON.stringify(this.regionTags.tmp);
 	$.ajax({
 		type: "POST",
 		url: "postGraphicTag",
 		data: graphicTags
 	}).done(function( msg ) {
-		console.log( "Graphic Data Saved: " + msg );
-		myState.saveCallback();
+		console.log( "Graphic Data Saved: " + msg);
+		myState.saveCallback(tagId, myState.regionTags.tmp, myState.freeHandTags.tmp);
+		//flush
+		myState.freeHandTags.tmp=[];
+		myState.regionTags.tmp=[];
+		myState.draw();
 	});
 	
-	//flush
-	this.freeHandTags.tmp=[];
-	this.regionTags.tmp=[];
+	
 }
 

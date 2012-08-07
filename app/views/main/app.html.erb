@@ -6,18 +6,17 @@
 		</td>
 	</tr>
 	<tr>
-		<td>
-			<div class="photo-container">
-				<div id="body_image_div" style="width:330px;height:750px;position:absolute;overflow:hidden">
-						<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
-					<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
-					alt="no photo" style="position:relative;"></img>
-					<canvas id="canvas" width="330" height="750" 
-						style="position:absolute;left:10px; top:100px; background-color:transparent; border: 1px solid black;">
-					</canvas>
-			</div>
-		</td>
-		<td>
+	<td>
+			<div id="body_image_div">
+					<!--Removed this image. Instead, the image is actually drawn onto the canvas. This will let us save it with annotations.-->
+				<img id="body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+				alt="no photo" ></img>
+				<canvas id="canvas" width="330" height="750" 
+					style="position:absolute;left:10px; top:100px; background-color:transparent; border: 1px solid black;">
+				</canvas>
+		</div>
+	</td>
+	<td>
 			<div id="pain_panel" style="width:330px;height:750px;">
 				<ul>
 					<li><a href="#pain_picker">Pain Picker</a></li>
@@ -38,7 +37,7 @@
 			</div>
 		</td>
 	</tr>
-	</table>
+</table>
 	
 <script type="text/javascript">
 	//set up canvas

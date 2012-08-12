@@ -1,4 +1,4 @@
-function CanvasState(canvas, tagButton, getData, saveCallback) {
+function CanvasState(canvas) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
@@ -11,8 +11,9 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 
 	// Keeping track of states.
 	// the collection of things to be drawn
-	this.regionTags = {"tmp":[]};  
-	this.freeHandTags={"tmp":[]};
+	//this.regionTags = {"tmp":[]};  
+	//this.freeHandTags={"tmp":[]};
+	this.allTags={"tmp":[]};
 	this.currentId=-1;
 	this.dragging = false; // Keep track of when we are dragging
 	this.needRedraw = false;
@@ -40,13 +41,6 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 	
 	/* registering mouse events */
 	var myState = this;
-	
-	/*for submitting information to the server*/
-	document.getElementById(tagButton).onclick=function(){
-		myState.submitTagInfo(myState);
-	};
-	this.getData=getData;
-	this.saveCallback=saveCallback;
 
 	//fixes a problem where double clicking causes text to get selected on the canvas
 	canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
@@ -64,11 +58,11 @@ function CanvasState(canvas, tagButton, getData, saveCallback) {
 		var my = mouse.y;
 
 		//can only edit ones not submitted yet
-		var regionTags = myState.regionTags.tmp;
-		var l = regionTags.length;
+		var allTags = myState.allTags.tmp;
+		var l = allTags.length;
 		for (var i = 0; i < l; i++) {
-			if (regionTags[i].contains(mx, my)) {
-				var mySel = regionTags[i];
+			if ((allTags[i] instanceof RegionTagCanvasElem) && allTags[i].contains(mx, my)) {
+				var mySel = allTags[i];	
 				// Keep track of where in the object we clicked
 				// so we can move it smoothly (see mousemove)
 				myState.dragoffx = mx - mySel.x;
@@ -233,17 +227,21 @@ CanvasState.prototype.clear = function(ctx){
 }
 
 CanvasState.prototype.addRegionTagCanvasElem = function(elem){
-	this.regionTags.tmp.push(elem);
+	this.allTags.tmp.push(elem);
 	this.needRedraw=true;
 }
 
 CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
-	this.freeHandTags.tmp.push(elem);
+	this.allTags.tmp.push(elem);
 }
 CanvasState.prototype.removeInvalidFreeHandTag = function(elem){
 	if(!elem.isValidElem()){
-		this.freeHandTags.tmp.pop();
+		this.allTags.tmp.pop();
 	}
+}
+CanvasState.prototype.undoLastDrawing = function(myState){
+	myState.allTags.tmp.pop();
+	myState.needRedraw=true;	
 }
 
 CanvasState.prototype.draw = function() {
@@ -254,29 +252,21 @@ CanvasState.prototype.draw = function() {
 		// ** Add stuff you want drawn in the background all the time here **
 
 		// ** Add stuff you want drawn in the background all the time here **
-
+		
 		// draw all Tags
-		for (var tagId in this.regionTags) {
-			var regionTags = this.regionTags[tagId];
-			var l = regionTags.length;
+		for (var tagId in this.allTags) {
+			var allTags = this.allTags[tagId];
+			var l = allTags.length;
 			var fillColor="#DDDDDD";
 			if(tagId=="tmp") fillColor="#F89393";
 			for (var i = 0; i < l; i++) {
-				var tagElem = regionTags[i];
-				// We can skip the drawing of elements that have moved off the screen:
-				if (tagElem.x > this.width || tagElem.y > this.height ||
-						tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
-				regionTags[i].draw(ctx, this.canvas.width, this.canvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles, fillColor);
-			}
-		}
-		
-		for (var tagId in this.freeHandTags) {
-			var freeHandTags = this.freeHandTags[tagId];
-			var fillColor="#DDDDDD";
-			if(tagId=="tmp") fillColor="#F89393";
-			var fl = freeHandTags.length;
-			for (var i = 0; i < fl; i++) {
-				freeHandTags[i].draw(ctx, fillColor);
+				var tagElem = allTags[i];
+				if(tagElem instanceof RegionTagCanvasElem){
+					tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
+				}
+				else {
+					tagElem.draw(ctx, fillColor);
+				}
 			}
 		}
 		this.needRedraw = false;
@@ -310,46 +300,29 @@ CanvasState.prototype.getMouse = function(e) {
 	return {x: mx, y: my};
 }
 
-CanvasState.prototype.submitTagInfo = function(myState){
-	var tagData = myState.getData();
-	$.ajax({
-		type: "POST",
-		url: "postTag",
-		data: tagData
-	}).done(function( msg ) {
-		console.log( "Data Saved: " + msg);
-		myState.submitGraphicTagInfo(msg);
-	});
-}
-
-CanvasState.prototype.submitGraphicTagInfo = function(tagId){
-	var l = this.freeHandTags.tmp.length;
+CanvasState.prototype.packGraphicTagInfo = function(){
+	/*var l = this.freeHandTags.tmp.length;
 	for (var i = 0; i < l; i++) {
 		this.freeHandTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
 	}
 	l = this.regionTags.tmp.length;
 	for (var i = 0; i < l; i++) {
 		this.regionTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
+	}*/
+	var l = this.allTags.tmp.length;
+	var freeHandTags=[];
+	var regionTags=[];
+	for (var i = 0; i < l; i++) {
+		this.allTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
 	}
-	
-	var myState=this;
-	var graphicTags={};
-	graphicTags.tagId=tagId;
-	graphicTags.freeHand=JSON.stringify(this.freeHandTags.tmp);
-	graphicTags.region=JSON.stringify(this.regionTags.tmp);
-	$.ajax({
-		type: "POST",
-		url: "postGraphicTag",
-		data: graphicTags
-	}).done(function( msg ) {
-		console.log( "Graphic Data Saved: " + msg);
-		myState.saveCallback(tagId, myState.regionTags.tmp, myState.freeHandTags.tmp);
-		//flush
-		myState.freeHandTags.tmp=[];
-		myState.regionTags.tmp=[];
-		myState.draw();
-	});
-	
-	
+	return this.allTags.tmp;
 }
+
+CanvasState.prototype.flush = function(){
+	//flush
+	this.allTags.tmp=[];
+	this.needsRedraw=true;
+	this.draw();
+}
+
 

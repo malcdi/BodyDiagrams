@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120804063547) do
+ActiveRecord::Schema.define(:version => 20120811042031) do
 
   create_table "hand_tags", :force => true do |t|
     t.integer  "tag_id"
@@ -41,20 +41,20 @@ ActiveRecord::Schema.define(:version => 20120804063547) do
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
 
   create_table "tags", :force => true do |t|
-    t.integer  "view_id"
     t.string   "annotate"
     t.integer  "severity"
     t.integer  "depth"
+    t.integer  "view_side"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.string   "user_id"
   end
 
-  create_table "views", :force => true do |t|
-    t.string  "body_part"
-    t.integer "view_side"
-    t.integer "zoom_scale"
-    t.integer "origin_x"
-    t.integer "origin_y"
+  create_table "users", :force => true do |t|
+    t.string   "gender"
+    t.string   "age"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
 end

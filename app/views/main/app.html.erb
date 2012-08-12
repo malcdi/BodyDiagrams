@@ -13,19 +13,23 @@ canvas {
 <p> FREE HAND: mouse down and drag </p>
 <p> REGION SELECT: double click & resize </p>
 </div>
+<button type="button" id="rotateLeft" style="position:absolute;top:80px;left:30px;">Rotate<<</button>
+<button type="button" id="rotateRight" style="position:absolute;top:80px;left:270px;">Rotate>></button>
+
 <div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:10px;position:absolute;">
-		<img id="body_view"  src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+		<img id="body_view"  src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
 		alt="no photo" style="position:relative;"></img>
 		<canvas id="canvas" width="330" height="740" >
 		</canvas>
 </div>
 
 <div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;left:360px;position:absolute;">
-		<img id="zoom_body_view" src="/assets/<%=@cur_view.body_part+"_"+@cur_view.view_side.to_s+".png" %>" onmousedown="event.preventDefault();" 
+		<img id="zoom_body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
 alt="no photo" style="position:relative;"></img>
 		<canvas id="zoomCanvas" width="330" height="520" >
 		</canvas>
 </div>
+<button type="button" id="undo" style="position:absolute;top:80px;left:640px;">Undo</button>
 
 <div id="pain_panel" style="width:330px;height:750px;position:absolute;top:100px;left:710px;">
 	<ul>
@@ -45,23 +49,23 @@ alt="no photo" style="position:relative;"></img>
 	
 	<div id="my_symptoms">
 </div>
-
+<div style="top:100px;left:360px;position:absolute;">
+<button type="button" id="submitTask">Submit!</button>
+</div>
 	
 <script type="text/javascript">
+var cur_view_side=0;
 var zoomScale=1.0;
-
 	//DM: handle all the zooming events
-	var cvState =new CanvasState(document.getElementById("zoomCanvas"), "tagDone", packTagInfo, submitCallback);
-	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback);
+	var cvState =new CanvasState(document.getElementById("zoomCanvas"));
+	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, packTagInfo, submitCallback);
 	cvState.setViewState(0,0,1.0);
 	//var zoomHandler = new ZoomHandler(cvState, zcvState);
 	
 	//set up canvas
-	function submitCallback(tagId, regionTags, handTags){
-		console.log("callaback:"+tagId);
-		//updating main canvas
-		zcvState.appendRegionTags(tagId, regionTags);
-		zcvState.appendFreeHandTags(tagId, handTags);
+	function submitCallback(){
+		//update drawing canvas
+		cvState.flush();
 	
 		//my_symptoms-->review..	
 		$("#my_symptoms").accordion("destroy");
@@ -86,7 +90,7 @@ var zoomScale=1.0;
 		var annotation=document.getElementById("tag_annotate").value;
 		var severity=document.getElementById("tag_pain_severity").childNodes[0].style.left;
 		var depth=document.getElementById("tag_pain_depth").childNodes[0].style.left;
-		return {"annotate":annotation, "severity":severity, "depth":depth, "view_id":0};
+		return {"annotate":annotation, "severity":severity, "depth":depth, "view_side":0};
 	}
 	//zoom called.
 	function zoomCallback(x, y, w, h){
@@ -102,6 +106,27 @@ var zoomScale=1.0;
 	$(function() {
 		$("#my_symptoms").accordion();
 		$( "#pain_panel" ).tabs();
+		$( "#rotateRight" ).click(function(){
+			cvState.flush();
+			cur_view_side = (cur_view_side+1)%4;
+			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
+			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
+		});
+		$( "#rotateLeft" ).click(function(){
+			cvState.flush();
+			cur_view_side = (cur_view_side+3)%4;
+			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
+			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
+		});
+		$( "#undo" ).click(function(){
+			cvState.undoLastDrawing(cvState);
+		});
+		$( "#submitTask" ).click(function(){
+			zcvState.submitAll();
+		});
+		$( "#tagDone" ).click(function(){
+			zcvState.saveTagInfo();
+		});
 		$(".pain_type_slider").slider();
 		$(".pain_type_slider").css({
 		});

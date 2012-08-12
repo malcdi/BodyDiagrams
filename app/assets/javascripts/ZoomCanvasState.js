@@ -4,7 +4,7 @@
  * tags should be translated and saved permanently to the CanvasState
  */
 
-function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback) {
+function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, saveCallback) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
@@ -26,7 +26,7 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback) {
 	this.ctx = zoomCanvas.getContext('2d');
 	this.zoomCanvas = zoomCanvas;
 	this.boundCanvasState = boundCanvasState;
-		
+
 	//for resizing
 	// Holds the 8 tiny boxes that will be our selection handles
 	// the selection handles will be in this order:
@@ -38,13 +38,13 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback) {
 	this.resizeSide = -1; 
 	
 	//saved tags
-	this.regionTags = {"tmp":[]};  
-	this.freeHandTags={"tmp":[]};
+	this.allTags = [];  
+	this.allTagData =[];
 	
 	// the current selected object.
 	// In the future we could turn this into an array for multiple selection
 	this.heightRatio=boundCanvasState.canvas.height/boundCanvasState.canvas.width;
-	this.zoomRegionSelection = new RegionTagCanvasElem(100, 100, 100, 100*this.heightRatio, '#CCEEFF', true);
+	this.zoomRegionSelection = new RegionTagCanvasElem(5, 5, 320, 320*this.heightRatio, '#CCEEFF', true);
 	this.needRedraw = true;
 	this.zoomCallback=zoomCallback;
 
@@ -54,6 +54,8 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback) {
 	
 	/* registering mouse events */
 	var myState = this;
+	this.getData=getData;
+	this.saveCallback=saveCallback;
 	
 	//fixes a problem where double clicking causes text to get selected on the zoomCanvas
 	zoomCanvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
@@ -259,15 +261,6 @@ ZoomCanvasState.prototype.clear = function(ctx){
 	ctx.clearRect(0, 0, this.zoomCanvas.width, this.zoomCanvas.height);
 }
 
-ZoomCanvasState.prototype.addRegionTagCanvasElem = function(elem){
-	this.regionTags.push(elem);
-	this.needRedraw=true;
-}
-
-ZoomCanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
-	this.freeHandTags.push(elem);
-}
-
 ZoomCanvasState.prototype.draw = function() {
 	// if our state is invalid, redraw and validate!
 	if (this.needRedraw) {
@@ -277,25 +270,19 @@ ZoomCanvasState.prototype.draw = function() {
 		// ** Add stuff you want drawn in the background all the time here **
 
 		// draw all SAVED Tags
-		for (var tagId in this.regionTags) {
-			var regionTags = this.regionTags[tagId];
-			var l = regionTags.length;
+		var l = this.allTags.length;
+		for (var j = 0; j< l; j++) {
+			var tags = this.allTags[j];
+			var len = tags.length;
 			var fillColor="#FFDD22";
-			for (var i = 0; i < l; i++) {
-				var tagElem = regionTags[i];
-				// We can skip the drawing of elements that have moved off the screen:
-				if (tagElem.x > this.width || tagElem.y > this.height ||
-						tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0) continue;
-				regionTags[i].draw(ctx, this.zoomCanvas.width, this.zoomCanvas.height, (this.regionSelection==regionTags[i]), this.selectionHandles, fillColor);
-			}
-		}
-		
-		for (var tagId in this.freeHandTags) {
-			var freeHandTags = this.freeHandTags[tagId];
-			var fillColor="#FFDD22";
-			var fl = freeHandTags.length;
-			for (var i = 0; i < fl; i++) {
-				freeHandTags[i].draw(ctx, fillColor);
+			for (var i = 0; i < len; i++) {
+				var tagElem = tags[i];
+				if(tagElem instanceof RegionTagCanvasElem){
+					tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
+				}
+				else {
+					tagElem.draw(ctx, fillColor);
+				}
 			}
 		}
 		
@@ -304,19 +291,68 @@ ZoomCanvasState.prototype.draw = function() {
 		// We can skip the drawing of elements that have moved off the screen:
 		if (!(tagElem.x > this.width || tagElem.y > this.height ||
 				tagElem.x + tagElem.w < 0 || tagElem.y + tagElem.h < 0)){
-			tagElem.draw(ctx, this.zoomCanvas.width, this.zoomCanvas.height, true, this.selectionHandles, '#CCEEFF');
+			tagElem.draw(ctx, true, this.selectionHandles, '#CCEEFF');
 		}
 		this.needRedraw = false;
 	}
 }
-ZoomCanvasState.prototype.appendRegionTags=function(tagId, regionTags){
-	this.regionTags[tagId]=regionTags;
-	this.needsRedraw=true;
+ZoomCanvasState.prototype.submitAll = function(){
+	var self=this;
+	$.ajax({
+		type: "GET",
+		url: "postTag",
+		data: {"tagData": JSON.stringify(self.allTagData)}
+	}).done(function( tagIdArr ) {
+		self.submitGraphicTags(JSON.parse(tagIdArr));
+	});
 }
-ZoomCanvasState.prototype.appendFreeHandTags=function(tagId, freeHandTags){
-	this.freeHandTags[tagId]=freeHandTags;
-	this.needsRedraw=true;
+
+//save graphic tag information for each tag associated.
+ZoomCanvasState.prototype.submitGraphicTags = function(tagIdArr){
+	var self=this;
+	var l = this.allTags.length;
+	for (var j = 0; j < l; j++) {
+		var tags = this.allTags[j];
+		var len = tags.length;
+		var freeHandTags=[];
+		var regionTags=[];
+		/*separate tags in region/freehand */
+		for (var i = 0; i < len; i++) {
+			var tagElem = tags[i];
+			if(tagElem instanceof RegionTagCanvasElem){
+				regionTags.push(tagElem);
+			}
+			else {
+				freeHandTags.push(tagElem);
+			}
+		}
+		
+		$.ajax({
+			type: "POST",
+			url: "postGraphicTag",
+			data: {"tagId":tagIdArr[j], "freeHand":JSON.stringify(freeHandTags), "region":JSON.stringify(regionTags)}
+		}).done(function( msg ) {
+			console.log( "Graphic Data Saved: " + msg);
+			//last submit
+			if(j==l-1) self.submitComplete();
+		});
+	}
 }
+ZoomCanvasState.prototype.submitComplete = function(){
+	alert("complete");
+}
+
+ZoomCanvasState.prototype.saveTagInfo = function(){
+	var myState=this;
+	var tagData = myState.getData();
+	myState.allTagData.push(tagData);
+	var tagId=myState.allTagData.length;
+	this.allTags.push(this.boundCanvasState.packGraphicTagInfo());
+	this.needsRedraw=true;
+	this.draw();
+	myState.saveCallback();
+}
+
 // Creates an object with x and y defined,
 // set to the mouse position relative to the state's zoomCanvas
 // If you wanna be super-correct this can be tricky,

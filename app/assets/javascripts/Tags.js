@@ -42,12 +42,12 @@ RegionTagCanvasElem.prototype.transform = function(x, y, scale) {
 }
 
 // Draws this shape to a given context
-RegionTagCanvasElem.prototype.draw = function(ctx, WIDTH, HEIGHT, thisElemOnSelect, selectionHandles, fillColor) {
+RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHandles, fillColor) {
 	ctx.fillStyle = fillColor;
 	ctx.globalAlpha = 0.4;
 	// We can skip the drawing of elements that have moved off the screen:
-	if (this.x > WIDTH || this.y > HEIGHT) return; 
-	if (this.x + this.w < 0 || this.y + this.h < 0) return;
+	//if (this.x > WIDTH || this.y > HEIGHT) return; 
+	//if (this.x + this.w < 0 || this.y + this.h < 0) return;
 
 	ctx.fillRect(this.x, this.y, this.w, this.h);
 

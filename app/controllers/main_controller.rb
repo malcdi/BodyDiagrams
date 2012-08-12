@@ -1,7 +1,5 @@
 class MainController < ApplicationController
 	def app
-		#temporary.. to be changed
-		@cur_view=View.find(:all)[0]
 		
 	end
 	
@@ -30,30 +28,45 @@ class MainController < ApplicationController
 		render :text=>tagId.to_s+"good"
 	end
 	
+	def postTag
+		@user = User.create(:gender=>"male", :age=>24)
+		allTags = JSON.parse(params[:tagData])
+		tagArr=[]
+		returnStr=""
+		allTags.each do |tagInfo|
+			@tag = Tag.new()
+			@tag.user_id=@user.id
+			@tag.annotate=tagInfo["annotate"]
+			@tag.severity=tagInfo["severity"]
+			@tag.depth=tagInfo["depth"]
+			@tag.view_side=tagInfo["view_side"]
+			if @tag.valid?
+				@tag.save()
+				tagArr.push(@tag.id)
+			else
+				tagArr.push(-1)
+			end
+		end
+		render :text=>tagArr.to_s
+	end
+	
+	#### NOT USED ANYMORE ######
+	def submitDraw
+		#temporary.. to be changed
+		@cur_view={:body_part=>"whole", :view_side=>0}
+		@user = User.new()
+		@user.saved=false
+	end
+	
 	def draw
 		@tag = Tag.new
 		#temporary.. to be changed
-		@cur_view=View.find(:all)[0]
+		@cur_view={:body_part=>"whole", :view_side=>0}
 	end
 	
 	def get_view
 		@cur_view=View.find(:all)[params[:view_num].to_i]
 		render :text =>@cur_view.to_json
-	end
-	
-	def postTag
-		@tag = Tag.new()
-		@tag.annotate=params[:annotate]
-		@tag.severity=params[:severity]
-		@tag.depth=params[:depth]
-		@tag.view_id=params[:view_id]
-		if @tag.valid?
-			@tag.save()
-			flash[:notice] = "Tag saved successfully!"
-			render :text=>@tag.id
-		else
-			render :text=>"-1"
-		end
 	end
 	
 	def get_tags
@@ -65,5 +78,6 @@ class MainController < ApplicationController
 		Tag.delete(params[:id].to_i)
 		render :text =>""
 	end
-	
+	########################
+
 end

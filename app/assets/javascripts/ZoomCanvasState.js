@@ -37,20 +37,19 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 	this.isResizeDrag = false;
 	this.resizeSide = -1; 
 	
-	//saved tags
-	this.allTags = [];  
-	this.allTagData =[];
+	this.allTags = [];   //graphic tags
+	this.allTagData =[]; //annotated tags
 	
-	// the current selected object.
-	// In the future we could turn this into an array for multiple selection
+	// Zoom related variables
 	this.heightRatio=boundCanvasState.canvas.height/boundCanvasState.canvas.width;
-	this.zoomRegionSelection = new RegionTagCanvasElem(5, 5, 320, 320*this.heightRatio, '#CCEEFF', true);
+	this.zoomRegionSelection = new RegionTagCanvasElem(5, 5, 320, 320*this.heightRatio, '#CCEEFF', true);//region element within main view.
 	this.needRedraw = true;
 	this.zoomCallback=zoomCallback;
 
 	this.exportHandSelection=null;
 	this.dragoffx = 0; 
 	this.dragoffy = 0;
+	this.cur_view_side=0;
 	
 	/* registering mouse events */
 	var myState = this;
@@ -82,15 +81,6 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 			myState.needRedraw = true;
 			return;
 		}
-
-		/* Free Hand Drawing */
-/*
-		myState.exportHandSelection = new FreeHandTagCanvasElem('#AABBAA');
-		myState.exportHandSelection.addPoint(myState.translateX(mx), myState.translateY(my));
-		boundCanvasState.addFreeHandTagCanvasElem(myState.exportHandSelection);
-		// DM: push to bound canvas
-		// DM: TODO: handle scaling
-		// boundCanvasState.addFreeHandTagCanvasElem(myState.handSelection);*/
 		
 	}, true);
 	
@@ -100,7 +90,6 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 		var mx = mouse.x;
 		var my = mouse.y;
 		
-		/* Non Free Hand */
 		if (myState.dragging){
 			myState.zoomRegionSelection.x = mx - myState.dragoffx;
 			myState.zoomRegionSelection.y = my - myState.dragoffy;  
@@ -158,7 +147,7 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 			myState.needRedraw = true; // Redraw flag
 		}
 		
-		// if there's a selection see if we grabbed one of the selection handles
+		//selection handles
 		if (!myState.isResizeDrag) {
 			for (var i = 0; i < 8; i++) {
 				// 0  1  2
@@ -166,8 +155,6 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 				// 5  6  7
 				var cur = myState.selectionHandles[i];
 				
-				// we dont need to use the ghost context because
-				// selection handles will always be rectangles
 				if (mx >= cur.x && mx <= cur.x + mySelBoxSize &&
 						my >= cur.y && my <= cur.y + mySelBoxSize) {
 					// we found one!
@@ -190,23 +177,11 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 		var mouse = myState.getMouse(e);
 		var mx = mouse.x;
 		var my = mouse.y;
+		//zoom button clicked
 		if (myState.zoomRegionSelection.onZoomButton(mx, my)){
 			myState.zoomCallback(myState.zoomRegionSelection.x,myState.zoomRegionSelection.y, myState.zoomRegionSelection.w, myState.zoomRegionSelection.h);
 		}
 	}, true);
-	
-	/*double click for making new regionTags
-	zoomCanvas.addEventListener('dblclick', function(e) {
-		var mouse = myState.getMouse(e);
-		myState.regionSelection=new RegionTagCanvasElem(mouse.x - 10, mouse.y - 10, 20, 20,
- 'rgba(0,255,0,.6)');
-		myState.addRegionTagCanvasElem(myState.regionSelection);
-		//DM: add to bound canvas, too. TODO: translate
-		myState.regionSelectionExport=new RegionTagCanvasElem(myState.translateX(mouse.x - 10), myState.translateY(mouse.y - 10), myState.scaleSize(20), myState.scaleSize(20),
- 'rgba(0,0,255,.6)');
-		boundCanvasState.addRegionTagCanvasElem(myState.regionSelectionExport);
-		myState.isResizeDrag=true;
-	}, true);*/
 	
 	/* For Resize */
 	// set up the selection handle boxes
@@ -261,13 +236,18 @@ ZoomCanvasState.prototype.clear = function(ctx){
 	ctx.clearRect(0, 0, this.zoomCanvas.width, this.zoomCanvas.height);
 }
 
+ZoomCanvasState.prototype.setCurViewSide = function(view_side) {
+	this.cur_view_side=view_side;
+	this.needRedraw=true;
+	this.draw();
+}
+
+
 ZoomCanvasState.prototype.draw = function() {
 	// if our state is invalid, redraw and validate!
 	if (this.needRedraw) {
 		var ctx = this.ctx;
 		this.clear(ctx);
-
-		// ** Add stuff you want drawn in the background all the time here **
 
 		// draw all SAVED Tags
 		var l = this.allTags.length;
@@ -275,18 +255,21 @@ ZoomCanvasState.prototype.draw = function() {
 			var tags = this.allTags[j];
 			var len = tags.length;
 			var fillColor="#FFDD22";
-			for (var i = 0; i < len; i++) {
-				var tagElem = tags[i];
-				if(tagElem instanceof RegionTagCanvasElem){
-					tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
-				}
-				else {
-					tagElem.draw(ctx, fillColor);
+			//only display tags with the same view side
+			if(this.allTagData[j].view_side==this.cur_view_side){
+				for (var i = 0; i < len; i++) {
+					var tagElem = tags[i];
+					if(tagElem instanceof RegionTagCanvasElem){
+						tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
+					}
+					else {
+						tagElem.draw(ctx, fillColor);
+					}
 				}
 			}
 		}
 		
-		//zoom box		
+		//zooming box		
 		var tagElem = this.zoomRegionSelection;
 		// We can skip the drawing of elements that have moved off the screen:
 		if (!(tagElem.x > this.width || tagElem.y > this.height ||
@@ -296,6 +279,19 @@ ZoomCanvasState.prototype.draw = function() {
 		this.needRedraw = false;
 	}
 }
+
+//called after "done" button clicked for each tag
+ZoomCanvasState.prototype.saveTagInfo = function(cur_view_side){
+	var myState=this;
+	var tagData = myState.getData(); 
+	myState.allTagData.push(tagData); //saves annnotated tag info
+	this.allTags.push(this.boundCanvasState.packGraphicTagInfo()); //saves graphic tag info
+	this.needRedraw=true;
+	this.draw();
+	myState.saveCallback(); //callback after saving done.
+}
+
+//save all the annotated tags
 ZoomCanvasState.prototype.submitAll = function(){
 	var self=this;
 	$.ajax({
@@ -303,7 +299,7 @@ ZoomCanvasState.prototype.submitAll = function(){
 		url: "postTag",
 		data: {"tagData": JSON.stringify(self.allTagData)}
 	}).done(function( tagIdArr ) {
-		self.submitGraphicTags(JSON.parse(tagIdArr));
+		self.submitGraphicTags(JSON.parse(tagIdArr));//array of tag ids returned.
 	});
 }
 
@@ -333,24 +329,15 @@ ZoomCanvasState.prototype.submitGraphicTags = function(tagIdArr){
 			data: {"tagId":tagIdArr[j], "freeHand":JSON.stringify(freeHandTags), "region":JSON.stringify(regionTags)}
 		}).done(function( msg ) {
 			console.log( "Graphic Data Saved: " + msg);
-			//last submit
+			//on last tag data submission
 			if(j==l-1) self.submitComplete();
 		});
 	}
 }
+
+//called after submission completed
 ZoomCanvasState.prototype.submitComplete = function(){
 	alert("complete");
-}
-
-ZoomCanvasState.prototype.saveTagInfo = function(){
-	var myState=this;
-	var tagData = myState.getData();
-	myState.allTagData.push(tagData);
-	var tagId=myState.allTagData.length;
-	this.allTags.push(this.boundCanvasState.packGraphicTagInfo());
-	this.needsRedraw=true;
-	this.draw();
-	myState.saveCallback();
 }
 
 // Creates an object with x and y defined,

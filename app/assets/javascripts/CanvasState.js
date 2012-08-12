@@ -9,17 +9,13 @@ function CanvasState(canvas) {
 		styleBorderTop   = parseInt(document.defaultView.getComputedStyle(canvas, null)['borderTopWidth'], 10)   || 0;
 	}
 
-	// Keeping track of states.
-	// the collection of things to be drawn
-	//this.regionTags = {"tmp":[]};  
-	//this.freeHandTags={"tmp":[]};
-	this.allTags={"tmp":[]};
-	this.currentId=-1;
+	
+	this.allTags=[];//all the tags on canvas
+	//for drawing
 	this.dragging = false; // Keep track of when we are dragging
 	this.needRedraw = false;
 	this.ctx = canvas.getContext('2d');
 	this.canvas = canvas;
-	
 	this.mouseDownForFreeHand=false;
 	
 	//for resizing
@@ -33,7 +29,6 @@ function CanvasState(canvas) {
 	this.resizeSide = -1; 
 	
 	// the current selected object.
-	// In the future we could turn this into an array for multiple selection
 	this.regionSelection = null;
 	this.handSelection=null;
 	this.dragoffx = 0; 
@@ -58,11 +53,10 @@ function CanvasState(canvas) {
 		var my = mouse.y;
 
 		//can only edit ones not submitted yet
-		var allTags = myState.allTags.tmp;
-		var l = allTags.length;
+		var l = myState.allTags.length;
 		for (var i = 0; i < l; i++) {
-			if ((allTags[i] instanceof RegionTagCanvasElem) && allTags[i].contains(mx, my)) {
-				var mySel = allTags[i];	
+			if ((myState.allTags[i] instanceof RegionTagCanvasElem) && myState.allTags[i].contains(mx, my)) {
+				var mySel = myState.allTags[i];	
 				// Keep track of where in the object we clicked
 				// so we can move it smoothly (see mousemove)
 				myState.dragoffx = mx - mySel.x;
@@ -181,6 +175,7 @@ function CanvasState(canvas) {
 		
 	}, true);
 	
+	//mouse event done
 	canvas.addEventListener('mouseup', function(e) {
 		if(myState.mouseDownForFreeHand){
 			myState.mouseDownForFreeHand = false;
@@ -216,59 +211,58 @@ function CanvasState(canvas) {
 		}, myState.interval);
 }
 
+//setting variables to keep track of current view's relative xy coordiantes and zoom scale
 CanvasState.prototype.setViewState = function(x, y,scale){
 	this.viewX=x;
 	this.viewY=y;
 	this.viewScale=scale;
 }
 
+//clearing canvas
 CanvasState.prototype.clear = function(ctx){
 	ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 }
 
+/*addint & removing tag elements from the allTags*/
 CanvasState.prototype.addRegionTagCanvasElem = function(elem){
-	this.allTags.tmp.push(elem);
+	this.allTags.push(elem);
 	this.needRedraw=true;
 }
 
 CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
-	this.allTags.tmp.push(elem);
+	this.allTags.push(elem);
 }
 CanvasState.prototype.removeInvalidFreeHandTag = function(elem){
 	if(!elem.isValidElem()){
-		this.allTags.tmp.pop();
+		this.allTags.pop();
 	}
 }
 CanvasState.prototype.undoLastDrawing = function(myState){
-	myState.allTags.tmp.pop();
+	myState.allTags.pop();
 	myState.needRedraw=true;	
 }
 
+/*main draw function*/
 CanvasState.prototype.draw = function() {
 	// if our state is invalid, redraw and validate!
 	if (this.needRedraw) {
 		var ctx = this.ctx;
 		this.clear(ctx);
-		// ** Add stuff you want drawn in the background all the time here **
-
-		// ** Add stuff you want drawn in the background all the time here **
 		
 		// draw all Tags
-		for (var tagId in this.allTags) {
-			var allTags = this.allTags[tagId];
-			var l = allTags.length;
-			var fillColor="#DDDDDD";
-			if(tagId=="tmp") fillColor="#F89393";
-			for (var i = 0; i < l; i++) {
-				var tagElem = allTags[i];
-				if(tagElem instanceof RegionTagCanvasElem){
-					tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
-				}
-				else {
-					tagElem.draw(ctx, fillColor);
-				}
+		var l = this.allTags.length;
+		var fillColor="#F89393";
+		for (var i = 0; i < l; i++) {
+			var tagElem = this.allTags[i];
+			//draw called to each element
+			if(tagElem instanceof RegionTagCanvasElem){
+				tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
+			}
+			else {
+				tagElem.draw(ctx, fillColor);
 			}
 		}
+		
 		this.needRedraw = false;
 	}
 }
@@ -287,12 +281,6 @@ CanvasState.prototype.getMouse = function(e) {
 			offsetY += element.offsetTop;
 		} while ((element = element.offsetParent));
 	}
-
-	// Add padding and border style widths to offset
-	// Also add the <html> offsets in case there's a position:fixed bar
-	//offsetX += this.stylePaddingLeft + this.styleBorderLeft + this.htmlLeft;
-	//offsetY += this.stylePaddingTop + this.styleBorderTop + this.htmlTop;
-
 	mx = e.pageX - offsetX;
 	my = e.pageY - offsetY;
 
@@ -301,27 +289,20 @@ CanvasState.prototype.getMouse = function(e) {
 }
 
 CanvasState.prototype.packGraphicTagInfo = function(){
-	/*var l = this.freeHandTags.tmp.length;
-	for (var i = 0; i < l; i++) {
-		this.freeHandTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
-	}
-	l = this.regionTags.tmp.length;
-	for (var i = 0; i < l; i++) {
-		this.regionTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
-	}*/
-	var l = this.allTags.tmp.length;
+	var l = this.allTags.length;
 	var freeHandTags=[];
 	var regionTags=[];
 	for (var i = 0; i < l; i++) {
-		this.allTags.tmp[i].transform(this.viewX, this.viewY, this.viewScale);
+		this.allTags[i].transform(this.viewX, this.viewY, this.viewScale);
 	}
-	return this.allTags.tmp;
+	return this.allTags;
 }
 
+//flush data of current canvas state.
+//called when submit button clicked, or view rotated
 CanvasState.prototype.flush = function(){
-	//flush
-	this.allTags.tmp=[];
-	this.needsRedraw=true;
+	this.allTags=[];
+	this.needRedraw=true;
 	this.draw();
 }
 

@@ -9,28 +9,38 @@ canvas {
 	background-color:#fffa98;
 }
 </style>
+<!--Description of the application-->
 <div style="background-color:#fffa98;width:100%">
 <p> FREE HAND: mouse down and drag </p>
 <p> REGION SELECT: double click & resize </p>
 </div>
-<button type="button" id="rotateLeft" style="position:absolute;top:80px;left:30px;">Rotate<<</button>
-<button type="button" id="rotateRight" style="position:absolute;top:80px;left:270px;">Rotate>></button>
 
-<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:10px;position:absolute;">
-		<img id="body_view"  src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
-		alt="no photo" style="position:relative;"></img>
-		<canvas id="canvas" width="330" height="740" >
-		</canvas>
+<!-- First pane: Main view for zooming functionality -->
+<div>
+	<!-- Rotation buttons -->
+	<button type="button" id="rotateLeft" style="position:absolute;top:80px;left:30px;">Rotate<<</button>
+	<button type="button" id="rotateRight" style="position:absolute;top:80px;left:270px;">Rotate>></button>
+	
+	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:10px;position:absolute;">
+			<img id="body_view"  src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
+			alt="no photo" style="position:relative;"></img>
+			<canvas id="canvas" width="330" height="740" >
+			</canvas>
+	</div>
 </div>
 
-<div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;left:360px;position:absolute;">
-		<img id="zoom_body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
-alt="no photo" style="position:relative;"></img>
-		<canvas id="zoomCanvas" width="330" height="520" >
-		</canvas>
+<!-- Second pane: Zoomed view for drawing functionality -->
+<div>
+	<button type="button" id="undo" style="position:absolute;top:80px;left:640px;">Undo</button>
+	<div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;left:360px;position:absolute;">
+			<img id="zoom_body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
+	alt="no photo" style="position:relative;"></img>
+			<canvas id="zoomCanvas" width="330" height="520" >
+			</canvas>
+	</div>
 </div>
-<button type="button" id="undo" style="position:absolute;top:80px;left:640px;">Undo</button>
 
+<!-- Third pane: Annotating & etc + review of symptoms -->
 <div id="pain_panel" style="width:330px;height:750px;position:absolute;top:100px;left:710px;">
 	<ul>
 		<li><a href="#pain_picker">Pain Picker</a></li>
@@ -49,28 +59,27 @@ alt="no photo" style="position:relative;"></img>
 	
 	<div id="my_symptoms">
 </div>
+<!-- Fourth pane: Submit button -->
 <div style="top:100px;left:360px;position:absolute;">
 <button type="button" id="submitTask">Submit!</button>
 </div>
 	
 <script type="text/javascript">
-var cur_view_side=0;
-var zoomScale=1.0;
-	//DM: handle all the zooming events
-	var cvState =new CanvasState(document.getElementById("zoomCanvas"));
-	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, packTagInfo, submitCallback);
-	cvState.setViewState(0,0,1.0);
-	//var zoomHandler = new ZoomHandler(cvState, zcvState);
+	//current view side {0:front, 1: right, 2: back, 3: left}
+	var cur_view_side=0;
 	
-	//set up canvas
-	function submitCallback(){
+	var zoomScale=1.0;//current zoom scale
+	var cvState =new CanvasState(document.getElementById("zoomCanvas"));//second pane: zoomed canvas
+	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, packTagInfo, tagDoneCallback);//first pane: main canvas
+	cvState.setViewState(0,0,1.0); //sets initial zoom scale
+	
+	//callback after "done" button clicked for tag
+	function tagDoneCallback(){
 		//update drawing canvas
 		cvState.flush();
 	
-		//my_symptoms-->review..	
+		//updating my_symptoms tab
 		$("#my_symptoms").accordion("destroy");
-
-		//append
 		var symptomLogger= $("#my_symptoms");
 		symptomLogger.append($("<h3><a href='#'>"+document.getElementById("tag_annotate").value+"</a></h3>"));
 		symptomLogger.append($("<div><div>severity: "+document.getElementById("tag_pain_severity").childNodes[0].style.left+
@@ -81,18 +90,21 @@ var zoomScale=1.0;
 			$("#my_symptoms").accordion("resize");
 		}, 1500);
 		
-		//reset
+		//resetting pain_panel tab
 		document.getElementById("tag_annotate").value="";
 		document.getElementById("tag_pain_severity").childNodes[0].style.left=0;
 		document.getElementById("tag_pain_depth").childNodes[0].style.left=0;
 	}
+	
+	//returns annotated tag information from pain tab.
 	function packTagInfo(){
 		var annotation=document.getElementById("tag_annotate").value;
 		var severity=document.getElementById("tag_pain_severity").childNodes[0].style.left;
 		var depth=document.getElementById("tag_pain_depth").childNodes[0].style.left;
-		return {"annotate":annotation, "severity":severity, "depth":depth, "view_side":0};
+		return {"annotate":annotation, "severity":severity, "depth":depth, "view_side":cur_view_side};
 	}
-	//zoom called.
+	
+	//called when zoom button is clicked.
 	function zoomCallback(x, y, w, h){
 		var standardW=330;
 		zoomScale=standardW/w;
@@ -102,19 +114,25 @@ var zoomScale=1.0;
 		zoomImg.style.top="-"+y*zoomScale+"px";
 		cvState.setViewState(x,y,zoomScale);
 	}
-	//set up pain panel
+	
+	//set up buttons & panels & tabs
 	$(function() {
 		$("#my_symptoms").accordion();
 		$( "#pain_panel" ).tabs();
+		$(".pain_type_slider").slider();
+		
+		//buttons
 		$( "#rotateRight" ).click(function(){
 			cvState.flush();
 			cur_view_side = (cur_view_side+1)%4;
+			zcvState.setCurViewSide(cur_view_side);
 			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
 			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
 		});
 		$( "#rotateLeft" ).click(function(){
 			cvState.flush();
 			cur_view_side = (cur_view_side+3)%4;
+			zcvState.setCurViewSide(cur_view_side);
 			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
 			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
 		});
@@ -126,9 +144,6 @@ var zoomScale=1.0;
 		});
 		$( "#tagDone" ).click(function(){
 			zcvState.saveTagInfo();
-		});
-		$(".pain_type_slider").slider();
-		$(".pain_type_slider").css({
 		});
 	});
 </script>

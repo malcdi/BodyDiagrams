@@ -1,0 +1,23 @@
+X general "chrome" --> pick a .css theme and work with it
+X general "chrome" --> pick icons for rotation
+X general "chrome" --> instructions
+X general "chrome" --> move submit button
+- general "chrome" --> better body image image
+- general "chrome" --> make main body image smaller (so that it fits within the screen reasonably)
+- general "chrome" --> switch between gender images
+
+X main pane: fix rotation directionality
+
+- zoom pane: improve first interaction
+- zoom pane: disappear focus panel on outside click
+- zoom pane: update drawing pain in real time (not just on click) ?
+X zoom pane: make it easier to resize region selections; this is not related to the selSize variable. added some "padding" to the Tag.contains function
+X zoom pane: merge "pain picker" with zoom panel div for logical link
+
+X pain picker: posture buttons (add icons later)
+- pain picker: log posture button selections to DB
+- pain picker: different colors for different symptoms
+
+- my symptoms --> include a free-hand text box
+
+- my symptoms symptom description on hover

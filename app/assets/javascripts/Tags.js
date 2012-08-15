@@ -101,7 +101,7 @@ RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHa
 			ctx.fillRect(cur.x, cur.y, mySelBoxSize, mySelBoxSize);
 		}
 		if(this.zoomBox){
-			ctx.fillStyle = "#33FF22";
+			ctx.fillStyle = "#33FF33";
 			var zbs=this.zoomBoxSize();
 			ctx.fillRect(zbs.x, zbs.y, zbs.w, zbs.h);
 			ctx.fillStyle = "#000000";
@@ -114,10 +114,11 @@ RegionTagCanvasElem.prototype.zoomBoxSize = function() {
 	return {"x": this.x + this.w/2-12, "y": this.y+this.h/2-10, "w":28, "h":15}
 }
 
-
+//DM: I added some margin for error here; it was difficult to select the selResizeBoxes on the drawing canvas after initially creating a region selection
 RegionTagCanvasElem.prototype.contains = function(mx, my) {
-	if(mx < this.x || mx > this.x+this.w) return false;
-	if(my < this.y || my > this.y+this.h) return false;
+	selBoxPadding = 2;
+	if(mx < this.x - selBoxPadding || mx > this.x+this.w + selBoxPadding) return false;
+	if(my < this.y - selBoxPadding || my > this.y+this.h + selBoxPadding) return false;
 	return true;
 }
 

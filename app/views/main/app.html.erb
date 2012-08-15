@@ -1,27 +1,61 @@
 <style>
 canvas {
-    border: 1px inset black;
     position:absolute;
     top: 0;
     left: 0;
 }
-#step_1{
-	background-color:#fffa98;
+
+h1 {
+	color:#71637D;
+	font-size:250%
+}
+
+h4{
+	color:#4F2F4F;
+}
+
+body {
+	background-color:#D8BFD8;
+	font-family : "Trebuchet MS";
+}
+
+#content-panel {
+	background-color:#FFFFFF;
+}
+
+#instructions{
+	width:1050px;
+	background-color:#ffda98;
 }
 </style>
-<!--Description of the application-->
-<div style="background-color:#fffa98;width:100%">
+<table>
+	<td width=35px/>
+	<td width=390px>
+		<h1>Body Diagrams</h1>
+	</td>
+	<td width = 600px>
+		<h4>
+			1: Use the zoom pane to focus <br/> 
+			2: Click and drag to draw; double click to define a rectangular region <br/>
+			3: Click "Done" when you are finished describing a symptom</h4>
+	</td>
+	<td>
+	<button type="button" id="submitTask">Submit!</button>
+	</td>
+</table>
+<!--Description of the application
+<div id="instructions">
 <p> FREE HAND: mouse down and drag </p>
 <p> REGION SELECT: double click & resize </p>
-</div>
+</div>-->
 
 <!-- First pane: Main view for zooming functionality -->
-<div>
+<div id="content-panel">
 	<!-- Rotation buttons -->
-	<button type="button" id="rotateLeft" style="position:absolute;top:80px;left:30px;">Rotate<<</button>
-	<button type="button" id="rotateRight" style="position:absolute;top:80px;left:270px;">Rotate>></button>
+	<button type="button" id="rotateLeft" style="position:absolute;top:350px;left:10px"> <img src="/assets/left_arrow.png"> </button>
+	<button type="button" id="rotateRight" style="position:absolute;top:350px;left:372px;"> <img src="/assets/right_arrow.png"> </button>
 	
-	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:10px;position:absolute;">
+	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:50px;position:absolute;">
 			<img id="body_view"  src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
 			alt="no photo" style="position:relative;"></img>
 			<canvas id="canvas" width="330" height="740" >
@@ -30,24 +64,52 @@ canvas {
 </div>
 
 <!-- Second pane: Zoomed view for drawing functionality -->
-<div>
-	<button type="button" id="undo" style="position:absolute;top:80px;left:640px;">Undo</button>
-	<div class="zoom-photo-container" style="width:332px;height:522px;overflow:hidden;top:100px;left:360px;position:absolute;">
-			<img id="zoom_body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
-	alt="no photo" style="position:relative;"></img>
-			<canvas id="zoomCanvas" width="330" height="520" >
-			</canvas>
-	</div>
+<!-- DM: I think it makes more sense to keep the text + drawing annotation components together? -->
+<div id="content-panel" style="width:700;height:336px;position:absolute;left:440px;top:100px">
+	
+	<table>
+		<td width="330px">
+			<div class="zoom-photo-container" style="width:330px;height:330px;overflow:hidden;">
+				<img id="zoom_body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
+					alt="no photo" style="position:relative;">
+				</img>
+
+			<canvas id="zoomCanvas" width="330" height="330">
+			</canvas>	
+		</td>
+		<td width="360px">	
+			<div id="pain_picker">
+					<ul style="list-style:none;">
+						<li>Please describe your symptom: </li>
+						<li><textarea cols="45" id="tag_annotate" name="tag[annotate]" rows="5"></textarea></li> <br/>
+						<li>Symptom Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li> <br/>
+						<li> Symptom Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li> <br/>
+						<li> I experience this symptom mostly when I: <br/>
+							<form>
+							<input type="checkbox" name="posture" value="Stand"/> Stand
+							<input type="checkbox" name="posture" value="Walk"/> Walk
+							<input type="checkbox" name="posture" value="Run"/> Run
+							<input type="checkbox" name="posture" value="Jump"/> Jump
+							<input type="checkbox" name="posture" value="Sit"/> Sleep
+							</form>
+							</li> <br/>
+						<li> <button type="button" id="undo">Undo</button> <button type="button" id="tagDone">Done!</button> </li>
+					</ul>
+			</div>	
+		</td>
+	</table>	
 </div>
 
+
 <!-- Third pane: Annotating & etc + review of symptoms -->
-<div id="pain_panel" style="width:330px;height:750px;position:absolute;top:100px;left:710px;">
+<div id="pain_panel" style="width:700px;height:350px;position:absolute;top:450px;left:440px;">
 	<ul>
-		<li><a href="#pain_picker">Pain Picker</a></li>
+		<!-- ><li><a href="#pain_picker">Pain Picker</a></li> -->
 		<li><a href="#my_symptoms">My Symptoms</a></li>
 	</ul>
 	
-	<div id="pain_picker">
+	<!-- DM: moved this to the second panel
+	><div id="pain_picker">
 			<ul style="list-style:none;">
 				<li>Describe Your Annotation: </li>
 				<li><textarea cols="25" id="tag_annotate" name="tag[annotate]" rows="4"></textarea></li>
@@ -56,12 +118,12 @@ canvas {
 				<li> <button type="button" id="tagDone">Done!</button> </li>
 			</ul>
 	</div>
-	
+	-->
 	<div id="my_symptoms">
 </div>
 <!-- Fourth pane: Submit button -->
 <div style="top:100px;left:360px;position:absolute;">
-<button type="button" id="submitTask">Submit!</button>
+
 </div>
 	
 <script type="text/javascript">
@@ -122,14 +184,14 @@ canvas {
 		$(".pain_type_slider").slider();
 		
 		//buttons
-		$( "#rotateRight" ).click(function(){
+		$( "#rotateLeft" ).click(function(){
 			cvState.flush();
 			cur_view_side = (cur_view_side+1)%4;
 			zcvState.setCurViewSide(cur_view_side);
 			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
 			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
 		});
-		$( "#rotateLeft" ).click(function(){
+		$( "#rotateRight" ).click(function(){
 			cvState.flush();
 			cur_view_side = (cur_view_side+3)%4;
 			zcvState.setCurViewSide(cur_view_side);

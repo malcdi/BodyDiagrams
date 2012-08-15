@@ -1,3 +1,4 @@
+//DM: if I'm correct, this comment is outdated. We never draw on the ZoomCanvasState, we just use it to zoom.
 /* ZoomStateCanvas is an extension of CanvasState. It retains the functionalities of CanvasState, but in addition,
  * it is bound to a CanvasState object. Tags initialized on a ZoomStateCanvas are translated into the original
  * CanvasState coordinates and pushed to the CanvasState object. ZoomStateCanvas tags should be considered transient:

@@ -27,6 +27,15 @@ body {
 	width:1050px;
 	background-color:#ffda98;
 }
+
+.centeredImage
+    {
+    text-align:center;
+    margin-top:0px;
+    margin-bottom:0px;
+    padding:0px;
+    }
+</style>
 </style>
 <table>
 	<td width=35px/>
@@ -54,13 +63,15 @@ body {
 	<!-- Rotation buttons -->
 	<button type="button" id="rotateLeft" style="position:absolute;top:350px;left:10px"> <img src="/assets/left_arrow.png"> </button>
 	<button type="button" id="rotateRight" style="position:absolute;top:350px;left:372px;"> <img src="/assets/right_arrow.png"> </button>
+	<button type="button" id="gender" style="position:absolute;top:450px;left:372px;"> <img src="/assets/genderIcon.png"> </button>
 	
-	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:50px;position:absolute;">
-			<img id="body_view"  src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
-			alt="no photo" style="position:relative;"></img>
+	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:50px;position:absolute;background-color:white">
+			<p class="centeredImage"><img id="body_view"  height="740" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
+			alt="no photo" style="position:relative;"></img></p>
 			<canvas id="canvas" width="330" height="740" >
 			</canvas>
 	</div>
+
 </div>
 
 <!-- Second pane: Zoomed view for drawing functionality -->
@@ -129,6 +140,7 @@ body {
 <script type="text/javascript">
 	//current view side {0:front, 1: right, 2: back, 3: left}
 	var cur_view_side=0;
+	var imagePrefix="/assets/";
 	
 	var zoomScale=1.0;//current zoom scale
 	var cvState =new CanvasState(document.getElementById("zoomCanvas"));//second pane: zoomed canvas
@@ -168,11 +180,13 @@ body {
 	
 	//called when zoom button is clicked.
 	function zoomCallback(x, y, w, h){
+		var originalW=document.getElementById("body_view").width;
+		var marginBuffer = (330 - originalW)/2;
 		var standardW=330;
 		zoomScale=standardW/w;
 		var zoomImg=document.getElementById("zoom_body_view");
-		zoomImg.style.width=standardW*zoomScale+"px";
-		zoomImg.style.left="-"+x*zoomScale+"px";
+		zoomImg.style.width=originalW*zoomScale+"px";
+		zoomImg.style.left=(marginBuffer*zoomScale - x*zoomScale)+"px";
 		zoomImg.style.top="-"+y*zoomScale+"px";
 		cvState.setViewState(x,y,zoomScale);
 	}
@@ -188,16 +202,26 @@ body {
 			cvState.flush();
 			cur_view_side = (cur_view_side+1)%4;
 			zcvState.setCurViewSide(cur_view_side);
-			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
-			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
+			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
+			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
 		});
 		$( "#rotateRight" ).click(function(){
 			cvState.flush();
 			cur_view_side = (cur_view_side+3)%4;
 			zcvState.setCurViewSide(cur_view_side);
-			$("#body_view").attr("src","/assets/whole_"+cur_view_side+".png");
-			$("#zoom_body_view").attr("src","/assets/whole_"+cur_view_side+".png");
+			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
+			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
 		});
+		$("#gender").click(function(){
+			console.log(imagePrefix);
+			if(imagePrefix == "/assets/"){
+				imagePrefix = "/assets/female_";
+			} else {
+				imagePrefix = "/assets/";
+			}
+			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
+			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
+		})
 		$( "#undo" ).click(function(){
 			cvState.undoLastDrawing(cvState);
 		});

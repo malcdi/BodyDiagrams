@@ -1,0 +1,65 @@
+
+<h1>Tell us about you!</h1>
+<table>
+	<tr>
+		<td style="width:150px">
+			<img id="body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
+				alt="no photo" style="width:150px;"> </img>
+		</td>
+		<td>
+			<table>
+			<tr>
+				<td>	
+				Select Gender: 
+				</td>
+				<td>
+					<button type="button" id="gender" style='width: 40px; height:80px;background-image:url("/assets/genderIcon.png")'> </button> 
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Your Birth Year:
+				</td>
+				<td>
+					<select id="birth">
+						<%for i in 0...70%>
+							<option value="<%=2010-i%>"><%=2010-i%></option>
+						<%end%>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>
+				<button type="button" id="next">Next</button>
+				</td>
+			</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+
+
+<script type="text/javascript">
+var imagePrefix="/assets/";
+$(function() {
+	$("#gender").click(function(){
+		if(imagePrefix == "/assets/"){
+			imagePrefix = "/assets/female_";
+		} else {
+			imagePrefix = "/assets/";
+		}
+		$("#body_view").attr("src",imagePrefix + "whole_0.png");
+	});
+	
+	$("#next").click(function(){
+		var gender="male";
+		if($("#body_view").attr("src").indexOf("female")!=-1){
+			gender="female";
+		}
+		window.location="/main/app?gender="+gender+"&birth="+$("#birth").val();
+	});
+});
+
+
+</script>

@@ -1,41 +1,4 @@
-<style>
-canvas {
-    position:absolute;
-    top: 0;
-    left: 0;
-}
 
-h1 {
-	color:#71637D;
-	font-size:250%
-}
-
-h4{
-	color:#4F2F4F;
-}
-
-body {
-	background-color:#D8BFD8;
-	font-family : "Trebuchet MS";
-}
-
-#content-panel {
-	background-color:#FFFFFF;
-}
-
-#instructions{
-	width:1050px;
-	background-color:#ffda98;
-}
-
-.centeredImage
-    {
-    text-align:center;
-    margin-top:0px;
-    margin-bottom:0px;
-    padding:0px;
-    }
-</style>
 </style>
 <table>
 	<td width=35px/>
@@ -63,12 +26,11 @@ body {
 	<!-- Rotation buttons -->
 	<button type="button" id="rotateLeft" style="position:absolute;top:350px;left:10px"> <img src="/assets/left_arrow.png"> </button>
 	<button type="button" id="rotateRight" style="position:absolute;top:350px;left:372px;"> <img src="/assets/right_arrow.png"> </button>
-	<button type="button" id="gender" style="position:absolute;top:450px;left:372px;"> <img src="/assets/genderIcon.png"> </button>
 	
 	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:50px;position:absolute;background-color:white">
 			<p class="centeredImage"><img id="body_view"  height="740" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
 			alt="no photo" style="position:relative;"></img></p>
-			<canvas id="canvas" width="330" height="740" >
+			<canvas id="canvas" width="330" height="740">
 			</canvas>
 	</div>
 
@@ -76,7 +38,7 @@ body {
 
 <!-- Second pane: Zoomed view for drawing functionality -->
 <!-- DM: I think it makes more sense to keep the text + drawing annotation components together? -->
-<div id="content-panel" style="width:700;height:336px;position:absolute;left:440px;top:100px">
+<div id="content-panel" style="width:700;height:366px;position:absolute;left:440px;top:100px">
 	
 	<table>
 		<td width="330px">
@@ -85,39 +47,43 @@ body {
 					alt="no photo" style="position:relative;">
 				</img>
 
-			<canvas id="zoomCanvas" width="330" height="330">
+			<canvas id="zoomCanvas" width="330" height="330" style="top:25px;left:3px">
 			</canvas>	
 		</td>
 		<td width="360px">	
 			<div id="pain_picker">
 					<ul style="list-style:none;">
 						<li>Please describe your symptom: </li>
-						<li><textarea cols="45" id="tag_annotate" name="tag[annotate]" rows="5"></textarea></li> <br/>
-						<li>Symptom Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li> <br/>
-						<li> Symptom Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li> <br/>
+						<li><textarea cols="45" id="tag_annotate" name="tag[annotate]" rows="5"></textarea></li><br/>
+						<li>Symptom Severity: </li>
+						<li>No Pain.............Moderate.........Unbearable</li>
+						<li>
+							<div class="pain_type_slider" id="tag_pain_severity"></div>
+						</li> <br/>
+						<li> Symptom Depth: </li>
+						<li>Skin....................Core.........Opposite Side</li>
+						<li><div class="pain_type_slider" id="tag_pain_depth"></div></li> <br/>
 						<li> I experience this symptom mostly when I: <br/>
 							<form>
-							<input type="checkbox" name="posture" value="Stand"/> Stand
-							<input type="checkbox" name="posture" value="Walk"/> Walk
-							<input type="checkbox" name="posture" value="Run"/> Run
-							<input type="checkbox" name="posture" value="Jump"/> Jump
-							<input type="checkbox" name="posture" value="Sit"/> Sleep
+								<input type="checkbox" name="posture" value="Stand"/> Stand
+								<input type="checkbox" name="posture" value="Walk"/> Walk
+								<input type="checkbox" name="posture" value="Run"/> Run
+								<input type="checkbox" name="posture" value="Jump"/> Jump
+								<input type="checkbox" name="posture" value="Sit"/> Sleep
 							</form>
 							</li> <br/>
-						<li> <button type="button" id="undo">Undo</button> <button type="button" id="tagDone">Done!</button> </li>
+						<li> <button type="button" id="undo">Undo</button> <button type="button" id="tagDone">Save this symptom.</button> </li>
 					</ul>
 			</div>	
 		</td>
 	</table>	
 </div>
 
-
+<div style="position:absolute;top:448px;left:440px; color:#71637D; font"><h2>My symptoms:</h2></div>
 <!-- Third pane: Annotating & etc + review of symptoms -->
-<div id="pain_panel" style="width:700px;height:350px;position:absolute;top:450px;left:440px;">
-	<ul>
-		<!-- ><li><a href="#pain_picker">Pain Picker</a></li> -->
-		<li><a href="#my_symptoms">My Symptoms</a></li>
-	</ul>
+<div style="width:720px;height:350px;position:absolute;top:500px;left:440px;background-color:white;">
+	
+	<div id="my_symptoms"></div>
 	
 	<!-- DM: moved this to the second panel
 	><div id="pain_picker">
@@ -130,23 +96,44 @@ body {
 			</ul>
 	</div>
 	-->
-	<div id="my_symptoms">
-</div>
-<!-- Fourth pane: Submit button -->
-<div style="top:100px;left:360px;position:absolute;">
-
 </div>
 	
 <script type="text/javascript">
+	function getURLParameter(name) {
+			return decodeURIComponent(
+					(location.search.match(RegExp("[?|&]"+name+'=(.+?)(&|$)'))||[,null])[1]
+			);  
+	}
 	//current view side {0:front, 1: right, 2: back, 3: left}
 	var cur_view_side=0;
 	var imagePrefix="/assets/";
 	
 	var zoomScale=1.0;//current zoom scale
 	var cvState =new CanvasState(document.getElementById("zoomCanvas"));//second pane: zoomed canvas
-	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, packTagInfo, tagDoneCallback);//first pane: main canvas
+	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, tagDoneCallback);//first pane: main canvas
 	cvState.setViewState(0,0,1.0); //sets initial zoom scale
-	
+	function translateTagInfo(tagInfo){
+		var severity="no pain";
+		if(tagInfo.depth==10) output="no pain";
+		else if(tagInfo.depth==20) output="mild pain";
+		else if(tagInfo.depth==30) output="mild pain";
+		else if(tagInfo.depth==40) output="discomforting";
+		else if(tagInfo.depth==50) output="moderate";
+		else if(tagInfo.depth==60) output="distressing";
+		else if(tagInfo.depth==70) output="severe";
+		else if(tagInfo.depth==80) output="intense";
+		else if(tagInfo.depth==90) output="very severe";
+		else if(tagInfo.depth==100) output="unbearable";
+		tagInfo.severity=severity;
+		
+		var depth="skin";
+		if(tagInfo.depth==25) output="beneath skin";
+		if(tagInfo.depth==50) output="core";
+		if(tagInfo.depth==75) output="close to opposite";
+		if(tagInfo.depth==100) output="opposite side";
+		tagInfo.depth=depth;
+		return tagInfo;
+	}
 	//callback after "done" button clicked for tag
 	function tagDoneCallback(){
 		//update drawing canvas
@@ -155,26 +142,29 @@ body {
 		//updating my_symptoms tab
 		$("#my_symptoms").accordion("destroy");
 		var symptomLogger= $("#my_symptoms");
-		symptomLogger.append($("<h3><a href='#'>"+document.getElementById("tag_annotate").value+"</a></h3>"));
-		symptomLogger.append($("<div><div>severity: "+document.getElementById("tag_pain_severity").childNodes[0].style.left+
-													"</div><div>depth: "+document.getElementById("tag_pain_depth").childNodes[0].style.left+"</div></div>"));
+		var TagInfo=translateTagInfo(packTagInfo());
+		
+		symptomLogger.append($("<h3><a href='#'>"+TagInfo.annotate+"</a></h3>"));
+		symptomLogger.append($("<div><div>severity: "+TagInfo.severity+
+													"</div><div>depth: "+TagInfo.depth+"</div></div>"));
 		
 		setTimeout(function(){
 			$("#my_symptoms").accordion();
 			$("#my_symptoms").accordion("resize");
-		}, 1500);
+		}, 100);
 		
 		//resetting pain_panel tab
 		document.getElementById("tag_annotate").value="";
-		document.getElementById("tag_pain_severity").childNodes[0].style.left=0;
-		document.getElementById("tag_pain_depth").childNodes[0].style.left=0;
+		$("#tag_pain_severity").find("a")[0].innerHTML="";
+		$( ".pain_type_slider" ).slider( "option", "value", 0 );
+		$("#tag_pain_severity").find("a")[0].style.backgroundColor="#E6E6E6";
 	}
 	
 	//returns annotated tag information from pain tab.
 	function packTagInfo(){
 		var annotation=document.getElementById("tag_annotate").value;
-		var severity=document.getElementById("tag_pain_severity").childNodes[0].style.left;
-		var depth=document.getElementById("tag_pain_depth").childNodes[0].style.left;
+		var severity=$("#tag_pain_severity").slider( "option", "value" );
+		var depth=$("#tag_pain_depth").slider( "option", "value" );
 		return {"annotate":annotation, "severity":severity, "depth":depth, "view_side":cur_view_side};
 	}
 	
@@ -194,8 +184,30 @@ body {
 	//set up buttons & panels & tabs
 	$(function() {
 		$("#my_symptoms").accordion();
-		$( "#pain_panel" ).tabs();
-		$(".pain_type_slider").slider();
+		$("#tag_pain_severity").slider({
+			step:10,
+			slide: function(event, ui) {
+				this.children[0].innerHTML=ui.value/10;
+				var greenValue=Math.floor(ui.value*255/100);
+				var redValue=255-greenValue;
+				this.children[0].style.backgroundImage="none";
+				this.children[0].style.backgroundColor="rgb("+greenValue+","+redValue+",0)";
+			}
+		});
+		$("#tag_pain_depth").slider({
+			step:25
+		});
+		$(".pain_type_slider").find("a").css({
+			textDecoration:"none",
+			textAlign:"center"
+		});
+		
+		//set up with user's information
+		if(getURLParameter("gender")=="female"){
+			imagePrefix="/assets/female_";
+			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
+			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
+	}	
 		
 		//buttons
 		$( "#rotateLeft" ).click(function(){
@@ -212,24 +224,24 @@ body {
 			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
 			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
 		});
-		$("#gender").click(function(){
-			console.log(imagePrefix);
-			if(imagePrefix == "/assets/"){
-				imagePrefix = "/assets/female_";
-			} else {
-				imagePrefix = "/assets/";
-			}
-			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-		})
 		$( "#undo" ).click(function(){
 			cvState.undoLastDrawing(cvState);
 		});
 		$( "#submitTask" ).click(function(){
-			zcvState.submitAll();
+			zcvState.submitAll(getURLParameter("gender"),  (2012-getURLParameter("birth")));
 		});
 		$( "#tagDone" ).click(function(){
-			zcvState.saveTagInfo();
+			var tagInfo=packTagInfo();
+			console.log(tagInfo);
+			if(tagInfo.severity=="0%") {
+				alert("please set symptom severity level");
+			}
+			else if(tagInfo.annotate=="") {
+				alert("please describe the symptom");
+			}
+			else{
+				zcvState.saveTagInfo(tagInfo);
+			}
 		});
 	});
 </script>

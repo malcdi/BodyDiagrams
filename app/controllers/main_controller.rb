@@ -1,6 +1,5 @@
 class MainController < ApplicationController
 	def app
-		
 	end
 	
 	def postGraphicTag
@@ -29,7 +28,7 @@ class MainController < ApplicationController
 	end
 	
 	def postTag
-		@user = User.create(:gender=>"male", :age=>24)
+		@user = User.create(:gender=>params[:gender], :age=>params[:age])
 		allTags = JSON.parse(params[:tagData])
 		tagArr=[]
 		returnStr=""

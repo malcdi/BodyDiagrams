@@ -5,7 +5,7 @@
  * tags should be translated and saved permanently to the CanvasState
  */
 
-function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, saveCallback) {
+function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, saveCallback) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
@@ -54,7 +54,6 @@ function ZoomCanvasState(zoomCanvas, boundCanvasState, zoomCallback, getData, sa
 	
 	/* registering mouse events */
 	var myState = this;
-	this.getData=getData;
 	this.saveCallback=saveCallback;
 	
 	//fixes a problem where double clicking causes text to get selected on the zoomCanvas
@@ -282,9 +281,8 @@ ZoomCanvasState.prototype.draw = function() {
 }
 
 //called after "done" button clicked for each tag
-ZoomCanvasState.prototype.saveTagInfo = function(cur_view_side){
+ZoomCanvasState.prototype.saveTagInfo = function(tagData){
 	var myState=this;
-	var tagData = myState.getData(); 
 	myState.allTagData.push(tagData); //saves annnotated tag info
 	this.allTags.push(this.boundCanvasState.packGraphicTagInfo()); //saves graphic tag info
 	this.needRedraw=true;
@@ -293,12 +291,16 @@ ZoomCanvasState.prototype.saveTagInfo = function(cur_view_side){
 }
 
 //save all the annotated tags
-ZoomCanvasState.prototype.submitAll = function(){
+ZoomCanvasState.prototype.submitAll = function(gender, age){
+	if(this.allTagData.length==0){
+		alert("please express your symptoms!");
+		return;
+	}
 	var self=this;
 	$.ajax({
 		type: "GET",
 		url: "postTag",
-		data: {"tagData": JSON.stringify(self.allTagData)}
+		data: {"tagData": JSON.stringify(self.allTagData), "gender":gender, "age":age}
 	}).done(function( tagIdArr ) {
 		self.submitGraphicTags(JSON.parse(tagIdArr));//array of tag ids returned.
 	});
@@ -308,37 +310,42 @@ ZoomCanvasState.prototype.submitAll = function(){
 ZoomCanvasState.prototype.submitGraphicTags = function(tagIdArr){
 	var self=this;
 	var l = this.allTags.length;
-	for (var j = 0; j < l; j++) {
-		var tags = this.allTags[j];
-		var len = tags.length;
-		var freeHandTags=[];
-		var regionTags=[];
-		/*separate tags in region/freehand */
-		for (var i = 0; i < len; i++) {
-			var tagElem = tags[i];
-			if(tagElem instanceof RegionTagCanvasElem){
-				regionTags.push(tagElem);
+	if (l==0){
+		self.submitComplete();
+	}
+	else{
+		for (var j = 0; j < l; j++) {
+			var tags = this.allTags[j];
+			var len = tags.length;
+			var freeHandTags=[];
+			var regionTags=[];
+			/*separate tags in region/freehand */
+			for (var i = 0; i < len; i++) {
+				var tagElem = tags[i];
+				if(tagElem instanceof RegionTagCanvasElem){
+					regionTags.push(tagElem);
+				}
+				else {
+					freeHandTags.push(tagElem);
+				}
 			}
-			else {
-				freeHandTags.push(tagElem);
-			}
+			
+			$.ajax({
+				type: "POST",
+				url: "postGraphicTag",
+				data: {"tagId":tagIdArr[j], "freeHand":JSON.stringify(freeHandTags), "region":JSON.stringify(regionTags)}
+			}).done(function( msg ) {
+				//on last tag data submission
+				if(j==l) self.submitComplete();
+			});
 		}
-		
-		$.ajax({
-			type: "POST",
-			url: "postGraphicTag",
-			data: {"tagId":tagIdArr[j], "freeHand":JSON.stringify(freeHandTags), "region":JSON.stringify(regionTags)}
-		}).done(function( msg ) {
-			console.log( "Graphic Data Saved: " + msg);
-			//on last tag data submission
-			if(j==l-1) self.submitComplete();
-		});
 	}
 }
 
 //called after submission completed
 ZoomCanvasState.prototype.submitComplete = function(){
 	alert("complete");
+	window.location="/main/complete"
 }
 
 // Creates an object with x and y defined,

@@ -11,3 +11,39 @@
  *= require_self
  *= require_tree .
 */
+canvas {
+    position:absolute;
+    top: 0;
+    left: 0;
+}
+
+h1 {
+  color:#71637D;
+  font-size:250%
+}
+
+h4{
+  color:#4F2F4F;
+}
+
+body {
+  background-color:#D8BFD8;
+  font-family : "Trebuchet MS";
+}
+
+#content-panel {
+  background-color:#FFFFFF;
+}
+
+#instructions{
+  width:1050px;
+  background-color:#ffda98;
+}
+
+.centeredImage
+    {
+    text-align:center;
+    margin-top:0px;
+    margin-bottom:0px;
+    padding:0px;
+    }

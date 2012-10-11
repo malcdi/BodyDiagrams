@@ -21,34 +21,38 @@
 <p> REGION SELECT: double click & resize </p>
 </div>-->
 
-<!-- First pane: Main view for zooming functionality -->
-<div id="content-panel">
-	<!-- Rotation buttons -->
-	<button type="button" id="rotateLeft" style="position:absolute;top:350px;left:10px"> <img src="/assets/left_arrow.png"> </button>
-	<button type="button" id="rotateRight" style="position:absolute;top:350px;left:372px;"> <img src="/assets/right_arrow.png"> </button>
-	
-	<div class="photo-container" style="width:332px;height:742px;overflow:hidden;top:100px;left:50px;position:absolute;background-color:white">
-			<p class="centeredImage"><img id="body_view"  height="740" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
-			alt="no photo" style="position:relative;"></img></p>
-			<canvas id="canvas" width="330" height="740">
-			</canvas>
-	</div>
-
+<!-- DM: I think it makes more sense to keep the text + drawing annotation components together? -->
+<div style="position: relative; margin-left: 200px; margin-right: 200px;">
+<div id="manipulationMode" style="float:right">
+	<input type="radio" id="zoom" name="radio" checked="checked" /><label for="zoom">zoom</label>
+	<input type="radio" id="draw" name="radio" /><label for="draw">draw</label>
+	<ul>
+		<li> <button type="button" id="undo">Undo</button></li>
+	</ul>
+</div>
+<div id="content-panel" style="height:800px;overflow:hidden;">
+<canvas id="canvas" width="700" height="800" style="position:relative"/></canvas>
+<div class="annotator-adder" id="annotate-box" style="visibility:hidden;position:absolute"><button id="annotating">??</button></div>
+<div class="annotator-outer annotator-editor"id="annotator" style="visibility:hidden;position:absolute">
+<div class="annotator-widget" >
+	<ul class="annotator-listing">
+		<li class="annotator-item">
+			<textarea id="annotator-field-0" placeholder="Comments…" ></textarea>
+		</li>
+		<li class="annotator-item"><input id="annotator-field-1" placeholder="Add some tags here…"></li>
+	</ul>
+</div>
 </div>
 
-<!-- Second pane: Zoomed view for drawing functionality -->
-<!-- DM: I think it makes more sense to keep the text + drawing annotation components together? -->
-<div id="content-panel" style="width:700;height:366px;position:absolute;left:440px;top:100px">
-	
-	<table>
-		<td width="330px">
-			<div class="zoom-photo-container" style="width:330px;height:330px;overflow:hidden;">
-				<img id="zoom_body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
-					alt="no photo" style="position:relative;">
-				</img>
+</div>
+<img id="imgsrc" src="/assets/female_whole_0_cropped.png" style="width:320px;height:800px;display:none"/>
 
-			<canvas id="zoomCanvas" width="330" height="330" style="top:25px;left:3px">
-			</canvas>	
+<!-- 
+	<table>
+		<td width="500px">
+			<div id="photo-container" style="width:500px;height:800px;overflow:hidden;">
+			 <img src="/assets/female_whole_0.png" style="width:350px;"/>
+			</div>
 		</td>
 		<td width="360px">	
 			<div id="pain_picker">
@@ -56,12 +60,21 @@
 						<li>Please describe your symptom: </li>
 						<li><textarea cols="45" id="tag_annotate" name="tag[annotate]" rows="5"></textarea></li><br/>
 						<li>Symptom Severity: </li>
-						<li>No Pain.............Moderate.........Unbearable</li>
+						<li>Light.........................................................Severe</li>
 						<li>
 							<div class="pain_type_slider" id="tag_pain_severity"></div>
 						</li> <br/>
+						<li>Symptom Type:</li>
+						<li>
+							<div id="symptomTypes">
+								<input type="radio" id="numb" name="radio" checked="checked" /><label for="numb">numb</label>
+								<input type="radio" id="sharp" name="radio" /><label for="sharp">sharp</label>
+								<input type="radio" id="dull" name="radio" /><label for="dull">dull</label>
+								<input type="radio" id="periodic" name="radio" /><label for="periodic">periodic</label>
+							</div>
+						</li>
 						<li> Symptom Depth: </li>
-						<li>Skin....................Core.........Opposite Side</li>
+						<li>Shallow......................................................Deep</li>
 						<li><div class="pain_type_slider" id="tag_pain_depth"></div></li> <br/>
 						<li> I experience this symptom mostly when I: <br/>
 							<form>
@@ -77,26 +90,9 @@
 			</div>	
 		</td>
 	</table>	
-</div>
-
-<div style="position:absolute;top:448px;left:440px; color:#71637D; font"><h2>My symptoms:</h2></div>
-<!-- Third pane: Annotating & etc + review of symptoms -->
-<div style="width:720px;height:350px;position:absolute;top:500px;left:440px;background-color:white;">
-	
-	<div id="my_symptoms"></div>
-	
-	<!-- DM: moved this to the second panel
-	><div id="pain_picker">
-			<ul style="list-style:none;">
-				<li>Describe Your Annotation: </li>
-				<li><textarea cols="25" id="tag_annotate" name="tag[annotate]" rows="4"></textarea></li>
-				<li>Pain Severity: <div class="pain_type_slider" id="tag_pain_severity"></div></li>
-				<li> Pain Depth: <div class="pain_type_slider" id="tag_pain_depth"></div></li>
-				<li> <button type="button" id="tagDone">Done!</button> </li>
-			</ul>
-	</div>
 	-->
 </div>
+	
 	
 <script type="text/javascript">
 	function getURLParameter(name) {
@@ -109,9 +105,39 @@
 	var imagePrefix="/assets/";
 	
 	var zoomScale=1.0;//current zoom scale
-	var cvState =new CanvasState(document.getElementById("zoomCanvas"));//second pane: zoomed canvas
-	var zcvState = new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, tagDoneCallback);//first pane: main canvas
-	cvState.setViewState(0,0,1.0); //sets initial zoom scale
+	$(document).ready(function(){
+		//$('#content-panel img').panZoom({min_height:1200,min_width:316});
+
+		var canvasElem=document.getElementById("canvas");
+		canvasElem.width=$(canvasElem).parent().width();
+		var cvState = new CanvasState(document.getElementById("canvas"));
+		cvState.setMode("zoom");//default
+		
+		$("#manipulationMode").buttonset();
+		$("#manipulationMode input").change(function(){
+			cvState.setMode(this.id);
+		});
+		
+		$( "#undo" ).click(function(){
+			cvState.undoLastDrawing(cvState);
+		});
+		
+		$( "#annotating" ).click(function(){
+			$("#annotator").css({
+				left:$(this).parent().css("left"),
+				top:parseInt($(this).parent().css("top"))-100,
+				width: 200,
+				height: 100,
+				visibility: "visible"
+			})
+			$(this).parent().css({visibility:"hidden"});
+		});
+		
+	});
+	
+	/*var cvState =null;//new CanvasState(document.getElementById("canvas"));//second pane: zoomed canvas
+	var zcvState = null;//new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, tagDoneCallback);//first pane: main canvas
+	cvState.setViewState(0,0,1.0); */
 	function translateTagInfo(tagInfo){
 		var severity="no pain";
 		if(tagInfo.depth==10) output="no pain";
@@ -180,10 +206,11 @@
 		zoomImg.style.top="-"+y*zoomScale+"px";
 		cvState.setViewState(x,y,zoomScale);
 	}
-	
+	/*
 	//set up buttons & panels & tabs
 	$(function() {
 		$("#my_symptoms").accordion();
+		$("#symptomTypes").buttonset();
 		$("#tag_pain_severity").slider({
 			step:10,
 			slide: function(event, ui) {
@@ -243,5 +270,5 @@
 				zcvState.saveTagInfo(tagInfo);
 			}
 		});
-	});
+	});*/
 </script>

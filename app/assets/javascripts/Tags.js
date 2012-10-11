@@ -135,13 +135,19 @@ FreeHandTagCanvasElem.prototype.toJSON = function() {
 	return this.points;
 }
 
-FreeHandTagCanvasElem.prototype.addPoint = function(x_t, y_t) {
-	this.points.push([x_t, y_t]);
+FreeHandTagCanvasElem.prototype.addPoint = function(x_t, y_t, svg, transformMat) {
+	var pt = svg.createSVGPoint();
+	pt.x = x_t;
+	pt.y = y_t;
+	var globalPoint = pt.matrixTransform(transformMat);
+	
+	this.points.push([globalPoint.x, globalPoint.y]);
 }
 
 FreeHandTagCanvasElem.prototype.isValidElem = function() {
 	return (this.points.length>1);
 }
+
 FreeHandTagCanvasElem.prototype.transform = function(x, y, scale) {
 	for (var i=0; i<this.points.length; i++){
 		this.points[i][0]= this.points[i][0]/scale+x;

@@ -42,8 +42,8 @@ RegionTagCanvasElem.prototype.transform = function(x, y, scale) {
 }
 
 // Draws this shape to a given context
-RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHandles, fillColor) {
-	ctx.fillStyle = fillColor;
+RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHandles) {
+	ctx.fillStyle = this.fill;
 	ctx.globalAlpha = 0.4;
 	// We can skip the drawing of elements that have moved off the screen:
 	//if (this.x > WIDTH || this.y > HEIGHT) return; 
@@ -124,10 +124,10 @@ RegionTagCanvasElem.prototype.contains = function(mx, my) {
 
 /* FREE HAND TAGS */
 // Constructor for RegionTag objects to hold data relevant to drawing.
-function FreeHandTagCanvasElem(fill) {
+function FreeHandTagCanvasElem(strokeStyle) {
 	// This is a very simple and unsafe constructor. 
 	// All we're doing is checking if the values exist.
-	this.fill = fill || '#AAAAAA';
+	this.strokeStyle = strokeStyle || '#F89393';
 	this.points=[];
 }
 
@@ -155,8 +155,8 @@ FreeHandTagCanvasElem.prototype.transform = function(x, y, scale) {
 	}
 }
 // Draws this shape to a given context
-FreeHandTagCanvasElem.prototype.draw = function(ctx, fillColor) {
-	ctx.strokeStyle = fillColor;
+FreeHandTagCanvasElem.prototype.draw = function(ctx) {
+	ctx.strokeStyle = this.strokeStyle;
 	ctx.beginPath();
 	for (var i=0; i<this.points.length; i++){
 		if (i==0) ctx.moveTo(this.points[i][0], this.points[i][1]);
@@ -168,6 +168,17 @@ FreeHandTagCanvasElem.prototype.draw = function(ctx, fillColor) {
 	ctx.closePath();
 }
 
+FreeHandTagCanvasElem.prototype.setStyle = function(strokeStyle) {
+	this.strokeStyle = strokeStyle;
+}
+
+FreeHandTagCanvasElem.prototype.saveTagAnnotation = function(severity, type, posture, depth, text) {
+	this.severity = severity;
+	this.type = type;
+	this.posture = posture;
+	this.depth = depth;
+	this.text = text;
+}
 
 
 

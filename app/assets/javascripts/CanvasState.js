@@ -11,8 +11,8 @@ function CanvasState(canvas) {
 
 	
 	//this.allTags=[];//all the tags on canvas
-this.allTags = [];   //graphic tags
-this.allTagData =[]; //annotated tags
+	this.allTags = [];   //graphic tags
+	this.allTagData =[]; //annotated tags
 
 	//for drawing
 	this.dragging = false; // Keep track of when we are dragging
@@ -83,12 +83,25 @@ this.allTagData =[]; //annotated tags
 	}
 	
 	/* Register Rendering */
-	this.interval = 30; //every 30 miliseconds
+	this.interval = 10; //every 30 miliseconds
 	setInterval(	function() { 
 			myState.draw(); 
 		}, myState.interval);
-		
-		
+	myState.draw(); 
+	
+	
+	/* Set up annotation */
+	$( "#annotating" ).click(function(){
+		$("#annotator").css({
+			left:$(this).parent().css("left"),
+			top:parseInt($(this).parent().css("top"))-100,
+			width: 200,
+			height: 100,
+			visibility: "visible"
+		})
+		$(this).parent().css({visibility:"hidden"});
+	});
+	
 }
 
 //setting variables to keep track of current view's relative xy coordiantes and zoom scale
@@ -129,18 +142,21 @@ CanvasState.prototype.draw = function() {
 		var ctx = this.ctx;
 		this.clear(ctx);
 		
-		ctx.drawImage(document.getElementById("imgsrc"), 370,20, 260, 800);		
+		var imgWidth = 260;
+		var imgHeight = 800;
+		ctx.drawImage(document.getElementById("imgsrc"), (this.canvas.width-imgWidth)/2, 
+										(this.canvas.height-imgHeight)/2, imgWidth, imgHeight);		
 		// draw all Tags
 		var l = this.allTags.length;
-		var fillColor="#F89393";
+		ctx.lineWidth = 6;
 		for (var i = 0; i < l; i++) {
 			var tagElem = this.allTags[i];
 			//draw called to each element
 			if(tagElem instanceof RegionTagCanvasElem){
-				tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles, fillColor);
+				tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles);
 			}
 			else {
-				tagElem.draw(ctx, fillColor);
+				tagElem.draw(ctx);
 			}
 		}
 		this.needRedraw = false;
@@ -189,9 +205,29 @@ CanvasState.prototype.flush = function(){
 CanvasState.prototype.setMode = function(modeName){
 	this.mode=modeName;
 	if(this.mode=="zoom")
-		this.canvas.style.cursor="move";
+		this.canvas.style.cursor="url('/assets/dragHand.png'), auto";
 	else if(this.mode=="draw")
-		this.canvas.style.cursor="crosshair";
+		this.canvas.style.cursor="url('/assets/drawHand.png'), auto";
+}
+
+CanvasState.prototype.updateGraphics = function(index, severity, type){
+	var theTag = this.allTags[index];
+	var newPattern = this.ctx.createPattern(document.getElementById("line"+severity), "repeat");
+	theTag.setStyle(newPattern);
+	this.needRedraw=true;
+	this.draw();
+}
+
+CanvasState.prototype.saveTagAnnotation = function(index, severity, type, posture, depth, text){
+	var theTag = this.allTags[index];
+	theTag.saveAnnotation(severity, type, posture, depth, text);
+}
+
+CanvasState.prototype.setZoomPan = function(deltaX, deltaY, deltaZoom){
+	this.ctx.translate(deltaX, deltaY);
+	this.lastX = this.canvas.width/2;
+	this.lastY = this.canvas.height/2;
+	zoom(deltaZoom, this);
 }
 
 function getEventHandler(name, myState){
@@ -205,11 +241,13 @@ function getEventHandler(name, myState){
 
 var CanvasZoomEventHandler={
 	'mousedown': function(e, myState) {
+		e.preventDefault();
 		myState.lastX = e.offsetX || (e.pageX - myState.canvas.offsetLeft);
 		myState.lastY = e.offsetY || (e.pageY - myState.canvas.offsetTop);
 		myState.dragStart = myState.ctx.transformedPoint(myState.lastX,myState.lastY);
 	},
 	'mousemove': function(e, myState) {
+		e.preventDefault();
 		myState.lastX = e.offsetX || (e.pageX - canvas.offsetLeft);
 		myState.lastY = e.offsetY || (e.pageY - canvas.offsetTop);
 		if (myState.dragStart){
@@ -234,6 +272,14 @@ var CanvasZoomEventHandler={
 
 var CanvasDrawEventHandler={
 	'mousedown': function(e, myState) {
+		  //init annotation
+		  $("#annotate-box").css({
+		  	visibility:"hidden"
+		  	});
+		  $("#annotator").css({
+		  	visibility:"hidden"
+		  	});
+			e.preventDefault();
 			if(myState.resizeSide != -1){
 				myState.isResizeDrag = true;
 				return;
@@ -268,7 +314,7 @@ var CanvasDrawEventHandler={
 			
 			/* Free Hand Drawing */
 			myState.mouseDownForFreeHand = true;
-			myState.handSelection=new FreeHandTagCanvasElem('#AAAAAA');
+			myState.handSelection=new FreeHandTagCanvasElem('#F89393');
 
 			myState.handSelection.addPoint(mx, my,myState.svg, myState.ctx.getTransform().inverse());
 			myState.addFreeHandTagCanvasElem(myState.handSelection);
@@ -277,6 +323,7 @@ var CanvasDrawEventHandler={
 			var mouse = myState.getMouse(e);
 			var mx = mouse.x;
 			var my = mouse.y;
+			e.preventDefault();
 			/*Free Hand Drawing*/
 			if(myState.mouseDownForFreeHand){
 				myState.handSelection.addPoint(mx, my,myState.svg, myState.ctx.getTransform().inverse());

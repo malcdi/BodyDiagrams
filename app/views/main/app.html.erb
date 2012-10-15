@@ -21,76 +21,74 @@
 <p> REGION SELECT: double click & resize </p>
 </div>-->
 
-<!-- DM: I think it makes more sense to keep the text + drawing annotation components together? -->
+
 <div style="position: relative; margin-left: 200px; margin-right: 200px;">
-<div id="manipulationMode" style="float:right">
-	<input type="radio" id="zoom" name="radio" checked="checked" /><label for="zoom">zoom</label>
-	<input type="radio" id="draw" name="radio" /><label for="draw">draw</label>
-	<ul>
-		<li> <button type="button" id="undo">Undo</button></li>
-	</ul>
-</div>
-<div id="content-panel" style="height:800px;overflow:hidden;">
+
+<div id="content-panel" style="width:700px;height:800px;overflow:hidden;display:inline-block;">
+
 <canvas id="canvas" width="700" height="800" style="position:relative"/></canvas>
+
+<!-- Zoom/Drag Control -->
+<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px; border: solid 1px black;">
+ 	<img class="opMode" id="zoom" src="/assets/dragHand.png" style="width:30px;height:30px;"/>
+ 	<img class="opMode" id="draw" src="/assets/drawIconInactive.png" style="width:30px;height:30px;"/>
+</div>
+
+<!-- Zoom Control -->
+<div id="zoomControl">
+	<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; "><div style="position: absolute; left: 16px; top: 17px; width:48px; height: 47px; overflow: hidden; "><img style="position: absolute; left: 0px; top: 0px; border: 0px; padding: 0px; margin: 0px;width:48px; height:370px " src="/assets/mapcontrols.png"></div></div>
+	
+	<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; " id="compass"><div style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " title="Pan down"></div></div>
+	
+	<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 10001; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
+	
+	<div style="position: absolute; left: 16px; top: 131px; width: 59px; height: 146px; overflow: hidden; " id="lmcslider"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+	
+	<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 10003; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
+	
+	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 10002; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+</div>
+
+<!--Hidden annotation box-->
 <div class="annotator-adder" id="annotate-box" style="visibility:hidden;position:absolute"><button id="annotating">??</button></div>
 <div class="annotator-outer annotator-editor"id="annotator" style="visibility:hidden;position:absolute">
 <div class="annotator-widget" >
 	<ul class="annotator-listing">
+		<li class="annotator-item"><div class="pain_type_slider" id="pain_severity" style="width:70%;float:right"></div><span>Pain Severity:</span></li>
 		<li class="annotator-item">
-			<textarea id="annotator-field-0" placeholder="Comments…" ></textarea>
+			<div id = "pain_type" class="annotator-tags">
+				<span>Pain Type:</span>
+				<span class="annotator-tag tag-selected">Sharp</span>
+				<span class="annotator-tag">Numb</span>
+				<span class="annotator-tag">Dull</span>
+			</div></li>
+		<li class="annotator-item"><div class="pain_type_slider" id="pain_depth" style="width:70%;float:right"></div><span>Pain Depth:</span></li>
+		<li class="annotator-item">
+			<div id = "pain_posture" class="annotator-tags">
+				<span>Pain Postures:</span>
+				<span class="annotator-tag tag-selected">Stand</span>
+				<span class="annotator-tag">Walk</span>
+				<span class="annotator-tag">Sit</span>
+				<span class="annotator-tag">Lie</span>
+		</div></li>
+		<li class="annotator-item">
+			<textarea id="pain_annotation" placeholder="Comments…" ></textarea>
 		</li>
-		<li class="annotator-item"><input id="annotator-field-1" placeholder="Add some tags here…"></li>
 	</ul>
+	<div class="annotator-controls">
+		<a class="annotator-cancel">Cancel</a>
+		<a class="annotator-save">Save</a>
+	</div>
+</div>
 </div>
 </div>
 
-</div>
-<img id="imgsrc" src="/assets/female_whole_0_cropped.png" style="width:320px;height:800px;display:none"/>
+ <!-- Images & patterns used, pre-loaded -->
+<img id="imgsrc" src="/assets/female_whole_0_cropped.png" style="width:320px;height:900px;display:none"/>
+<img id="lineSharp" src="/assets/lineSharp.png" style="width:5px;height:5px;display:none"/>
+<img id="lineNumb" src="/assets/lineNumb.png" style="width:5px;height:5px;display:none"/>
+<img id="lineDull" src="/assets/lineDull.png" style="width:5px;height:5px;display:none"/>
 
-<!-- 
-	<table>
-		<td width="500px">
-			<div id="photo-container" style="width:500px;height:800px;overflow:hidden;">
-			 <img src="/assets/female_whole_0.png" style="width:350px;"/>
-			</div>
-		</td>
-		<td width="360px">	
-			<div id="pain_picker">
-					<ul style="list-style:none;">
-						<li>Please describe your symptom: </li>
-						<li><textarea cols="45" id="tag_annotate" name="tag[annotate]" rows="5"></textarea></li><br/>
-						<li>Symptom Severity: </li>
-						<li>Light.........................................................Severe</li>
-						<li>
-							<div class="pain_type_slider" id="tag_pain_severity"></div>
-						</li> <br/>
-						<li>Symptom Type:</li>
-						<li>
-							<div id="symptomTypes">
-								<input type="radio" id="numb" name="radio" checked="checked" /><label for="numb">numb</label>
-								<input type="radio" id="sharp" name="radio" /><label for="sharp">sharp</label>
-								<input type="radio" id="dull" name="radio" /><label for="dull">dull</label>
-								<input type="radio" id="periodic" name="radio" /><label for="periodic">periodic</label>
-							</div>
-						</li>
-						<li> Symptom Depth: </li>
-						<li>Shallow......................................................Deep</li>
-						<li><div class="pain_type_slider" id="tag_pain_depth"></div></li> <br/>
-						<li> I experience this symptom mostly when I: <br/>
-							<form>
-								<input type="checkbox" name="posture" value="Stand"/> Stand
-								<input type="checkbox" name="posture" value="Walk"/> Walk
-								<input type="checkbox" name="posture" value="Run"/> Run
-								<input type="checkbox" name="posture" value="Jump"/> Jump
-								<input type="checkbox" name="posture" value="Sit"/> Sleep
-							</form>
-							</li> <br/>
-						<li> <button type="button" id="undo">Undo</button> <button type="button" id="tagDone">Save this symptom.</button> </li>
-					</ul>
-			</div>	
-		</td>
-	</table>	
-	-->
 </div>
 	
 	
@@ -113,31 +111,139 @@
 		var cvState = new CanvasState(document.getElementById("canvas"));
 		cvState.setMode("zoom");//default
 		
-		$("#manipulationMode").buttonset();
-		$("#manipulationMode input").change(function(){
-			cvState.setMode(this.id);
+	   /* Setting up annotation box*/
+		$(".pain_type_slider").slider({
+			step:20,
+			slide: function(event, ui) {
+				//this.children[0].innerHTML=ui.value/10;
+				var greyValue = 200 - Math.floor(ui.value);
+				var redValue = Math.floor(ui.value*55/100) +200;
+				this.children[0].style.backgroundImage="none";
+				this.children[0].style.backgroundColor="rgb("+redValue+","+greyValue+","+greyValue+")";
+			}
 		});
 		
-		$( "#undo" ).click(function(){
+		$(".annotator-tag").click(function(){
+			var children = this.parentElement.children;
+			for (var index in children){
+				var classes=children[index].classList;
+				if(classes!=undefined && classes.contains("annotator-tag") && classes.contains("tag-selected")){
+					$(children[index]).toggleClass("tag-selected");
+				}
+			}
+			$(this).toggleClass("tag-selected");
+			
+			if(this.parentElement.id=="pain_type"){
+				//TODO:only applies to the LAST drawing
+				cvState.updateGraphics(cvState.allTags.length-1, this.innerText, "");
+			}
+			else if(this.parentElement.id=="pain_posture"){
+				
+			}
+		})
+		
+		$(".annotator-cancel").click(function(){
+			//TODO:UNDOES LAST drawing
 			cvState.undoLastDrawing(cvState);
-		});
-		
-		$( "#annotating" ).click(function(){
 			$("#annotator").css({
-				left:$(this).parent().css("left"),
-				top:parseInt($(this).parent().css("top"))-100,
-				width: 200,
-				height: 100,
-				visibility: "visible"
-			})
-			$(this).parent().css({visibility:"hidden"});
+				visibility:"hidden"
+			});
+		})
+		
+		$(".annotator-save").click(function(){
+			//TODO: only applies to last
+			/*var severity = $("#pain_severity")[0].left;
+			var type = $(".pain_type>tag-selected")[0].innerText;
+			var posture = $(".pain_posture>tag-selected")[0].innerText;
+			var depth = $("#pain_depth")[0].left;
+			var text = $("#pain_annotation")[0].innerText;
+			cvState.saveTagAnnotation(cvState.allTags.length-1, severity, type, posture, depth, text);*/
+			$("#annotator").css({
+				visibility:"hidden"
+			});
+		})
+		
+		/* Setting up Mode Control */
+		$('.opMode').click(function(){
+			cvState.setMode(this.id);
+			//change images accordingly
+			var children = this.parentElement.children;
+			if(this.id=="zoom"){
+				this.src = '/assets/dragHand.png';
+				$("#draw")[0].src = '/assets/drawIconInactive.png';
+			}
+			else{
+				this.src = '/assets/drawIcon.png';
+				$("#zoom")[0].src = '/assets/dragHandInactive.png';
+			}
 		});
 		
+		/* Setting up Zoom Control*/
+		//panning
+		$('#compass div').click(function(){
+			switch(this.title){
+				case "Pan left":
+					cvState.setZoomPan(-2, 0, 0);
+					break;
+				case "Pan right":
+					cvState.setZoomPan(2, 0, 0);
+					break;
+				case "Pan up":
+					cvState.setZoomPan(0, -2, 0);
+					break;
+				case "Pan down":
+					cvState.setZoomPan(0,2, 0);
+					break;
+			}
+		})
+		
+		var sliderElem = $('#lmczbg')[0];
+		//zoom in/out
+		$('div[title="Zoom In"]').click(function(){
+			if(parseInt(sliderElem.style.top) > 0){
+				var newY = parseInt(sliderElem.style.top)-10;
+				newY = Math.max(Math.min(137, newY), 0);
+				sliderElem.style.top = newY +"px";
+				cvState.setZoomPan(0,0,0.75);
+			}
+		});
+		$('div[title="Zoom Out"]').click(function(){
+			if(parseInt(sliderElem.style.top) < 137){
+				var newY = parseInt(sliderElem.style.top)+10;
+				newY = Math.max(Math.min(137, newY), 0);
+				sliderElem.style.top = newY +"px";
+				cvState.setZoomPan(0,0,-0.75);
+			}
+		});
+		
+		//slider zoom
+		$('#lmczb').mousedown(function(e){
+			e.preventDefault();
+			var oldY = parseInt(sliderElem.style.top);
+			var newY = (e.pageY - this.offsetTop) -76;
+			sliderElem.style.top = Math.max(Math.min(137, newY), 0) + "px";
+			cvState.setZoomPan(0, 0, (oldY-newY)*10/137);
+			this.dragStart = true;
+		});
+		$('#lmczb').mousemove(function(e){
+			e.preventDefault();
+			if(this.dragStart){
+				var newY = (e.pageY - this.offsetTop) -76;
+				newY = Math.max(Math.min(137, newY), 0);
+				var lastY = parseInt(sliderElem.style.top);
+				sliderElem.style.top = newY + "px";
+				cvState.setZoomPan(0, 0, (lastY-newY)*10/137);
+			}
+		});
+		$('#lmczb').mouseup(function(e){
+			this.dragStart= false;
+		});
 	});
 	
 	/*var cvState =null;//new CanvasState(document.getElementById("canvas"));//second pane: zoomed canvas
 	var zcvState = null;//new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, tagDoneCallback);//first pane: main canvas
 	cvState.setViewState(0,0,1.0); */
+	/*
 	function translateTagInfo(tagInfo){
 		var severity="no pain";
 		if(tagInfo.depth==10) output="no pain";
@@ -206,6 +312,7 @@
 		zoomImg.style.top="-"+y*zoomScale+"px";
 		cvState.setViewState(x,y,zoomScale);
 	}
+	*/
 	/*
 	//set up buttons & panels & tabs
 	$(function() {

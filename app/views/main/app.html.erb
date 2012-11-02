@@ -1,20 +1,17 @@
 
-</style>
-<table>
-	<td width=35px/>
-	<td width=390px>
+<div id = "header">
+	<div>
 		<h1>Body Diagrams</h1>
-	</td>
-	<td width = 600px>
+	</div>
+	<div style="width:600px">
 		<h4>
 			1: Use the zoom pane to focus <br/> 
 			2: Click and drag to draw; double click to define a rectangular region <br/>
-			3: Click "Done" when you are finished describing a symptom</h4>
-	</td>
-	<td>
+			3: Click "Done" when you are finished describing a symptom
+		</h4>
+	</div>
 	<button type="button" id="submitTask">Submit!</button>
-	</td>
-</table>
+</div>
 <!--Description of the application
 <div id="instructions">
 <p> FREE HAND: mouse down and drag </p>
@@ -22,14 +19,14 @@
 </div>-->
 
 
-<div style="position: relative; margin-left: 200px; margin-right: 200px;">
+<div style="position: relative; margin-left: 10px; margin-right: 10px;">
+<div id="svg-content" style = "position:absolute;width:1200px; height:750px;"></div>
+<div id="content-panel">
 
-<div id="content-panel" style="width:700px;height:800px;overflow:hidden;display:inline-block;">
-
-<canvas id="canvas" width="700" height="800" style="position:relative"/></canvas>
+<canvas id="canvas" width="500" height="750" style="position:relative"/></canvas>
 
 <!-- Zoom/Drag Control -->
-<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px; border: solid 1px black;">
+<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px;">
  	<img class="opMode" id="zoom" src="/assets/dragHand.png" style="width:30px;height:30px;"/>
  	<img class="opMode" id="draw" src="/assets/drawIconInactive.png" style="width:30px;height:30px;"/>
 </div>
@@ -49,50 +46,91 @@
 	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 10002; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
 </div>
 
-<!--Hidden annotation box-->
-<div class="annotator-adder" id="annotate-box" style="visibility:hidden;position:absolute"><button id="annotating">??</button></div>
-<div class="annotator-outer annotator-editor"id="annotator" style="visibility:hidden;position:absolute">
-<div class="annotator-widget" >
-	<ul class="annotator-listing">
-		<li class="annotator-item"><div class="pain_type_slider" id="pain_severity" style="width:70%;float:right"></div><span>Pain Severity:</span></li>
-		<li class="annotator-item">
-			<div id = "pain_type" class="annotator-tags">
-				<span>Pain Type:</span>
-				<span class="annotator-tag tag-selected">Sharp</span>
-				<span class="annotator-tag">Numb</span>
-				<span class="annotator-tag">Dull</span>
-			</div></li>
-		<li class="annotator-item"><div class="pain_type_slider" id="pain_depth" style="width:70%;float:right"></div><span>Pain Depth:</span></li>
-		<li class="annotator-item">
-			<div id = "pain_posture" class="annotator-tags">
-				<span>Pain Postures:</span>
-				<span class="annotator-tag tag-selected">Stand</span>
-				<span class="annotator-tag">Walk</span>
-				<span class="annotator-tag">Sit</span>
-				<span class="annotator-tag">Lie</span>
-		</div></li>
-		<li class="annotator-item">
-			<textarea id="pain_annotation" placeholder="Comments…" ></textarea>
-		</li>
-	</ul>
-	<div class="annotator-controls">
-		<a class="annotator-cancel">Cancel</a>
-		<a class="annotator-save">Save</a>
-	</div>
-</div>
-</div>
-</div>
+	<!-- Rotate left right image -->
+	<img class="rotation" id="left" src="/assets/dragHand.png"/>
+	<img class="rotation" id="right" src="/assets/dragHand.png"/>
 
- <!-- Images & patterns used, pre-loaded -->
-<img id="imgsrc" src="/assets/female_whole_0_cropped.png" style="width:320px;height:900px;display:none"/>
-<img id="lineSharp" src="/assets/lineSharp.png" style="width:5px;height:5px;display:none"/>
-<img id="lineNumb" src="/assets/lineNumb.png" style="width:5px;height:5px;display:none"/>
-<img id="lineDull" src="/assets/lineDull.png" style="width:5px;height:5px;display:none"/>
+	<!--Hidden annotation box-->
+	<div class="annotator-outer annotator-editor"id="annotator" style="position:absolute">
+		<div class="annotator-widget" >
+			<ul class="annotator-listing">
+				<li class="annotator-item"><div class="pain_type_slider pain_severity"style="width:70%;float:right"></div><span>Symptom Severity:</span></li>
+				<li class="annotator-item">
+					<div class="pain_type annotator-tags">
+						<span>Symptom Type:</span>
+						<span class="annotator-tag tag-selected">Sharp</span>
+						<span class="annotator-tag">Numb</span>
+						<span class="annotator-tag">Dull</span>
+					</div></li>
+				<li class="annotator-item"><div class="pain_type_slider pain_depth" style="width:70%;float:right"></div><span>Symptom Depth:</span></li>
+				<li class="annotator-item">
+					<div class="pain_posture annotator-tags">
+						<span>Symptom Postures:</span>
+						<span class="annotator-tag tag-selected">Stand</span>
+						<span class="annotator-tag">Walk</span>
+						<span class="annotator-tag">Sit</span>
+						<span class="annotator-tag">Lie</span>
+				</div></li>
+				<li class="annotator-item">
+					<textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea>
+				</li>
+			</ul>
+		</div>
+	</div>
+	
+</div>
 
 </div>
 	
+	<!-- Tag Annotations-->
+	<div id="pain_annotation_list_container">
+		<ul id="pain_annotation_list" >
+			
+		</ul>
+	</div>
 	
 <script type="text/javascript">
+	function tagSelectionUpdate(index, select){
+		var annotatorElem = $("#tag_"+index);
+		if(annotatorElem.length==0)
+			$("#annotator > div.annotator-widget").css({
+				opacity:1.0
+			});
+		else
+			$("#annotator > div.annotator-widget").css({
+				opacity:0.5
+			});
+		if(select && annotatorElem.hasClass("annotator-list"))
+			annotatorElem.toggleClass("annotator-list");
+		else if(!select && !annotatorElem.hasClass("annotator-list"))
+			annotatorElem.toggleClass("annotator-list");
+	}	
+	
+	function updateAnnotations(tag,index){
+		var severity = $(".pain_severity").slider("value")/20+1;
+		var type = $(".pain_type>.tag-selected")[0].innerText;
+		var posture = $(".pain_posture>.tag-selected")[0].innerText;
+		var depth = $(".pain_depth").slider("value")/20+1;
+		var text = $(".pain_annotation").val();
+		
+		$(".pain_severity").slider("value", 0);
+		$(".pain_depth").slider("value",0);
+		$(".pain_annotation").val("");
+		
+		tag.saveTagAnnotation(severity, type, posture, depth, text);
+		var tagAnnotation = $("#annotator > .annotator-widget").clone();
+		tagAnnotation.attr("id","tag_"+index);
+		tagAnnotation.css({
+			"position":"static",
+			"opacity":""});
+		tagAnnotation.find(".pain_annotation")[0].value= text;
+		tagAnnotation.toggleClass("annotator-list");
+		
+		var newLiElem = $("<li></li>");
+		tagAnnotation.appendTo(newLiElem);
+		newLiElem.appendTo("#pain_annotation_list");
+	}
+	
 	function getURLParameter(name) {
 			return decodeURIComponent(
 					(location.search.match(RegExp("[?|&]"+name+'=(.+?)(&|$)'))||[,null])[1]
@@ -105,14 +143,21 @@
 	var zoomScale=1.0;//current zoom scale
 	$(document).ready(function(){
 		//$('#content-panel img').panZoom({min_height:1200,min_width:316});
-
+		
+		var currentView = 0;
+		var currentGender = getURLParameter("gender"); 
 		var canvasElem=document.getElementById("canvas");
 		canvasElem.width=$(canvasElem).parent().width();
-		var cvState = new CanvasState(document.getElementById("canvas"));
-		cvState.setMode("zoom");//default
+		var cvState = new CanvasState(document.getElementById("canvas"),
+						{gender:currentGender, 
+						view:currentView, 
+						mode:"zoom", 
+						imageLoader:ImageLoader,
+						saveCallback: updateAnnotations,
+						selectCallback: tagSelectionUpdate});
 		
 	   /* Setting up annotation box*/
-		$(".pain_type_slider").slider({
+		$(".pain_severity").slider({
 			step:20,
 			slide: function(event, ui) {
 				//this.children[0].innerHTML=ui.value/10;
@@ -120,7 +165,14 @@
 				var redValue = Math.floor(ui.value*55/100) +200;
 				this.children[0].style.backgroundImage="none";
 				this.children[0].style.backgroundColor="rgb("+redValue+","+greyValue+","+greyValue+")";
+				var severityLevel = ui.value/20+1;
+				var painType = $(".pain_type>.tag-selected").text();
+				cvState.updateGraphics(cvState.allTags.length-1, severityLevel ,painType);
 			}
+		});
+		
+		var pain_depth_slider = $(".pain_depth").slider({
+			step:20
 		});
 		
 		$(".annotator-tag").click(function(){
@@ -135,33 +187,35 @@
 			
 			if(this.parentElement.id=="pain_type"){
 				//TODO:only applies to the LAST drawing
-				cvState.updateGraphics(cvState.allTags.length-1, this.innerText, "");
+				var severityLevel = $(".pain_severity").slider("value")/20+1;
+				cvState.updateGraphics(cvState.allTags.length-1, severityLevel , this.innerText);
 			}
 			else if(this.parentElement.id=="pain_posture"){
 				
 			}
 		})
-		
+		/*
 		$(".annotator-cancel").click(function(){
 			//TODO:UNDOES LAST drawing
 			cvState.undoLastDrawing(cvState);
-			$("#annotator").css({
-				visibility:"hidden"
+			$("#annotator > div.annotator-widget").css({
+				opacity:0.5
 			});
 		})
 		
 		$(".annotator-save").click(function(){
 			//TODO: only applies to last
-			/*var severity = $("#pain_severity")[0].left;
-			var type = $(".pain_type>tag-selected")[0].innerText;
-			var posture = $(".pain_posture>tag-selected")[0].innerText;
-			var depth = $("#pain_depth")[0].left;
-			var text = $("#pain_annotation")[0].innerText;
-			cvState.saveTagAnnotation(cvState.allTags.length-1, severity, type, posture, depth, text);*/
-			$("#annotator").css({
-				visibility:"hidden"
+			var severity = $("#pain_severity").slider("value")/20+1;
+			var type = $("#pain_type>.tag-selected")[0].innerText;
+			var posture = $("#pain_posture>.tag-selected")[0].innerText;
+			var depth = $("#pain_depth").slider("value")/20+1;
+			var text = $("#pain_annotation").val();
+			
+			cvState.saveTagAnnotation(cvState.allTags.length-1, severity, type, posture, depth, text);
+			$("#annotator > div.annotator-widget").css({
+				opacity:1.0
 			});
-		})
+		})*/
 		
 		/* Setting up Mode Control */
 		$('.opMode').click(function(){
@@ -170,11 +224,16 @@
 			var children = this.parentElement.children;
 			if(this.id=="zoom"){
 				this.src = '/assets/dragHand.png';
+				this.style.border ="solid 2px rgb(108, 204, 128)";
 				$("#draw")[0].src = '/assets/drawIconInactive.png';
+				$("#draw")[0].style.border ="solid 2px rgb(108, 204, 128)";
+				$("#draw")[0].style.border ="";
 			}
 			else{
 				this.src = '/assets/drawIcon.png';
 				$("#zoom")[0].src = '/assets/dragHandInactive.png';
+				this.style.border ="solid 2px rgb(108, 204, 128)";
+				$("#zoom")[0].style.border ="";
 			}
 		});
 		
@@ -238,7 +297,87 @@
 		$('#lmczb').mouseup(function(e){
 			this.dragStart= false;
 		});
+		
+		/* Setting up Rotation Control */
+		$("#left").attr("src",ImageLoader.getBodyImageSrc(currentGender, 3));
+		$("#right").attr("src",ImageLoader.getBodyImageSrc(currentGender, 1));
+		var padding = $("#left").width() + parseInt($("#left").css("padding"))*2 + parseInt($("#left").css("margin"))*2
+		$("#right").css({left: canvasElem.width- padding});
+		
+		$(".rotation").click(function(){
+			currentView = getView(currentView, this.id);
+			this.src = ImageLoader.getBodyImageSrc(currentGender, getView(currentView, this.id));
+			var otherDirection = getOtherView(this.id);
+				$("#"+otherDirection)[0].src = ImageLoader.getBodyImageSrc(currentGender, getView(currentView,  otherDirection));
+			cvState.setView(currentView);
+		});
+		
+		/* Showing All Annotations */
+		$("#annotator > div.annotator-widget").css({
+			opacity:0.5
+		});
+		//setup
+		/*var svg = d3.select("#svg-content").append("svg")
+					.attr("width", "1200")
+					.style("position", "absolute")
+					.attr("height", "800");
+		cvState.svgA = svg;*/		
 	});
+
+		/*
+		d3.select("#svg-content").select("svg").selectAll("rect")
+			.data(cvState.allTags)
+			.enter().append("rect")
+				.attr("x", 700)
+				.attr("class","annotated")
+				.attr("y", function(d){
+					return 30*this.parentElement.childNodes.length +200;
+				})
+				.attr("width", 200)
+				.attr("height", 50)
+				.attr("rx", 10).attr("ry",10)
+				.style("opacity", 0.8)
+				.style("fill", "white")
+				.style("-webkit-svg-shadow","-1px 2px 2px navy");
+		var txtA = d3.select("#svg-content").select("svg").selectAll("text")
+			.data(cvState.allTags)
+			.enter().append("text")
+				.attr("x", 700)
+				.attr("y", 200)
+				.attr("dx", 10)
+				.attr("dy", function(d){
+					return 2 + 3.0*(this.parentElement.childNodes.length-1)+ "em";
+				});
+				
+		txtA.append("tspan")
+			.attr("x", 700)
+			.text(function(d){
+				return 'severity:' + d.severity;
+			});
+		txtA.append("tspan")
+			.attr("x", 700)
+			.attr("dx", 10)
+			.attr("dy", "1.5em")
+			.text(function(d){
+				return 'annotation: '+d.text;
+			})
+		*/
+	
+	function getOtherView(direction){
+		if (direction=="left")
+			return "right"
+		else if(direction=="right")
+			return "left"
+		return "";
+	}
+	
+	function getView(curView, direction){
+		if (direction=="left")
+			return (curView+3)%4
+		else if(direction=="right")
+			return (curView+1)%4
+		return 0;
+	}
 	
 	/*var cvState =null;//new CanvasState(document.getElementById("canvas"));//second pane: zoomed canvas
 	var zcvState = null;//new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, tagDoneCallback);//first pane: main canvas

@@ -7,31 +7,19 @@ var selectionWidth = 2;
 
 /* REGION TAGS */
 // Constructor for RegionTag objects to hold data relevant to drawing.
-function RegionTagCanvasElem(x, y, w, h, fill, zoomBox) {
+function RegionTagCanvasElem(x, y, w, h, fill) {
 	// This is a very simple and unsafe constructor. 
 	// All we're doing is checking if the values exist.
 	// "x || 0" just means "if there is a value for x, use that. Otherwise use 0."
 	this.x = x || 0;
 	this.y = y || 0;
-	this.w = w || 1;
-	this.h = h || 1;
+	this.w = w || 0;
+	this.h = h || 0;
 	this.fill = fill || '#AAAAAA';
-	if(zoomBox!=undefined && zoomBox!=null){
-		this.zoomBox=true;
-	}
-	else {
-		this.zoomBox=false;
-	}
-}
-RegionTagCanvasElem.prototype.toJSON = function() {
-	return {"origin_x":this.x, "origin_y":this.y, "height":this.h, "width":this.w};
 }
 
-RegionTagCanvasElem.prototype.onZoomButton = function(mx, my) {
-	var zbs = this.zoomBoxSize();
-	if(mx < zbs.x || mx > zbs.x+zbs.w) return false;
-	if(my < zbs.y || my > zbs.y+zbs.h) return false;
-	return true;
+RegionTagCanvasElem.prototype.toJSON = function() {
+	return {"origin_x":this.x, "origin_y":this.y, "height":this.h, "width":this.w};
 }
 
 RegionTagCanvasElem.prototype.transform = function(x, y, scale) {
@@ -43,8 +31,8 @@ RegionTagCanvasElem.prototype.transform = function(x, y, scale) {
 
 // Draws this shape to a given context
 RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHandles) {
-	ctx.fillStyle = this.fill;
-	ctx.globalAlpha = 0.4;
+	ctx.fillStyle = '#AAAAAA';
+	ctx.globalAlpha = 0.1;
 	// We can skip the drawing of elements that have moved off the screen:
 	//if (this.x > WIDTH || this.y > HEIGHT) return; 
 	//if (this.x + this.w < 0 || this.y + this.h < 0) return;
@@ -54,14 +42,15 @@ RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHa
 	// draw selection
 	// this is a stroke along the box and also 8 new selection handles
 	if (thisElemOnSelect) {
-		ctx.strokeStyle = mySelBoxColor;
+		ctx.globalAlpha = 1.0;
+		ctx.strokeStyle = '#AAAAAA';
 		ctx.lineWidth = selectionWidth;
 		ctx.strokeRect(this.x,this.y,this.w,this.h);
 
 		// draw the boxes
 
 		var half = mySelBoxSize / 2;
-
+		/*
 		// 0  1  2
 		// 3     4
 		// 5  6  7
@@ -99,19 +88,15 @@ RegionTagCanvasElem.prototype.draw = function(ctx, thisElemOnSelect, selectionHa
 		for (var i = 0; i < 8; i ++) {
 			var cur = selectionHandles[i];
 			ctx.fillRect(cur.x, cur.y, mySelBoxSize, mySelBoxSize);
-		}
-		if(this.zoomBox){
-			ctx.fillStyle = "#33FF33";
-			var zbs=this.zoomBoxSize();
-			ctx.fillRect(zbs.x, zbs.y, zbs.w, zbs.h);
-			ctx.fillStyle = "#000000";
-			ctx.fillText("zoom", zbs.x+2, zbs.y+10);
-		}
+		}*/
 	}
 }
 
-RegionTagCanvasElem.prototype.zoomBoxSize = function() {
-	return {"x": this.x + this.w/2-12, "y": this.y+this.h/2-10, "w":28, "h":15}
+RegionTagCanvasElem.prototype.setCoordinates = function(minX, minY, maxX, maxY) {
+	this.x = minX;
+	this.y = minY;
+	this.w = maxX - minX;
+	this.h = maxY - minY;
 }
 
 //DM: I added some margin for error here; it was difficult to select the selResizeBoxes on the drawing canvas after initially creating a region selection
@@ -124,36 +109,61 @@ RegionTagCanvasElem.prototype.contains = function(mx, my) {
 
 /* FREE HAND TAGS */
 // Constructor for RegionTag objects to hold data relevant to drawing.
-function FreeHandTagCanvasElem(strokeStyle) {
+function FreeHandTagCanvasElem(strokeStyle, view) {
 	// This is a very simple and unsafe constructor. 
 	// All we're doing is checking if the values exist.
 	this.strokeStyle = strokeStyle || '#F89393';
 	this.points=[];
+	this.view = view; 
+	this.minX = 10000;
+	this.minY = 10000;
+	this.maxX = 0;
+	this.maxY = 0;
 }
 
+FreeHandTagCanvasElem.prototype.getView = function() {
+	return this.view;
+}
 FreeHandTagCanvasElem.prototype.toJSON = function() {
 	return this.points;
 }
 
-FreeHandTagCanvasElem.prototype.addPoint = function(x_t, y_t, svg, transformMat) {
-	var pt = svg.createSVGPoint();
-	pt.x = x_t;
-	pt.y = y_t;
-	var globalPoint = pt.matrixTransform(transformMat);
-	
-	this.points.push([globalPoint.x, globalPoint.y]);
+FreeHandTagCanvasElem.prototype.contains = function(mx, my) {
+	selBoxPadding = 2;
+	if(mx < this.minX - selBoxPadding || mx > this.maxX + selBoxPadding) return false;
+	if(my < this.minY - selBoxPadding || my > this.maxY + selBoxPadding) return false;
+	return true;
+}
+
+FreeHandTagCanvasElem.prototype.addPoint = function(x_t, y_t) {
+	if(x_t < this.minX)
+		this.minX = x_t
+	else if(x_t > this.maxX)
+		this.maxX = x_t
+		
+	if(y_t < this.minY)
+		this.minY = y_t
+	else if(y_t > this.maxY)
+		this.maxY = y_t
+		
+	this.points.push([x_t, y_t]);
 }
 
 FreeHandTagCanvasElem.prototype.isValidElem = function() {
 	return (this.points.length>1);
 }
 
-FreeHandTagCanvasElem.prototype.transform = function(x, y, scale) {
+FreeHandTagCanvasElem.prototype.moveAll = function(mx, my) {
 	for (var i=0; i<this.points.length; i++){
-		this.points[i][0]= this.points[i][0]/scale+x;
-		this.points[i][1]= this.points[i][1]/scale+y;
+		this.points[i][0]= this.points[i][0]+mx;
+		this.points[i][1]= this.points[i][1]+my;
 	}
+	this.minX +=mx;
+	this.maxX +=mx;
+	this.minY +=my;
+	this.maxY +=my;
 }
+
 // Draws this shape to a given context
 FreeHandTagCanvasElem.prototype.draw = function(ctx) {
 	ctx.strokeStyle = this.strokeStyle;

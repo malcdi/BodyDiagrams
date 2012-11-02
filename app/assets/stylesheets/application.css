@@ -16,23 +16,31 @@ canvas {
     top: 0;
     left: 0;
 }
-
-h1 {
-  color:#71637D;
-  font-size:250%
+#header{
+  width: 100%;
+  background-color:gray;
+  padding: 10px;
 }
-
-h4{
-  color:#4F2F4F;
+#header div{
+  display: inline-block;
+  color:white;
+  height: 30px;
+  margin-right: 40px;
 }
 
 body {
-  background-color:#D8BFD8;
   font-family : "Trebuchet MS";
+  margin: 0px;
 }
 
 #content-panel {
   background-color:#FFFFFF;
+  width:500px;
+  height:750px;
+  overflow:hidden;
+  display:inline-block;
+  padding: 10px;
+  border-right: 5px solid grey;
 }
 
 #instructions{

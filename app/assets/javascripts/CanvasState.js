@@ -1,4 +1,4 @@
-function CanvasState(canvas) {
+function CanvasState(canvas, options) {
 
 	// fixes mouse co-ordinate problems when there's a border or padding
 	// see getMouse for more detail
@@ -28,8 +28,6 @@ function CanvasState(canvas) {
 	// 3     4
 	// 5  6  7
 	this.selectionHandles = [];
-	this.isResizeDrag = false;
-	this.resizeSide = -1; 
 	
 	// the current selected object.
 	this.regionSelection = null;
@@ -38,14 +36,21 @@ function CanvasState(canvas) {
 	this.dragoffy = 0;
 	
 	
-	this.mode = "zoom";//modes: zoom, draw
+	//SETS up using options
+	this.gender = options.gender ? options.gender : "male";
+	this.view = options.view ? options.view : 0;
+	this.mode = options.mode ? options.mode : "zoom";
+	this.imageLoader = options.imageLoader;
+	this.saveCallback = options.saveCallback;
+	this.selectCallback = options.selectCallback;
+	
 	this.lastX=canvas.width/2;
 	this.lastY=canvas.height/2;
 	this.svg= document.createElementNS("http://www.w3.org/2000/svg",'svg');
 	
 	// Zoom related variables
 	this.heightRatio=this.canvas.height/this.canvas.width;
-	this.zoomRegionSelection = new RegionTagCanvasElem(5, 5, 320, 320*this.heightRatio, '#CCEEFF', true);//region element within main view.
+	this.highlightRegion = new RegionTagCanvasElem(5, 5,0, 0, '#CCEEFF');//region element within main view.
 	this.needRedraw = true;
 	this.cur_view_side=0;
 	
@@ -89,26 +94,16 @@ function CanvasState(canvas) {
 		}, myState.interval);
 	myState.draw(); 
 	
-	
-	/* Set up annotation */
-	$( "#annotating" ).click(function(){
-		$("#annotator").css({
-			left:$(this).parent().css("left"),
-			top:parseInt($(this).parent().css("top"))-100,
-			width: 200,
-			height: 100,
-			visibility: "visible"
-		})
-		$(this).parent().css({visibility:"hidden"});
-	});
-	
 }
 
-//setting variables to keep track of current view's relative xy coordiantes and zoom scale
-CanvasState.prototype.setViewState = function(x, y,scale){
-	this.viewX=x;
-	this.viewY=y;
-	this.viewScale=scale;
+//setting view side (front? left? etc)
+CanvasState.prototype.setView= function(view){
+	this.view = view;
+	this.needRedraw = true;
+	this.draw();
+}
+CanvasState.prototype.getView= function(){
+	return this.view
 }
 
 //clearing canvas
@@ -125,11 +120,7 @@ CanvasState.prototype.addRegionTagCanvasElem = function(elem){
 CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
 	this.allTags.push(elem);
 }
-CanvasState.prototype.removeInvalidFreeHandTag = function(elem){
-	if(!elem.isValidElem()){
-		this.allTags.pop();
-	}
-}
+
 CanvasState.prototype.undoLastDrawing = function(myState){
 	myState.allTags.pop();
 	myState.needRedraw=true;	
@@ -141,23 +132,34 @@ CanvasState.prototype.draw = function() {
 	if (this.needRedraw) {
 		var ctx = this.ctx;
 		this.clear(ctx);
+		//ctx.fillStyle='#f00';
+		//ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
 		
-		var imgWidth = 260;
+		var bodyImage = this.imageLoader.getBodyImage(this.gender, this.view);
 		var imgHeight = 800;
-		ctx.drawImage(document.getElementById("imgsrc"), (this.canvas.width-imgWidth)/2, 
+		var imgWidth = bodyImage.width*imgHeight/bodyImage.height; //keeps aspect ratio
+		ctx.drawImage(bodyImage, (this.canvas.width-imgWidth)/2, 
 										(this.canvas.height-imgHeight)/2, imgWidth, imgHeight);		
 		// draw all Tags
 		var l = this.allTags.length;
-		ctx.lineWidth = 6;
+		ctx.lineWidth = 3;
 		for (var i = 0; i < l; i++) {
 			var tagElem = this.allTags[i];
 			//draw called to each element
-			if(tagElem instanceof RegionTagCanvasElem){
+			/*if(tagElem instanceof RegionTagCanvasElem){
 				tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles);
 			}
 			else {
 				tagElem.draw(ctx);
-			}
+			}*/
+			//only draw if the same side.
+			if(tagElem.getView() == this.view)
+				tagElem.draw(ctx);
+		}
+		if(this.regionSelection !=null ){
+			var mySel = this.regionSelection;
+			this.highlightRegion.setCoordinates(mySel.minX, mySel.minY, mySel.maxX, mySel.maxY);
+			this.highlightRegion.draw(ctx,true,this.selectionHandles);
 		}
 		this.needRedraw = false;
 	}
@@ -212,7 +214,7 @@ CanvasState.prototype.setMode = function(modeName){
 
 CanvasState.prototype.updateGraphics = function(index, severity, type){
 	var theTag = this.allTags[index];
-	var newPattern = this.ctx.createPattern(document.getElementById("line"+severity), "repeat");
+	var newPattern = this.ctx.createPattern(this.imageLoader.getPainPatternImage(type, severity), "repeat");
 	theTag.setStyle(newPattern);
 	this.needRedraw=true;
 	this.draw();
@@ -220,7 +222,7 @@ CanvasState.prototype.updateGraphics = function(index, severity, type){
 
 CanvasState.prototype.saveTagAnnotation = function(index, severity, type, posture, depth, text){
 	var theTag = this.allTags[index];
-	theTag.saveAnnotation(severity, type, posture, depth, text);
+	theTag.saveTagAnnotation(severity, type, posture, depth, text);
 }
 
 CanvasState.prototype.setZoomPan = function(deltaX, deltaY, deltaZoom){
@@ -242,6 +244,28 @@ function getEventHandler(name, myState){
 var CanvasZoomEventHandler={
 	'mousedown': function(e, myState) {
 		e.preventDefault();
+		var mouse = myState.getMouse(e);
+		var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+		
+		//see if selection occured
+		var l = myState.allTags.length;
+		for (var i = 0; i < l; i++) {
+			if (myState.allTags[i].view ==myState.view && myState.allTags[i].contains(globalPoint.x, globalPoint.y)) 			
+			{
+				myState.selectCallback(myState.allTags.indexOf(myState.regionSelection),false);
+				myState.regionSelection = myState.allTags[i];	
+				myState.selectCallback(i,true);
+				myState.needRedraw = true;
+				myState.dragging = true;
+				myState.dragoffx = globalPoint.x;
+				myState.dragoffy = globalPoint.y;
+				return;
+			}
+		}
+		myState.selectCallback(myState.allTags.indexOf(myState.regionSelection),false);
+		myState.regionSelection = null;
+		myState.needRedraw = true;
+		
 		myState.lastX = e.offsetX || (e.pageX - myState.canvas.offsetLeft);
 		myState.lastY = e.offsetY || (e.pageY - myState.canvas.offsetTop);
 		myState.dragStart = myState.ctx.transformedPoint(myState.lastX,myState.lastY);
@@ -256,9 +280,22 @@ var CanvasZoomEventHandler={
 			myState.needRedraw=true;
 			myState.draw();
 		}
+		
+		/* Non Free Hand */
+		if (myState.dragging){
+			var mouse = myState.getMouse(e);
+			var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+			
+			myState.regionSelection.moveAll(globalPoint.x - myState.dragoffx, globalPoint.y - myState.dragoffy);
+			myState.dragoffx = globalPoint.x;
+			myState.dragoffy = globalPoint.y;
+			
+			myState.needRedraw = true; // Redraw flag 			
+		}
 	},
 	'mouseup': function(e, myState) {
 		myState.dragStart = null;
+		myState.dragging = false;
 	},
 	'mousewheel':function(e,myState) { 
 		var delta = e.originalEvent.wheelDelta ? e.originalEvent.wheelDelta/40 : e.originalEvent.detail ? e.originalEvent.detail : 0;
@@ -272,165 +309,56 @@ var CanvasZoomEventHandler={
 
 var CanvasDrawEventHandler={
 	'mousedown': function(e, myState) {
-		  //init annotation
-		  $("#annotate-box").css({
-		  	visibility:"hidden"
-		  	});
-		  $("#annotator").css({
-		  	visibility:"hidden"
-		  	});
+			myState.selectCallback(myState.allTags.indexOf(myState.regionSelection),false);
+			myState.regionSelection = null;
+			myState.needRedraw = true;
+			
 			e.preventDefault();
-			if(myState.resizeSide != -1){
-				myState.isResizeDrag = true;
-				return;
-			}
 			
 			var mouse = myState.getMouse(e);
-			var mx = mouse.x;
-			var my = mouse.y;
-		
-			//can only edit ones not submitted yet
-			var l = myState.allTags.length;
-			for (var i = 0; i < l; i++) {
-				if ((myState.allTags[i] instanceof RegionTagCanvasElem) && myState.allTags[i].contains(mx, my)) {
-					var mySel = myState.allTags[i];	
-					// Keep track of where in the object we clicked
-					// so we can move it smoothly (see mousemove)
-					myState.dragoffx = mx - mySel.x;
-					myState.dragoffy = my - mySel.y;
-					myState.dragging = true;
-					myState.regionSelection = mySel;
-					myState.needRedraw = true;
-					return;
-				}
-			}
-			
-			// havent returned means we have failed to select anything.
-			// If there was an object selected, we deselect it
-			if (myState.regionSelection) {
-				myState.regionSelection = null;
-				myState.needRedraw = true; // Need to clear the old selection border
-			}
 			
 			/* Free Hand Drawing */
-			myState.mouseDownForFreeHand = true;
-			myState.handSelection=new FreeHandTagCanvasElem('#F89393');
+			//save old one
+			if(myState.handSelection)
+				myState.saveCallback(myState.handSelection, myState.allTags.length-1);
 
-			myState.handSelection.addPoint(mx, my,myState.svg, myState.ctx.getTransform().inverse());
+			myState.mouseDownForFreeHand = true;
+			myState.handSelection=new FreeHandTagCanvasElem('#F89393', myState.view);
+			
+			var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+			myState.handSelection.addPoint(globalPoint.x, globalPoint.y);
 			myState.addFreeHandTagCanvasElem(myState.handSelection);
 		},
+		
 	'mousemove': function(e, myState) {
 			var mouse = myState.getMouse(e);
-			var mx = mouse.x;
-			var my = mouse.y;
 			e.preventDefault();
 			/*Free Hand Drawing*/
 			if(myState.mouseDownForFreeHand){
-				myState.handSelection.addPoint(mx, my,myState.svg, myState.ctx.getTransform().inverse());
+				var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+				myState.handSelection.addPoint(globalPoint.x, globalPoint.y);
 				myState.needRedraw=true;
 				return;
 			}
-			
-			if (myState.regionSelection ==null) return;
-			
-			/* Non Free Hand */
-			if (myState.dragging){
-				myState.regionSelection.x = mx - myState.dragoffx;
-				myState.regionSelection.y = my - myState.dragoffy;  
-				myState.needRedraw = true; // Redraw flag 			
-			} else if (myState.isResizeDrag){
-				var oldx = myState.regionSelection.x;
-				var oldy = myState.regionSelection.y;
-				
-				// 0  1  2
-				// 3     4
-				// 5  6  7
-				switch (myState.resizeSide) {
-					case 0:
-						myState.regionSelection.x = mx;
-						myState.regionSelection.y = my;
-						myState.regionSelection.w += oldx - mx;
-						myState.regionSelection.h += oldy - my;
-						break;
-					case 1:
-						myState.regionSelection.y = my;
-						myState.regionSelection.h += oldy - my;
-						break;
-					case 2:
-						myState.regionSelection.y = my;
-						myState.regionSelection.w = mx - oldx;
-						myState.regionSelection.h += oldy - my;
-						break;
-					case 3:
-						myState.regionSelection.x = mx;
-						myState.regionSelection.w += oldx - mx;
-						break;
-					case 4:
-						myState.regionSelection.w = mx - oldx;
-						break;
-					case 5:
-						myState.regionSelection.x = mx;
-						myState.regionSelection.w += oldx - mx;
-						myState.regionSelection.h = my - oldy;
-						break;
-					case 6:
-						myState.regionSelection.h = my - oldy;
-						break;
-					case 7:
-						myState.regionSelection.w = mx - oldx;
-						myState.regionSelection.h = my - oldy;
-						break;
-				}
-				myState.needRedraw = true; // Redraw flag
-			}
-			
-			// if there's a selection see if we grabbed one of the selection handles
-			if (myState.regionSelection != null && !myState.isResizeDrag) {
-				for (var i = 0; i < 8; i++) {
-					// 0  1  2
-					// 3     4
-					// 5  6  7
-					
-					var cur = myState.selectionHandles[i];
-					
-					// we dont need to use the ghost context because
-					// selection handles will always be rectangles
-					if (mx >= cur.x && mx <= cur.x + mySelBoxSize &&
-							my >= cur.y && my <= cur.y + mySelBoxSize) {
-						// we found one!
-						myState.resizeSide = i;
-						myState.needRedraw = true;
-						return;
-					}
-					
-				}
-				// not over a selection box, return to normal
-				myState.isResizeDrag = false;
-				myState.resizeSide = -1;
-				this.style.cursor='auto';
-			}
-			
 		},
 	'mouseup': function(e, myState) {
+			
 			if(myState.mouseDownForFreeHand){
 				myState.mouseDownForFreeHand = false;
+				
+				if(!myState.handSelection.isValidElem()){
+					myState.allTags.pop();
+				}
+				else {
+					myState.regionSelection = myState.handSelection;
+					myState.selectCallback(myState.allTags.length-1, true);
+				}
 				myState.needRedraw=true;
-				myState.removeInvalidFreeHandTag(myState.handSelection);
 				
 				var mouse = myState.getMouse(e);
-				//open up annotation button
-				var annotateBox=$("#annotate-box");
-				annotateBox.css({
-					left:mouse.x,
-					top:mouse.y,
-					visibility:"visible"
-					});
-				
 				return;
 			}
 			myState.dragging = false;
-			myState.isResizeDrag = false;
-			myState.resizeSide = -1;
 		},
 		'mousewheel':function(e,myState) {
 			return false;

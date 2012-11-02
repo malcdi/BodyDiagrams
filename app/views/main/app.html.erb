@@ -37,13 +37,13 @@
 	
 	<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; " id="compass"><div style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " title="Pan down"></div></div>
 	
-	<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 10001; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
+	<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 101; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
 	
 	<div style="position: absolute; left: 16px; top: 131px; width: 59px; height: 146px; overflow: hidden; " id="lmcslider"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
 	
-	<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 10003; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
+	<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
 	
-	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 10002; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
 </div>
 
 	<!-- Rotate left right image -->
@@ -89,6 +89,8 @@
 		</ul>
 	</div>
 	
+<div></div>
+
 <script type="text/javascript">
 	function tagSelectionUpdate(index, select){
 		var annotatorElem = $("#tag_"+index);
@@ -111,24 +113,34 @@
 		var type = $(".pain_type>.tag-selected")[0].innerText;
 		var posture = $(".pain_posture>.tag-selected")[0].innerText;
 		var depth = $(".pain_depth").slider("value")/20+1;
-		var text = $(".pain_annotation").val();
+		var text = $("#annotator").find(".pain_annotation").val();
 		
 		$(".pain_severity").slider("value", 0);
 		$(".pain_depth").slider("value",0);
-		$(".pain_annotation").val("");
+		$("#annotator").find(".pain_annotation").val("");
 		
 		tag.saveTagAnnotation(severity, type, posture, depth, text);
-		var tagAnnotation = $("#annotator > .annotator-widget").clone();
-		tagAnnotation.attr("id","tag_"+index);
-		tagAnnotation.css({
+		
+		var newTagContainer = $('<div class="annotator-widget annotator-list" style="position: static; "></div>');
+		newTagContainer.attr("id","tag_"+index);
+		newTagContainer.css({
 			"position":"static",
 			"opacity":""});
-		tagAnnotation.find(".pain_annotation")[0].value= text;
-		tagAnnotation.toggleClass("annotator-list");
-		
-		var newLiElem = $("<li></li>");
-		tagAnnotation.appendTo(newLiElem);
-		newLiElem.appendTo("#pain_annotation_list");
+			
+		var newUL = $('<ul class="annotator-listing"></ul>') ;
+		var newLI = $('<li class = "annotator-item"></li>');
+		var newTextArea = $('<textarea class="pain_annotation" rows="4"></textarea>');
+		newTextArea[0].value = text;
+		newLI.append(newTextArea);
+		newUL.append(newLI);
+		newTagContainer.append(newUL);
+		$("#pain_annotation_list").prepend(newTagContainer);
+		newTextArea.focus(function(obj){
+			tagSelectionUpdate(index,true);
+		});
+		newTextArea.focusout(function(obj){
+			tagSelectionUpdate(index,false);
+		});
 	}
 	
 	function getURLParameter(name) {
@@ -315,6 +327,10 @@
 		/* Showing All Annotations */
 		$("#annotator > div.annotator-widget").css({
 			opacity:0.5
+		});
+		$(".pain_annotation").focus(function(obj){
+			console.log(obj);
+			console.log(this);
 		});
 		//setup
 		/*var svg = d3.select("#svg-content").append("svg")

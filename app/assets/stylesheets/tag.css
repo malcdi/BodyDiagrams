@@ -47,20 +47,28 @@
 }
 
 #annotator{
-	top: 250px;
+	top: 240px;
 	left: 550px;
 }
 #pain_annotation_list_container{
 	position: absolute;
-	top: 300px;
+	top: 330px;
 	left: 500px;
-	height: 500px;
+	height: 490px;
 	overflow:scroll;
 }
 #pain_annotation_list{
 	list-style:none;
 }
+.annotator-type-tag{
+	cursor:pointer;
+}
 
+.ui-slider-horizontal .ui-state-default {position: absolute;z-index: 100;background-color:#FCBBA1;height: 14px;width: 10px; margin-top:-3px;padding-left:0px;top: auto;}   
+.pain_severity span{
+	margin-right:14.5px;
+	font-size:0.9em;
+}
 /*jquery css*/
 
 a.photo-tagger-tag { 
@@ -141,9 +149,12 @@ div.photo-tagger-message {
 
 .annotator-tags{margin-bottom:-2px}
 
-.annotator-tags .annotator-tag{display:inline-block;padding:0 8px;margin-bottom:2px;line-height:1.6;font-weight:bold;background-color:#e6e6e6;-webkit-border-radius:8px;-moz-border-radius:8px;-o-border-radius:8px;border-radius:8px}
+.annotator-tag{display:inline-block;padding:0 8px;margin-bottom:2px;line-height:1.6;font-weight:bold;background-color:#e6e6e6;-webkit-border-radius:8px;-moz-border-radius:8px;-o-border-radius:8px;border-radius:8px}
 .annotator-tags .annotator-tag:hover {cursor:pointer}
 .annotator-tags .tag-selected {cursor:pointer; background-color:lightblue}
+
+.annotator-type-tag{display:inline-block;padding:0 8px;margin-bottom:2px;background-color:transparent;background-image: -webkit-linear-gradient(top, #D7ECFA 0%, #B6DBF5 100%);-webkit-border-radius:4px;-moz-border-radius:4px;-o-border-radius:4px;border-radius:4px;-webkit-background-clip:padding-box;color:black;}
+.annotator-type-tag .annotator-type-tag:hover {cursor:pointer}
 
 .annotator-filter{z-index:9998;position:fixed;top:0;right:0;left:0;text-align:left;line-height:0;border:0;border-bottom:1px solid #878787;padding-left:10px;padding-right:10px;-webkit-border-radius:0;-moz-border-radius:0;-o-border-radius:0;border-radius:0;-webkit-box-shadow:inset 0 -1px 0 rgba(255,255,255,0.3);-moz-box-shadow:inset 0 -1px 0 rgba(255,255,255,0.3);-o-box-shadow:inset 0 -1px 0 rgba(255,255,255,0.3);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.3)}.annotator-filter strong{font-size:12px;font-weight:bold;color:#3c3c3c;text-shadow:0 1px 0 rgba(255,255,255,0.7);position:relative;top:-9px}.annotator-filter .annotator-filter-property,.annotator-filter .annotator-filter-navigation{position:relative;display:inline-block;overflow:hidden;line-height:10px;padding:2px 0;margin-right:8px}.annotator-filter .annotator-filter-property label,.annotator-filter .annotator-filter-navigation button{text-align:left;display:block;float:left;line-height:20px;-webkit-border-radius:10px 0 0 10px;-moz-border-radius:10px 0 0 10px;-o-border-radius:10px 0 0 10px;border-radius:10px 0 0 10px}.annotator-filter .annotator-filter-property label{padding-left:8px}.annotator-filter .annotator-filter-property input{display:block;float:right;-webkit-appearance:none;background-color:#fff;border:1px solid #878787;border-left:none;padding:2px 4px;line-height:16px;min-height:16px;font-size:12px;width:150px;color:#333;background-color:#f8f8f8;-webkit-border-radius:0 10px 10px 0;-moz-border-radius:0 10px 10px 0;-o-border-radius:0 10px 10px 0;border-radius:0 10px 10px 0;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,0.2);-moz-box-shadow:inset 0 1px 1px rgba(0,0,0,0.2);-o-box-shadow:inset 0 1px 1px rgba(0,0,0,0.2);box-shadow:inset 0 1px 1px rgba(0,0,0,0.2)}.annotator-filter .annotator-filter-property input:focus{outline:0;background-color:#fff}.annotator-filter .annotator-filter-clear{position:absolute;right:3px;top:6px;border:0;text-indent:-900em;width:15px;height:15px;background-position:0 -90px;opacity:.4}.annotator-filter .annotator-filter-clear:hover,.annotator-filter .annotator-filter-clear:focus{opacity:.8}.annotator-filter .annotator-filter-clear:active{opacity:1}.annotator-filter .annotator-filter-navigation button{border:1px solid #a2a2a2;padding:0;text-indent:-900px;width:20px;min-height:22px;-webkit-box-shadow:inset 0 0 5px rgba(255,255,255,0.2),inset 0 0 1px rgba(255,255,255,0.8);-moz-box-shadow:inset 0 0 5px rgba(255,255,255,0.2),inset 0 0 1px rgba(255,255,255,0.8);-o-box-shadow:inset 0 0 5px rgba(255,255,255,0.2),inset 0 0 1px rgba(255,255,255,0.8);box-shadow:inset 0 0 5px rgba(255,255,255,0.2),inset 0 0 1px rgba(255,255,255,0.8)}.annotator-filter .annotator-filter-navigation button,.annotator-filter .annotator-filter-navigation button:hover,.annotator-filter .annotator-filter-navigation button:focus{color:transparent}.annotator-filter .annotator-filter-navigation button::after{position:absolute;top:8px;left:8px;content:"";display:block;width:9px;height:9px;background-position:0 -210px}.annotator-filter .annotator-filter-navigation button:hover::after{background-position:0 -225px}.annotator-filter .annotator-filter-navigation .annotator-filter-next{-webkit-border-radius:0 10px 10px 0;-moz-border-radius:0 10px 10px 0;-o-border-radius:0 10px 10px 0;border-radius:0 10px 10px 0;border-left:none}.annotator-filter .annotator-filter-navigation .annotator-filter-next::after{left:auto;right:7px;background-position:0 -240px}.annotator-filter .annotator-filter-navigation .annotator-filter-next:hover::after{background-position:0 -255px}.annotator-hl-active{background:rgba(255,255,10,0.8)}.annotator-hl-filtered{background-color:transparent}
 

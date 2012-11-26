@@ -20,15 +20,17 @@
 
 
 <div style="position: relative; margin-left: 10px; margin-right: 10px;">
-<div id="svg-content" style = "position:absolute;width:1200px; height:750px;"></div>
 <div id="content-panel">
-
-<canvas id="canvas" width="500" height="750" style="position:relative"/></canvas>
+<div id="canvasDiv" style="width:500px; height:750px;z-index: 1000"></div>
 
 <!-- Zoom/Drag Control -->
-<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px;">
+<div id="opModeControl" style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px; width:500px">
  	<img class="opMode" id="zoom" src="/assets/dragHand.png" style="width:30px;height:30px;"/>
+ 	<img class="opMode" id="newDraw" src="/assets/plusInactive.png" style="width:30px;height:30px;"/>
  	<img class="opMode" id="draw" src="/assets/drawIconInactive.png" style="width:30px;height:30px;"/>
+ 	<img class="opMode" id="undo" src="/assets/undoInactive.png" style="width:30px;height:30px; float:right;"/>
+ 	<div id="drawBrush" style="width:80px;height:30px;"><img src="/assets/paint_brush.png" style="width:20px;height:20px;"/><div style="width:60px;margin:0px 10px;display:inline-block;"></div></div>
+ 	<div class="opMode" id="symptomTitle" style="font-size:1.2em;padding:5px;float:right;margin-right:20px;"></div>
 </div>
 
 <!-- Zoom Control -->
@@ -37,13 +39,13 @@
 	
 	<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; " id="compass"><div style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " title="Pan down"></div></div>
 	
-	<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 10001; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
+	<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 101; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
 	
 	<div style="position: absolute; left: 16px; top: 131px; width: 59px; height: 146px; overflow: hidden; " id="lmcslider"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
 	
-	<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 10003; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
+	<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
 	
-	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 10002; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
 </div>
 
 	<!-- Rotate left right image -->
@@ -51,32 +53,55 @@
 	<img class="rotation" id="right" src="/assets/dragHand.png"/>
 
 	<!--Hidden annotation box-->
-	<div class="annotator-outer annotator-editor"id="annotator" style="position:absolute">
-		<div class="annotator-widget" >
-			<ul class="annotator-listing">
-				<li class="annotator-item"><div class="pain_type_slider pain_severity"style="width:70%;float:right"></div><span>Symptom Severity:</span></li>
-				<li class="annotator-item">
-					<div class="pain_type annotator-tags">
-						<span>Symptom Type:</span>
-						<span class="annotator-tag tag-selected">Sharp</span>
-						<span class="annotator-tag">Numb</span>
-						<span class="annotator-tag">Dull</span>
+
+	<div id="annotator" style="position:absolute">
+		<div class="annotator-outer annotator-editor" style = "top:90px;">
+			<div class="annotator-widget" >
+				<ul class="annotator-listing">
+					<li class="annotator-item"><div class="pain_severity"style="width:70%;float:right"><span style="margin-left:-2px">1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span style="margin-right:-3px">10</span></div>
+						<span>Symptom Severity:</span>
+					</li>
+					<li class="annotator-item">
+						<div class="pain_type">
+							<span>Symptom Type:</span>
+							<textarea id="pain_type_tags" placeholder="Tags..." style="height:30px;padding:5px 8px;" rows="1"></textarea>
+							<span class="annotator-type-tag">#sharp</span>
+							<span class="annotator-type-tag">#dull</span>
+							<span class="annotator-type-tag">#numb</span>
+							<span class="annotator-type-tag">#hot</span>
+							<span class="annotator-type-tag">#sensitive</span>
+							<span class="annotator-type-tag">#itchy</span>
+							<span class="annotator-type-tag">#shooting</span>
+							<span class="annotator-type-tag">#cramping</span>
+							<span class="annotator-type-tag">#pounding</span>
+							<span class="annotator-type-tag">#aching</span>
+
+						</div></li>
+					<li class="annotator-item">
+						<div class="pain_posture annotator-tags">
+							<span>Symptom Layer:</span>
+								<span class="annotator-tag tag-selected">Skin</span>
+								<span class="annotator-tag">Muscle</span>
+								<span class="annotator-tag">Internal</span>
+								<span class="annotator-tag">Bone/Joint</span>
+								<span class="annotator-tag">Neural</span>
+						</div>
+					</li>
+					<li class="annotator-item">
+						<div class="pain_posture annotator-tags">
+							<span>Symptom Postures:</span>
+							<span class="annotator-tag tag-selected">Stand</span>
+							<span class="annotator-tag">Walk</span>
+							<span class="annotator-tag">Sit</span>
+							<span class="annotator-tag">Lie</span>
 					</div></li>
-				<li class="annotator-item"><div class="pain_type_slider pain_depth" style="width:70%;float:right"></div><span>Symptom Depth:</span></li>
-				<li class="annotator-item">
-					<div class="pain_posture annotator-tags">
-						<span>Symptom Postures:</span>
-						<span class="annotator-tag tag-selected">Stand</span>
-						<span class="annotator-tag">Walk</span>
-						<span class="annotator-tag">Sit</span>
-						<span class="annotator-tag">Lie</span>
-				</div></li>
-				<li class="annotator-item">
-					<textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea>
-				</li>
-			</ul>
-		</div>
+					<li class="annotator-item">
+						<textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea>
+					</li>
+				</ul>
+			</div>
 	</div>
+	<button id="done_button" style ="position:absolute;top:60px;left:290px">Done</button>
 	
 </div>
 
@@ -89,46 +114,100 @@
 		</ul>
 	</div>
 	
+
 <script type="text/javascript">
+	var cvState;
+	function zoomModeOn(){
+		cvState.setMode(this.id);
+		this.src = '/assets/dragHand.png';
+		this.style.border ="solid 2px rgb(108, 204, 128)";
+		$("#draw")[0].src = '/assets/drawIconInactive.png';
+		$("#draw")[0].style.border ="solid 2px rgb(108, 204, 128)";
+		$("#draw")[0].style.border ="";
+		$("#undo").css("display", "none");
+		$("#drawBrush").css("display", "none");
+
+		$("#newDraw")[0].src = '/assets/plusInactive.png';
+		$("#newDraw")[0].style.border ="solid 2px rgb(108, 204, 128)";
+		$("#newDraw")[0].style.border ="";
+	}
+
+	function drawModeOn(){
+		cvState.setMode(this.id);
+		$("#undo").css("display", "inline-block");
+		$("#drawBrush").css("display", "inline-block");
+		this.src = '/assets/drawIcon.png';
+		$("#zoom")[0].src = '/assets/dragHandInactive.png';
+		this.style.border ="solid 2px rgb(108, 204, 128)";
+		$("#zoom")[0].style.border ="";
+	}
+
 	function tagSelectionUpdate(index, select){
-		var annotatorElem = $("#tag_"+index);
-		if(annotatorElem.length==0)
+		cvState.deHighlightCloud();
+		if(index<0)
+		{
 			$("#annotator > div.annotator-widget").css({
 				opacity:1.0
 			});
-		else
-			$("#annotator > div.annotator-widget").css({
-				opacity:0.5
-			});
-		if(select && annotatorElem.hasClass("annotator-list"))
-			annotatorElem.toggleClass("annotator-list");
-		else if(!select && !annotatorElem.hasClass("annotator-list"))
-			annotatorElem.toggleClass("annotator-list");
+		}
+
+		var possibleTags = $("#pain_annotation_list").find(".annotator-widget");
+		for(var i=0; i<possibleTags.length; i++){
+			var theTagC =$(possibleTags[i])
+			if(select && theTagC.find("#tag_"+index).length>0)
+				theTagC.removeClass('annotator-list');
+			else{
+				theTagC.addClass('annotator-list');
+			}
+		}
+		cvState.highlightCloud(index);
+	}	
+	function saveTagAnnotations (tags, severity, type, posture, depth, text)
+	{
+		for (var i =0; i<tags.length; i++){
+			tags[i].saveTagAnnotation(severity, type, posture, depth, text);
+		}
 	}	
 	
-	function updateAnnotations(tag,index){
+	function updateAnnotations(tags,index){
 		var severity = $(".pain_severity").slider("value")/20+1;
-		var type = $(".pain_type>.tag-selected")[0].innerText;
+		var typeText = $(".pain_type>#pain_type_tags").val();
 		var posture = $(".pain_posture>.tag-selected")[0].innerText;
 		var depth = $(".pain_depth").slider("value")/20+1;
-		var text = $(".pain_annotation").val();
+		var text = $("#annotator").find(".pain_annotation").val();
 		
 		$(".pain_severity").slider("value", 0);
 		$(".pain_depth").slider("value",0);
-		$(".pain_annotation").val("");
+		$("#annotator").find(".pain_annotation").val("");
 		
-		tag.saveTagAnnotation(severity, type, posture, depth, text);
-		var tagAnnotation = $("#annotator > .annotator-widget").clone();
-		tagAnnotation.attr("id","tag_"+index);
-		tagAnnotation.css({
-			"position":"static",
-			"opacity":""});
-		tagAnnotation.find(".pain_annotation")[0].value= text;
-		tagAnnotation.toggleClass("annotator-list");
+		saveTagAnnotations(tags, severity, typeText, posture, depth, text);
 		
-		var newLiElem = $("<li></li>");
-		tagAnnotation.appendTo(newLiElem);
-		newLiElem.appendTo("#pain_annotation_list");
+		var newTagContainer = $('<li><div class="annotator-widget annotator-list" style="position:static;"><ul class="annotator-listing"> <li class="annotator-item"><div class="pain_type"> </div></li><li class="annotator-item"><textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea> </li> </ul></div></li>');
+
+		var newTextArea = newTagContainer.find(".pain_annotation");
+		newTextArea[0].value = text;
+		
+		$(".pain_severity").slider("value", 3);
+		$(".pain_severity").find("a")[0].style.backgroundColor="#FCBBA1";
+
+		$(".pain_depth").slider("value",0);
+		$("#pain_type_tags").val("");
+		$("#annotator").find(".pain_annotation").val("");
+		$("#pain_annotation_list").prepend(newTagContainer);
+		newTagContainer.ready(function(){
+			newTagContainer.find(".pain_annotation").attr("id", "tag_"+index);
+			newTagContainer.find(".pain_type").text("Symptom Type: "+typeText); 
+			newTagContainer.find(".pain_annotation").focus(function(obj){
+				var index = this.id.match("tag_([0-9]+)")[1];
+				tagSelectionUpdate(index,true);
+			});
+			newTagContainer.find(".pain_annotation").focusout(function(obj){
+				var index = this.id.match("tag_([0-9]+)")[1];
+				tagSelectionUpdate(index,false);
+			});
+
+		});
+		
 	}
 	
 	function getURLParameter(name) {
@@ -142,13 +221,12 @@
 	
 	var zoomScale=1.0;//current zoom scale
 	$(document).ready(function(){
-		//$('#content-panel img').panZoom({min_height:1200,min_width:316});
-		
+		/* Canvas State */
 		var currentView = 0;
 		var currentGender = getURLParameter("gender"); 
-		var canvasElem=document.getElementById("canvas");
+		var canvasElem=document.getElementById("canvasDiv");
 		canvasElem.width=$(canvasElem).parent().width();
-		var cvState = new CanvasState(document.getElementById("canvas"),
+		cvState = new CanvasState(document.getElementById("canvasDiv"),
 						{gender:currentGender, 
 						view:currentView, 
 						mode:"zoom", 
@@ -157,22 +235,19 @@
 						selectCallback: tagSelectionUpdate});
 		
 	   /* Setting up annotation box*/
+	   	$("#annotator").css("opacity","0.3");
+
 		$(".pain_severity").slider({
-			step:20,
+			min: 1,
+			max: 10,
+			value: 3,
 			slide: function(event, ui) {
-				//this.children[0].innerHTML=ui.value/10;
-				var greyValue = 200 - Math.floor(ui.value);
-				var redValue = Math.floor(ui.value*55/100) +200;
-				this.children[0].style.backgroundImage="none";
-				this.children[0].style.backgroundColor="rgb("+redValue+","+greyValue+","+greyValue+")";
-				var severityLevel = ui.value/20+1;
 				var painType = $(".pain_type>.tag-selected").text();
-				cvState.updateGraphics(cvState.allTags.length-1, severityLevel ,painType);
+				var newCol = cvState.updateGraphics(cvState.allTags.length-1, ui.value-1 ,painType);
+				$(this).find("a")[0].style.backgroundImage="none";
+				$(this).find("a")[0].style.backgroundColor= newCol;
+				cvState.highlightCloud(-1);
 			}
-		});
-		
-		var pain_depth_slider = $(".pain_depth").slider({
-			step:20
 		});
 		
 		$(".annotator-tag").click(function(){
@@ -184,57 +259,56 @@
 				}
 			}
 			$(this).toggleClass("tag-selected");
-			
-			if(this.parentElement.id=="pain_type"){
-				//TODO:only applies to the LAST drawing
-				var severityLevel = $(".pain_severity").slider("value")/20+1;
-				cvState.updateGraphics(cvState.allTags.length-1, severityLevel , this.innerText);
-			}
-			else if(this.parentElement.id=="pain_posture"){
-				
-			}
+		});
+
+		//block interaction if faded.
+	   	$("#annotator").mousedown(function(event){
+	   		if(this.style.opacity<1.0){
+	   			event.stopImmediatePropagation();
+	   			event.preventDefault();
+	   		}
+	   	})
+
+		//highlights the cloud
+		$("#annotator").focusin(function() {
+			cvState.highlightCloud(-1);
+			//draw line?
 		})
-		/*
-		$(".annotator-cancel").click(function(){
-			//TODO:UNDOES LAST drawing
-			cvState.undoLastDrawing(cvState);
-			$("#annotator > div.annotator-widget").css({
-				opacity:0.5
-			});
-		})
-		
-		$(".annotator-save").click(function(){
-			//TODO: only applies to last
-			var severity = $("#pain_severity").slider("value")/20+1;
-			var type = $("#pain_type>.tag-selected")[0].innerText;
-			var posture = $("#pain_posture>.tag-selected")[0].innerText;
-			var depth = $("#pain_depth").slider("value")/20+1;
-			var text = $("#pain_annotation").val();
-			
-			cvState.saveTagAnnotation(cvState.allTags.length-1, severity, type, posture, depth, text);
-			$("#annotator > div.annotator-widget").css({
-				opacity:1.0
-			});
-		})*/
+		.focusout(function() {
+			cvState.deHighlightCloud();
+			//undo draw line?
+		});
+
+		//tagging
+		$(".annotator-type-tag").click(function(){
+			var pastStr = $("#pain_type_tags").val();
+			if(pastStr.indexOf($(this).text())<0){
+				pastStr+=$(this).text() +", ";
+				$("#pain_type_tags").val(pastStr);
+			}
+		});
 		
 		/* Setting up Mode Control */
-		$('.opMode').click(function(){
-			cvState.setMode(this.id);
-			//change images accordingly
-			var children = this.parentElement.children;
-			if(this.id=="zoom"){
-				this.src = '/assets/dragHand.png';
-				this.style.border ="solid 2px rgb(108, 204, 128)";
-				$("#draw")[0].src = '/assets/drawIconInactive.png';
-				$("#draw")[0].style.border ="solid 2px rgb(108, 204, 128)";
-				$("#draw")[0].style.border ="";
+		$('#zoom').bind('click', zoomModeOn);
+		$("#zoom").trigger('click');
+		$("#draw").css("display", "none");
+		$("#undo").css("display", "none");
+		$("#symptomTitle").css("display", "none");
+		$("#drawBrush").css("display", "none");
+
+		$("#drawBrush").find("div").slider({
+			min: 3,
+			max: 10,
+			value: 5,
+			slide: function(event, ui) {
+				cvState.setStrokeWidth(ui.value);
 			}
-			else{
-				this.src = '/assets/drawIcon.png';
-				$("#zoom")[0].src = '/assets/dragHandInactive.png';
-				this.style.border ="solid 2px rgb(108, 204, 128)";
-				$("#zoom")[0].style.border ="";
-			}
+
+		});
+
+		//undo
+		$("#undo").click(function(){
+			cvState.undoLastDrawing();
 		});
 		
 		/* Setting up Zoom Control*/
@@ -279,7 +353,7 @@
 		$('#lmczb').mousedown(function(e){
 			e.preventDefault();
 			var oldY = parseInt(sliderElem.style.top);
-			var newY = (e.pageY - this.offsetTop) -76;
+			var newY = (e.pageY - this.offsetTop) -60;
 			sliderElem.style.top = Math.max(Math.min(137, newY), 0) + "px";
 			cvState.setZoomPan(0, 0, (oldY-newY)*10/137);
 			this.dragStart = true;
@@ -287,7 +361,7 @@
 		$('#lmczb').mousemove(function(e){
 			e.preventDefault();
 			if(this.dragStart){
-				var newY = (e.pageY - this.offsetTop) -76;
+				var newY = (e.pageY - this.offsetTop) -60;
 				newY = Math.max(Math.min(137, newY), 0);
 				var lastY = parseInt(sliderElem.style.top);
 				sliderElem.style.top = newY + "px";
@@ -299,8 +373,8 @@
 		});
 		
 		/* Setting up Rotation Control */
-		$("#left").attr("src",ImageLoader.getBodyImageSrc(currentGender, 3));
-		$("#right").attr("src",ImageLoader.getBodyImageSrc(currentGender, 1));
+		$("#left").attr("src",ImageLoader.getBodyImageSrc(currentGender, 1));
+		$("#right").attr("src",ImageLoader.getBodyImageSrc(currentGender, 3));
 		var padding = $("#left").width() + parseInt($("#left").css("padding"))*2 + parseInt($("#left").css("margin"))*2
 		$("#right").css({left: canvasElem.width- padding});
 		
@@ -312,56 +386,59 @@
 			cvState.setView(currentView);
 		});
 		
-		/* Showing All Annotations */
-		$("#annotator > div.annotator-widget").css({
-			opacity:0.5
+		/* Showing All Annotations */		
+		$("#annotator").find(".pain_annotation").focus(function(obj){
+			tagSelectionUpdate(-2,true);
 		});
-		//setup
-		/*var svg = d3.select("#svg-content").append("svg")
-					.attr("width", "1200")
-					.style("position", "absolute")
-					.attr("height", "800");
-		cvState.svgA = svg;*/		
-	});
+		$("#annotator").find(".pain_annotation").focusout(function(obj){
+			tagSelectionUpdate(-2,false);
+		});
+		
+		$('#done_button').css("display", "none");
+		
+		/* set up symptom button*/
+		$('#newDraw').click(function(){
+			$("#annotator").css("opacity",1.0);
+			$("#symptomTitle").css("display", "block");
+			$("#symptomTitle").text("Symptom "+(cvState.tagCloud+1))
+			$('#done_button').css("display", "block");
+			cvState.startRecordingNewMsg();
+			cvState.deHighlightCloud();
 
-		/*
-		d3.select("#svg-content").select("svg").selectAll("rect")
-			.data(cvState.allTags)
-			.enter().append("rect")
-				.attr("x", 700)
-				.attr("class","annotated")
-				.attr("y", function(d){
-					return 30*this.parentElement.childNodes.length +200;
-				})
-				.attr("width", 200)
-				.attr("height", 50)
-				.attr("rx", 10).attr("ry",10)
-				.style("opacity", 0.8)
-				.style("fill", "white")
-				.style("-webkit-svg-shadow","-1px 2px 2px navy");
-		var txtA = d3.select("#svg-content").select("svg").selectAll("text")
-			.data(cvState.allTags)
-			.enter().append("text")
-				.attr("x", 700)
-				.attr("y", 200)
-				.attr("dx", 10)
-				.attr("dy", function(d){
-					return 2 + 3.0*(this.parentElement.childNodes.length-1)+ "em";
-				});
-				
-		txtA.append("tspan")
-			.attr("x", 700)
-			.text(function(d){
-				return 'severity:' + d.severity;
-			});
-		txtA.append("tspan")
-			.attr("x", 700)
-			.attr("dx", 10)
-			.attr("dy", "1.5em")
-			.text(function(d){
-				return 'annotation: '+d.text;
-			})
-		*/
+			this.src = '/assets/plus.png';
+
+			var wasDrawing = ($("#draw")[0].style.opacity==1);
+			if(wasDrawing){
+				$('#done_button').trigger("click");
+				$("#draw")[0].style.opacity = 0.2;
+				$(this).trigger("click");
+				$("#undo").css("display", "none");
+				$("#drawBrush").css("display", "none");
+
+
+			}
+			else{
+				$('#draw').bind('click', drawModeOn);
+				$("#draw")[0].style.opacity = 1;
+				$("#draw").trigger("click");
+				$("#draw").css("display", "inline-block");
+			}
+		});
+		
+		$('#done_button').click(function(){
+			updateAnnotations(cvState.allTags[cvState.tagCloud], cvState.tagCloud);
+			$('#done_button').css("display", "none");
+			$("#annotator").css("opacity",0.3);
+			cvState.stopRecordingNewMsg();
+			cvState.deHighlightCloud();
+
+			$('#draw').unbind('click', drawModeOn);
+			$("#undo").css("display", "none");
+			$("#drawBrush").css("display", "none");
+			$("#draw")[0].style.opacity = 0.2;
+			$("#zoom").trigger("click");
+		})
+	});
 	
 	function getOtherView(direction){
 		if (direction=="left")
@@ -373,9 +450,9 @@
 	
 	function getView(curView, direction){
 		if (direction=="left")
-			return (curView+3)%4
-		else if(direction=="right")
 			return (curView+1)%4
+		else if(direction=="right")
+			return (curView+3)%4
 		return 0;
 	}
 	

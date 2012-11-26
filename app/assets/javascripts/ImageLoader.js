@@ -39,4 +39,7 @@ var ImageLoader = new function(){
 	this.getPainPatternImage = function(type, severity){
 		return this.painPatterns[type+"_"+severity];
 	}
+	this.getPainPatternImageSrc = function(type, severity){
+		return this.painPatterns[type+"_"+severity].src;
+	}
 };

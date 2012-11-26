@@ -146,7 +146,10 @@ FreeHandTagCanvasElem.prototype.addPoint = function(x_t, y_t) {
 	else if(y_t > this.maxY)
 		this.maxY = y_t
 		
-	this.points.push([x_t, y_t]);
+	var hash = {};
+	hash.x = x_t;
+	hash.y = y_t;
+	this.points.push(hash);
 }
 
 FreeHandTagCanvasElem.prototype.isValidElem = function() {
@@ -155,8 +158,8 @@ FreeHandTagCanvasElem.prototype.isValidElem = function() {
 
 FreeHandTagCanvasElem.prototype.moveAll = function(mx, my) {
 	for (var i=0; i<this.points.length; i++){
-		this.points[i][0]= this.points[i][0]+mx;
-		this.points[i][1]= this.points[i][1]+my;
+		this.points[i].x= this.points[i].x+mx;
+		this.points[i].y= this.points[i].y+my;
 	}
 	this.minX +=mx;
 	this.maxX +=mx;
@@ -169,9 +172,10 @@ FreeHandTagCanvasElem.prototype.draw = function(ctx) {
 	ctx.strokeStyle = this.strokeStyle;
 	ctx.beginPath();
 	for (var i=0; i<this.points.length; i++){
-		if (i==0) ctx.moveTo(this.points[i][0], this.points[i][1]);
+		
+		if (i==0) ctx.moveTo(this.points[i].x, this.points[i].y);
 		else {
-			ctx.lineTo(this.points[i][0], this.points[i][1]);
+			ctx.lineTo(this.points[i].x, this.points[i].y);
 			ctx.stroke();
 		}
 	}

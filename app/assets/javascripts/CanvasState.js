@@ -9,6 +9,10 @@ function CanvasState(canvas, options) {
 		styleBorderTop   = parseInt(document.defaultView.getComputedStyle(canvas, null)['borderTopWidth'], 10)   || 0;
 	}
 
+	this.line = d3.svg.line()
+		.x(function(d) { return d.x; })
+		.y(function(d) { return d.y; })
+		.interpolate("linear");
 	
 	//this.allTags=[];//all the tags on canvas
 	this.allTags = [];   //graphic tags
@@ -16,9 +20,8 @@ function CanvasState(canvas, options) {
 
 	//for drawing
 	this.dragging = false; // Keep track of when we are dragging
-	this.needRedraw = false;
-	this.ctx = canvas.getContext('2d');
-	this.canvas = canvas;
+
+
 	this.mouseDownForFreeHand=false;
 	
 	//for resizing
@@ -34,11 +37,17 @@ function CanvasState(canvas, options) {
 	this.handSelection=null;
 	this.dragoffx = 0; 
 	this.dragoffy = 0;
+	this.strokeWidth = 3;
+
+	//recording states
+	this.tagCloud = -1;
+	this.highlightTagCloud = -1;
+	this.recording = false;
 	
 	
 	//SETS up using options
 	this.gender = options.gender ? options.gender : "male";
-	this.view = options.view ? options.view : 0;
+	this.cur_view_side = options.view ? options.view : 0;
 	this.mode = options.mode ? options.mode : "zoom";
 	this.imageLoader = options.imageLoader;
 	this.saveCallback = options.saveCallback;
@@ -46,30 +55,105 @@ function CanvasState(canvas, options) {
 	
 	this.lastX=canvas.width/2;
 	this.lastY=canvas.height/2;
-	this.svg= document.createElementNS("http://www.w3.org/2000/svg",'svg');
+
 	
 	// Zoom related variables
+	this.canvas = document.getElementById("canvasDiv");
 	this.heightRatio=this.canvas.height/this.canvas.width;
 	this.highlightRegion = new RegionTagCanvasElem(5, 5,0, 0, '#CCEEFF');//region element within main view.
 	this.needRedraw = true;
 	this.cur_view_side=0;
 	
+	//DEBUG
+	
+	console.log(document.getElementById("canvasDiv"));
+	/*d3.select("#canvasDiv")
+	.attr("onmouseover", "alert('x')");*/
+	//DEBUG
+	
+	
 	/* registering mouse events */
 	var myState = this;
-	trackTransforms(this.ctx, this.svg);
+	var canvasDivW = 500;
+	var canvasDivH = 700;
+	this.svg= d3.select("#canvasDiv").append("svg")
+		.attr("width", canvasDivW)
+		.attr("height",canvasDivH);
+	/*
+	var markerDef = this.svg.append("defs");
+	markerDef.append("marker")
+			.attr("id", "numb_pattern")
+			.attr("viewBox", "0 0 5 5")
+			.attr("refX", 1)
+			.attr("refY", 1)
+			.attr("markerWidth", 3)
+			.attr("markerHeight", 3)
+		.append("image")
+			.attr("patternUnits", "objectBoundingBox")
+			.attr("xlink:href", this.imageLoader.getPainPatternImageSrc("Numb", 1))
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("width", 3)
+			.attr("height", 3);
+	markerDef.append("marker")
+					.attr("id", "dull_pattern")
+					.attr("viewBox", "0 0 5 5")
+					.attr("refX", 1)
+					.attr("refY", 3)
+					.attr("markerWidth", 3)
+					.attr("markerHeight", 3)
+				.append("image")
+					.attr("patternUnits", "objectBoundingBox")
+					.attr("xlink:href", this.imageLoader.getPainPatternImageSrc("Dull", 1))
+					.attr("x", 0)
+					.attr("y", 0)
+					.attr("width", 3)
+					.attr("height", 3);
+	markerDef.append("marker")
+					.attr("id", "sharp_pattern")
+					.attr("viewBox", "0 0 5 5")
+					.attr("refX", 1)
+					.attr("refY", 3)
+					.attr("markerWidth", 3)
+					.attr("markerHeight", 3)
+				.append("image")
+					.attr("patternUnits", "objectBoundingBox")
+					.attr("xlink:href", this.imageLoader.getPainPatternImageSrc("Sharp", 1))
+					.attr("x", 0)
+					.attr("y", 0)
+					.attr("width", 3)
+					.attr("height", 3);			
+	*/
+	this.strokeWidthGuider = this.svg.append("path")
+		.attr("id", "strokeWidthGuider")
+		.attr("d","M130,20L140,20L150,20L160,20L170,20")
+		.style("stroke-width", this.strokeWidth)
+		.style("fill","none")
+		.style("stroke",colorSelector(2))
+		.style("opacity", 0);
+		
+	this.svg = this.svg.append("g")
+		.on('selectstart', getEventHandler('selectstart',myState))
+		.on('mouseup', getEventHandler('mouseup',myState))
+		.on('mousewheel', getEventHandler('mousewheel',myState))
+		.on('mousedown', getEventHandler('mousedown',myState))
+		.on('mousemove', getEventHandler('mousemove',myState));
+
+
+		
+	this.srcImg = this.svg.append("image")
+		.attr("x", (canvasDivW-300)/2)
+		.attr("y",(canvasDivH-700)/2)
+		.attr("width",300)
+		.attr("height",700)
+		.attr("xlink:href",ImageLoader.getBodyImageSrc(this.gender, this.cur_view_side));
+		
+	this.tracker ={};
+	trackSVGTransforms(this.tracker, document.createElementNS("http://www.w3.org/2000/svg","svg"));
 	
+		
 	//fixes a problem where double clicking causes text to get selected on the canvas
-	$(myState.canvas).bind('selectstart', getEventHandler('selectstart',myState));
-	
-	// Up, down, and move are for dragging
-	$(myState.canvas).bind('mousedown', getEventHandler('mousedown',myState));
-	
-	//Mouse Move Event--On drag
-	$(myState.canvas).bind('mousemove', getEventHandler('mousemove',myState));
-	
-	//mouse event done
-	$(myState.canvas).bind('mouseup', getEventHandler('mouseup',myState));
-	$(myState.canvas).bind('mousewheel', getEventHandler('mousewheel',myState));
+	$("#canvasDiv").find("svg").bind('selectstart', getEventHandler('selectstart',myState));
 	
 	/* double click for making new regionTags
 	canvas.addEventListener('dblclick', function(e) {
@@ -86,82 +170,46 @@ function CanvasState(canvas, options) {
 		var rect = new RegionTagCanvasElem;
 		this.selectionHandles.push(rect);
 	}
-	
-	/* Register Rendering */
-	this.interval = 10; //every 30 miliseconds
-	setInterval(	function() { 
-			myState.draw(); 
-		}, myState.interval);
-	myState.draw(); 
-	
 }
 
 //setting view side (front? left? etc)
 CanvasState.prototype.setView= function(view){
-	this.view = view;
-	this.needRedraw = true;
-	this.draw();
+	this.cur_view_side = view;
+	this.srcImg.attr("xlink:href",ImageLoader.getBodyImageSrc(this.gender, this.cur_view_side));
+	this.svg.selectAll("path").style("opacity",function(d){
+		if(this.classList.contains(view))
+			return 1;
+		else if(this.id=="strokeWidthGuider")
+			return 1;
+		else return 0;
+	});
+	this.deHighlightCloud();
 }
 CanvasState.prototype.getView= function(){
-	return this.view
-}
-
-//clearing canvas
-CanvasState.prototype.clear = function(ctx){
-	ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	return this.cur_view_side
 }
 
 /*addint & removing tag elements from the allTags*/
 CanvasState.prototype.addRegionTagCanvasElem = function(elem){
-	this.allTags.push(elem);
+	this.allTags[this.tagCloud].allTags.push(elem);
 	this.needRedraw=true;
 }
 
 CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
-	this.allTags.push(elem);
+	var list = this.allTags[this.tagCloud];
+	list.push(elem);
 }
 
-CanvasState.prototype.undoLastDrawing = function(myState){
-	myState.allTags.pop();
-	myState.needRedraw=true;	
-}
-
-/*main draw function*/
-CanvasState.prototype.draw = function() {
-	// if our state is invalid, redraw and validate!
-	if (this.needRedraw) {
-		var ctx = this.ctx;
-		this.clear(ctx);
-		//ctx.fillStyle='#f00';
-		//ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
-		
-		var bodyImage = this.imageLoader.getBodyImage(this.gender, this.view);
-		var imgHeight = 800;
-		var imgWidth = bodyImage.width*imgHeight/bodyImage.height; //keeps aspect ratio
-		ctx.drawImage(bodyImage, (this.canvas.width-imgWidth)/2, 
-										(this.canvas.height-imgHeight)/2, imgWidth, imgHeight);		
-		// draw all Tags
-		var l = this.allTags.length;
-		ctx.lineWidth = 3;
-		for (var i = 0; i < l; i++) {
-			var tagElem = this.allTags[i];
-			//draw called to each element
-			/*if(tagElem instanceof RegionTagCanvasElem){
-				tagElem.draw(ctx, (this.regionSelection==tagElem), this.selectionHandles);
-			}
-			else {
-				tagElem.draw(ctx);
-			}*/
-			//only draw if the same side.
-			if(tagElem.getView() == this.view)
-				tagElem.draw(ctx);
+CanvasState.prototype.undoLastDrawing = function(){
+	this.allTags[this.tagCloud].pop();
+	var grouper = this.svg.select(".tag_"+this.tagCloud);
+	if(!grouper.empty())
+	{
+		grouper.select(":last-child").remove();
+		if(grouper.selectAll("path")[0]==null){
+			grouper.remove();
+			this.tagCloud-=1;
 		}
-		if(this.regionSelection !=null ){
-			var mySel = this.regionSelection;
-			this.highlightRegion.setCoordinates(mySel.minX, mySel.minY, mySel.maxX, mySel.maxY);
-			this.highlightRegion.draw(ctx,true,this.selectionHandles);
-		}
-		this.needRedraw = false;
 	}
 }
 
@@ -196,28 +244,102 @@ CanvasState.prototype.packGraphicTagInfo = function(){
 	return this.allTags;
 }
 
+CanvasState.prototype.startRecordingNewMsg = function(){
+	this.tagCloud +=1;
+	this.allTags.push([]);
+	this.recording = true;
+}
+
+CanvasState.prototype.stopRecordingNewMsg = function(){
+	this.recording = false;
+}
+
+CanvasState.prototype.setStrokeWidth = function(width){
+	this.strokeWidth = width;
+	this.strokeWidthGuider.style("stroke-width", this.strokeWidth);
+}
+
 //flush data of current canvas state.
 //called when submit button clicked, or view rotated
 CanvasState.prototype.flush = function(){
 	this.allTags=[];
-	this.needRedraw=true;
-	this.draw();
+}
+
+CanvasState.prototype.deHighlightCloud = function(){
+	var bbox = this.svg.select("#boundingBox");
+	if(!bbox.empty())
+		bbox.style("opacity", 0);
+}
+
+CanvasState.prototype.highlightCloud = function(index){
+	if(index<0) index = this.allTags.length-1;
+
+	var cloudElems = this.allTags[index];
+	if(!cloudElems || cloudElems.length<1) return;
+	//ignore if in diff view
+	if(cloudElems[0].view!=this.cur_view_side) return;
+
+	this.highlightTagCloud = index;
+
+	var boundingBox = {"x1":1000,"y1":1000,"x2":0,"y2":0};
+	//find bounding region for this cloud
+	for(var i=0; i<cloudElems.length; i++){
+		var tagElem = cloudElems[i];
+		if(tagElem.minX<boundingBox["x1"])
+			boundingBox["x1"] = tagElem.minX;
+		if(tagElem.minY<boundingBox["y1"])
+			boundingBox["y1"] = tagElem.minY;
+		if(tagElem.maxX>boundingBox["x2"])
+			boundingBox["x2"] = tagElem.maxX;
+		if(tagElem.maxY>boundingBox["y2"])
+			boundingBox["y2"] = tagElem.maxY;
+	}
+	var bbox = this.svg.select("#boundingBox");
+	if(bbox.empty())
+		bbox = this.svg.append("rect").attr("id", "boundingBox");
+
+	bbox.attr("x", boundingBox["x1"])
+		.attr("y", boundingBox["y1"])
+		.attr("width", boundingBox["x2"] - boundingBox["x1"])
+		.attr("height", boundingBox["y2"] - boundingBox["y1"])
+		.style("fill", "#7BCCC4")
+		.style("stroke", "#43A2CA")
+		.style("stroke-width", 3)
+		.style("fill-opacity", "0.2")
+		.style("opacity", 1.0);
+}
+
+CanvasState.prototype.highlightAllTags = function(index){
+	//if(index<0) this.highlightTagCloud = this.allTags.length -1;
+	if(index!=-1) this.regionSelection = null;
+	if(index==-2) this.highlightTagCloud = this.allTags.length -1;
+	else this.highlightTagCloud = index;
 }
 
 CanvasState.prototype.setMode = function(modeName){
 	this.mode=modeName;
-	if(this.mode=="zoom")
+	if(this.mode=="zoom"){
 		this.canvas.style.cursor="url('/assets/dragHand.png'), auto";
-	else if(this.mode=="draw")
+		this.strokeWidthGuider.style("opacity",0);
+	
+	}
+	else if(this.mode=="draw"){
 		this.canvas.style.cursor="url('/assets/drawHand.png'), auto";
+		this.strokeWidthGuider.style("opacity",1.0);
+	}
 }
 
 CanvasState.prototype.updateGraphics = function(index, severity, type){
-	var theTag = this.allTags[index];
+	var grouper = this.svg.select(".side_" + this.cur_view_side + ".tag_" + index);
+	var col = colorSelector(severity);
+	if(!grouper.empty()){
+		grouper.selectAll("path").style("stroke", col);
+	}
+
+	return col;
+	/*
 	var newPattern = this.ctx.createPattern(this.imageLoader.getPainPatternImage(type, severity), "repeat");
-	theTag.setStyle(newPattern);
-	this.needRedraw=true;
-	this.draw();
+	theTag.setStyle(newPattern);*/
 }
 
 CanvasState.prototype.saveTagAnnotation = function(index, severity, type, posture, depth, text){
@@ -226,18 +348,19 @@ CanvasState.prototype.saveTagAnnotation = function(index, severity, type, postur
 }
 
 CanvasState.prototype.setZoomPan = function(deltaX, deltaY, deltaZoom){
-	this.ctx.translate(deltaX, deltaY);
+	this.tracker.translate(deltaX, deltaY);
 	this.lastX = this.canvas.width/2;
 	this.lastY = this.canvas.height/2;
 	zoom(deltaZoom, this);
 }
 
 function getEventHandler(name, myState){
+	
  	return function(e){
 		if(myState.mode=="draw")	
-			CanvasDrawEventHandler[name](e, myState);
+			CanvasDrawEventHandler[name](d3.event, myState);
 		else if(myState.mode=="zoom")	
-			CanvasZoomEventHandler[name](e, myState);
+			CanvasZoomEventHandler[name](d3.event, myState);
 	};
 }
 
@@ -245,52 +368,54 @@ var CanvasZoomEventHandler={
 	'mousedown': function(e, myState) {
 		e.preventDefault();
 		var mouse = myState.getMouse(e);
-		var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+		var globalPoint = myState.tracker.transformedPoint(mouse.x, mouse.y);
 		
 		//see if selection occured
-		var l = myState.allTags.length;
-		for (var i = 0; i < l; i++) {
-			if (myState.allTags[i].view ==myState.view && myState.allTags[i].contains(globalPoint.x, globalPoint.y)) 			
-			{
-				myState.selectCallback(myState.allTags.indexOf(myState.regionSelection),false);
-				myState.regionSelection = myState.allTags[i];	
-				myState.selectCallback(i,true);
-				myState.needRedraw = true;
-				myState.dragging = true;
-				myState.dragoffx = globalPoint.x;
-				myState.dragoffy = globalPoint.y;
-				return;
+		
+		var selectedCloud = -1;
+		for (var i = 0; i < myState.allTags.length; i++) {
+			var curTagL = myState.allTags[i];
+			var l = curTagL.length;
+			for(var j=0; j<l; j++){
+				if (curTagL[j].cur_view_side ==myState.cur_view_side && curTagL[j].contains(globalPoint.x, globalPoint.y)) 			
+				{
+					myState.selectCallback(curTagL.indexOf(myState.regionSelection),false);
+					myState.regionSelection = curTagL[j];	
+					myState.selectCallback(i,true);
+
+					myState.dragging = true;
+					myState.dragoffx = globalPoint.x;
+					myState.dragoffy = globalPoint.y;
+					return;
+				}
+
 			}
 		}
-		myState.selectCallback(myState.allTags.indexOf(myState.regionSelection),false);
+		myState.selectCallback(selectedCloud,false);
 		myState.regionSelection = null;
-		myState.needRedraw = true;
 		
 		myState.lastX = e.offsetX || (e.pageX - myState.canvas.offsetLeft);
 		myState.lastY = e.offsetY || (e.pageY - myState.canvas.offsetTop);
-		myState.dragStart = myState.ctx.transformedPoint(myState.lastX,myState.lastY);
+		myState.dragStart = myState.tracker.transformedPoint(myState.lastX,myState.lastY);
 	},
 	'mousemove': function(e, myState) {
 		e.preventDefault();
 		myState.lastX = e.offsetX || (e.pageX - canvas.offsetLeft);
 		myState.lastY = e.offsetY || (e.pageY - canvas.offsetTop);
 		if (myState.dragStart){
-			var pt = myState.ctx.transformedPoint(myState.lastX,myState.lastY);
-			myState.ctx.translate(pt.x-myState.dragStart.x,pt.y-myState.dragStart.y);
-			myState.needRedraw=true;
-			myState.draw();
+			var pt = myState.tracker.transformedPoint(myState.lastX,myState.lastY);
+			var newMat = myState.tracker.translate(pt.x-myState.dragStart.x,pt.y-myState.dragStart.y);
+			myState.svg.attr("transform", "matrix("+newMat.a+","+newMat.b+","+newMat.c+","+newMat.d+","+newMat.e+","+newMat.f+")");
 		}
 		
 		/* Non Free Hand */
 		if (myState.dragging){
 			var mouse = myState.getMouse(e);
-			var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+			var globalPoint =myState.tracker.transformedPoint(mouse.x, mouse.y);
 			
 			myState.regionSelection.moveAll(globalPoint.x - myState.dragoffx, globalPoint.y - myState.dragoffy);
 			myState.dragoffx = globalPoint.x;
-			myState.dragoffy = globalPoint.y;
-			
-			myState.needRedraw = true; // Redraw flag 			
+			myState.dragoffy = globalPoint.y;		
 		}
 	},
 	'mouseup': function(e, myState) {
@@ -309,25 +434,34 @@ var CanvasZoomEventHandler={
 
 var CanvasDrawEventHandler={
 	'mousedown': function(e, myState) {
-			myState.selectCallback(myState.allTags.indexOf(myState.regionSelection),false);
-			myState.regionSelection = null;
-			myState.needRedraw = true;
-			
-			e.preventDefault();
-			
-			var mouse = myState.getMouse(e);
-			
-			/* Free Hand Drawing */
-			//save old one
-			if(myState.handSelection)
-				myState.saveCallback(myState.handSelection, myState.allTags.length-1);
+		if(! myState.recording) return;
+		myState.regionSelection = null;
+		
+		e.preventDefault();
+		
+		var mouse = myState.getMouse(e);
+		
+		/* Free Hand Drawing */
 
-			myState.mouseDownForFreeHand = true;
-			myState.handSelection=new FreeHandTagCanvasElem('#F89393', myState.view);
-			
-			var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
-			myState.handSelection.addPoint(globalPoint.x, globalPoint.y);
-			myState.addFreeHandTagCanvasElem(myState.handSelection);
+		myState.mouseDownForFreeHand = true;
+		myState.handSelection=new FreeHandTagCanvasElem('#F89393', myState.cur_view_side);
+		
+		var globalPoint = myState.tracker.transformedPoint(mouse.x, mouse.y);
+		myState.handSelection.addPoint(globalPoint.x, globalPoint.y);
+		myState.addFreeHandTagCanvasElem(myState.handSelection);
+		
+		var grouper = myState.svg.select(".side_" + myState.cur_view_side + ".tag_" + myState.tagCloud);
+
+		if(grouper.empty())
+			grouper = myState.svg.append("svg:g")
+				.attr("class", "side_" + myState.cur_view_side + " tag_" + myState.tagCloud)
+				.attr("opacity", 0.7);
+
+		myState.curElemG = grouper.append("svg:path")
+				.style("stroke-width", myState.strokeWidth)
+				.style("fill","none")
+				.style("stroke",colorSelector(2))
+				.attr("d", myState.line(myState.handSelection.points));
 		},
 		
 	'mousemove': function(e, myState) {
@@ -335,9 +469,10 @@ var CanvasDrawEventHandler={
 			e.preventDefault();
 			/*Free Hand Drawing*/
 			if(myState.mouseDownForFreeHand){
-				var globalPoint = myState.ctx.transformedPoint(mouse.x, mouse.y);
+				var globalPoint = myState.tracker.transformedPoint(mouse.x, mouse.y);
 				myState.handSelection.addPoint(globalPoint.x, globalPoint.y);
-				myState.needRedraw=true;
+
+				myState.curElemG.attr("d",myState.line(myState.handSelection.points));
 				return;
 			}
 		},
@@ -347,14 +482,14 @@ var CanvasDrawEventHandler={
 				myState.mouseDownForFreeHand = false;
 				
 				if(!myState.handSelection.isValidElem()){
-					myState.allTags.pop();
+					myState.undoLastDrawing();
+					//take out from the svg. myState.curElemG
 				}
 				else {
 					myState.regionSelection = myState.handSelection;
-					myState.selectCallback(myState.allTags.length-1, true);
-				}
-				myState.needRedraw=true;
-				
+					//myState.selectCallback(myState.tagCloud, true);
+					myState.curElemG.attr("d",myState.line(myState.handSelection.points));
+				}				
 				var mouse = myState.getMouse(e);
 				return;
 			}
@@ -368,71 +503,85 @@ var CanvasDrawEventHandler={
 };
 
 
-var zoom = function(clicks, myState){
-	var ctx=myState.ctx;
-	
-	var pt = ctx.transformedPoint(myState.lastX,myState.lastY);
-	ctx.translate(pt.x,pt.y);
-	var factor = Math.pow(1.1,clicks);
-	ctx.scale(factor,factor);
-	ctx.translate(-pt.x,-pt.y);
-	myState.needRedraw=true;
-	myState.draw();
+var colorSelector = function(severity){
+	if(severity==0)
+		return "#FFF5F0";
+	else if(severity==1)
+		return "#FEE0D2";
+	else if(severity==2)
+		return "#FCBBA1";
+	else if(severity==3)
+		return "#FC9272";
+	else if(severity==4)
+		return "#FB6A4A";
+	else if(severity==5)
+		return "#EF3B2C";
+	else if(severity==6)
+		return "#CB181D";
+	else if(severity==7)
+		return "#A50F15";
+	else if(severity==8)
+		return "#67000D";
+	else if(severity==9)
+		return "#67000D";
+
 }
 
-function trackTransforms(ctx,svg){
+var zoom = function(clicks, myState){
+	var pt = myState.tracker.transformedPoint(myState.lastX,myState.lastY);
+	//myState.tracker.translate(pt.x,pt.y);
+	var factor = Math.pow(1.1,clicks);
+	myState.tracker.scale(factor,factor);
+	//myState.tracker.translate(-pt.x,-pt.y);
+	var newMat = myState.tracker.getTransform();
+	myState.svg.attr("transform", "matrix("+newMat.a+","+newMat.b+","+newMat.c+","+newMat.d+","+newMat.e+","+newMat.f+")");
+}
+
+function trackSVGTransforms(tracker, svg){
 	var xform = svg.createSVGMatrix();
-	ctx.getTransform = function(){ return xform; };
-
-	var savedTransforms = [];
-	var save = ctx.save;
-	ctx.save = function(){
-		savedTransforms.push(xform.translate(0,0));
-		return save.call(ctx);
-	};
-	var restore = ctx.restore;
-	ctx.restore = function(){
-		xform = savedTransforms.pop();
-		return restore.call(ctx);
-	};
-
-	var scale = ctx.scale;
-	ctx.scale = function(sx,sy){
+	var getTransform = tracker.getTransform;
+	tracker.getTransform = function(){ return xform; };
+	
+	var scale = 1;
+	var scale = tracker.scale;
+	tracker.scale = function(sx,sy){
 		xform = xform.scaleNonUniform(sx,sy);
-		return scale.call(ctx,sx,sy);
+		return xform;
 	};
-	var rotate = ctx.rotate;
-	ctx.rotate = function(radians){
+	var rotate = tracker.rotate;
+	tracker.rotate = function(radians){
 		xform = xform.rotate(radians*180/Math.PI);
-		return rotate.call(ctx,radians);
+		return xform;
 	};
-	var translate = ctx.translate;
-	ctx.translate = function(dx,dy){
+	var translate = tracker.translate;
+	tracker.translate = function(dx,dy){
 		xform = xform.translate(dx,dy);
-		return translate.call(ctx,dx,dy);
+		return xform;
 	};
-	var transform = ctx.transform;
-	ctx.transform = function(a,b,c,d,e,f){
+	var transform = tracker.transform;
+	tracker.transform = function(a,b,c,d,e,f){
 		var m2 = svg.createSVGMatrix();
 		m2.a=a; m2.b=b; m2.c=c; m2.d=d; m2.e=e; m2.f=f;
 		xform = xform.multiply(m2);
-		return transform.call(ctx,a,b,c,d,e,f);
+		return xform;
 	};
-	var setTransform = ctx.setTransform;
-	ctx.setTransform = function(a,b,c,d,e,f){
+	var setTransform = tracker.setTransform;
+	tracker.setTransform = function(a,b,c,d,e,f){
 		xform.a = a;
 		xform.b = b;
 		xform.c = c;
 		xform.d = d;
 		xform.e = e;
 		xform.f = f;
-		return setTransform.call(ctx,a,b,c,d,e,f);
+		return xform;
 	};
-	var pt  = svg.createSVGPoint();
-	ctx.transformedPoint = function(x,y){
+	
+	var pt = svg.createSVGPoint();
+	tracker.transformedPoint = function(x,y){
 		pt.x=x; pt.y=y;
 		return pt.matrixTransform(xform.inverse());
 	}
 }
+
 
 

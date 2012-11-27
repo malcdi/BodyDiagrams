@@ -3,7 +3,7 @@
 .rotation{
 	width:20px;
 	position: absolute;
-	top: 615px;
+	top: 580px;
 	margin:10px;
 	padding: 10px;
 	min-height:120px;
@@ -52,7 +52,7 @@
 }
 #pain_annotation_list_container{
 	position: absolute;
-	top: 330px;
+	top: 360px;
 	left: 500px;
 	height: 490px;
 	overflow:scroll;

@@ -21,16 +21,19 @@
 
 <div style="position: relative; margin-left: 10px; margin-right: 10px;">
 <div id="content-panel">
-<div id="canvasDiv" style="width:500px; height:750px;z-index: 1000"></div>
+<div id="canvasDiv" style="width:500px; height:730px;z-index: 1000"></div>
 
 <!-- Zoom/Drag Control -->
 <div id="opModeControl" style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px; width:500px">
  	<img class="opMode" id="zoom" src="/assets/dragHand.png" style="width:30px;height:30px;"/>
- 	<img class="opMode" id="newDraw" src="/assets/plusInactive.png" style="width:30px;height:30px;"/>
- 	<img class="opMode" id="draw" src="/assets/drawIconInactive.png" style="width:30px;height:30px;"/>
- 	<img class="opMode" id="undo" src="/assets/undoInactive.png" style="width:30px;height:30px; float:right;"/>
- 	<div id="drawBrush" style="width:80px;height:30px;"><img src="/assets/paint_brush.png" style="width:20px;height:20px;"/><div style="width:60px;margin:0px 10px;display:inline-block;"></div></div>
- 	<div class="opMode" id="symptomTitle" style="font-size:1.2em;padding:5px;float:right;margin-right:20px;"></div>
+ 	<span id ="drawSet" style="display:inline-block;">
+	 	<img class="opMode" id="draw" src="/assets/drawIconInactive.png" style="width:30px;height:30px;"/>
+	 	<img class="opMode" id="undo" src="/assets/undoInactive.png" style="width:30px;height:30px; float:right;margin-left:300px"/>
+	 	<div id="drawBrush" style="width:80px;height:30px;display:inline-block;">
+	 		<img src="/assets/paint_brush.png" style="width:20px;height:20px;"/>
+	 		<div style="width:60px;margin:0px 10px;display:inline-block;"></div>
+	 	</div>
+	</span>
 </div>
 
 <!-- Zoom Control -->
@@ -52,10 +55,15 @@
 	<img class="rotation" id="left" src="/assets/dragHand.png"/>
 	<img class="rotation" id="right" src="/assets/dragHand.png"/>
 
+	<!-- new draw-->
+	<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 540px">
+ 	<div id="symptomTitle" style="font-size:1.2em;padding:5px;display:inline-block;margin-right: 10px;vertical-align:top"></div>
+ 	<img class="opMode" id="newDraw" src="/assets/plus.png" style="display:inline-block;width:30px;height:30px;"/>
+ </div>
 	<!--Hidden annotation box-->
 
 	<div id="annotator" style="position:absolute">
-		<div class="annotator-outer annotator-editor" style = "top:90px;">
+		<div class="annotator-outer annotator-editor" style = "top:125px;">
 			<div class="annotator-widget" >
 				<ul class="annotator-listing">
 					<li class="annotator-item"><div class="pain_severity"style="width:70%;float:right"><span style="margin-left:-2px">1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span style="margin-right:-3px">10</span></div>
@@ -101,7 +109,7 @@
 				</ul>
 			</div>
 	</div>
-	<button id="done_button" style ="position:absolute;top:60px;left:290px">Done</button>
+	<button id="done_button" style ="position:absolute;top:90px;left:290px">Done</button>
 	
 </div>
 
@@ -117,31 +125,12 @@
 
 <script type="text/javascript">
 	var cvState;
-	function zoomModeOn(){
-		cvState.setMode(this.id);
-		this.src = '/assets/dragHand.png';
-		this.style.border ="solid 2px rgb(108, 204, 128)";
-		$("#draw")[0].src = '/assets/drawIconInactive.png';
-		$("#draw")[0].style.border ="solid 2px rgb(108, 204, 128)";
-		$("#draw")[0].style.border ="";
-		$("#undo").css("display", "none");
-		$("#drawBrush").css("display", "none");
-
-		$("#newDraw")[0].src = '/assets/plusInactive.png';
-		$("#newDraw")[0].style.border ="solid 2px rgb(108, 204, 128)";
-		$("#newDraw")[0].style.border ="";
+	function getURLParameter(name) {
+			return decodeURIComponent(
+					(location.search.match(RegExp("[?|&]"+name+'=(.+?)(&|$)'))||[,null])[1]
+			);  
 	}
-
-	function drawModeOn(){
-		cvState.setMode(this.id);
-		$("#undo").css("display", "inline-block");
-		$("#drawBrush").css("display", "inline-block");
-		this.src = '/assets/drawIcon.png';
-		$("#zoom")[0].src = '/assets/dragHandInactive.png';
-		this.style.border ="solid 2px rgb(108, 204, 128)";
-		$("#zoom")[0].style.border ="";
-	}
-
+	
 	function tagSelectionUpdate(index, select){
 		cvState.deHighlightCloud();
 		if(index<0)
@@ -162,65 +151,17 @@
 		}
 		cvState.highlightCloud(index);
 	}	
-	function saveTagAnnotations (tags, severity, type, posture, depth, text)
-	{
-		for (var i =0; i<tags.length; i++){
-			tags[i].saveTagAnnotation(severity, type, posture, depth, text);
-		}
-	}	
-	
-	function updateAnnotations(tags,index){
-		var severity = $(".pain_severity").slider("value")/20+1;
-		var typeText = $(".pain_type>#pain_type_tags").val();
-		var posture = $(".pain_posture>.tag-selected")[0].innerText;
-		var depth = $(".pain_depth").slider("value")/20+1;
-		var text = $("#annotator").find(".pain_annotation").val();
-		
-		$(".pain_severity").slider("value", 0);
-		$(".pain_depth").slider("value",0);
-		$("#annotator").find(".pain_annotation").val("");
-		
-		saveTagAnnotations(tags, severity, typeText, posture, depth, text);
-		
-		var newTagContainer = $('<li><div class="annotator-widget annotator-list" style="position:static;"><ul class="annotator-listing"> <li class="annotator-item"><div class="pain_type"> </div></li><li class="annotator-item"><textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea> </li> </ul></div></li>');
 
-		var newTextArea = newTagContainer.find(".pain_annotation");
-		newTextArea[0].value = text;
-		
-		$(".pain_severity").slider("value", 3);
-		$(".pain_severity").find("a")[0].style.backgroundColor="#FCBBA1";
-
-		$(".pain_depth").slider("value",0);
-		$("#pain_type_tags").val("");
-		$("#annotator").find(".pain_annotation").val("");
-		$("#pain_annotation_list").prepend(newTagContainer);
-		newTagContainer.ready(function(){
-			newTagContainer.find(".pain_annotation").attr("id", "tag_"+index);
-			newTagContainer.find(".pain_type").text("Symptom Type: "+typeText); 
-			newTagContainer.find(".pain_annotation").focus(function(obj){
-				var index = this.id.match("tag_([0-9]+)")[1];
-				tagSelectionUpdate(index,true);
-			});
-			newTagContainer.find(".pain_annotation").focusout(function(obj){
-				var index = this.id.match("tag_([0-9]+)")[1];
-				tagSelectionUpdate(index,false);
-			});
-
-		});
-		
-	}
-	
-	function getURLParameter(name) {
-			return decodeURIComponent(
-					(location.search.match(RegExp("[?|&]"+name+'=(.+?)(&|$)'))||[,null])[1]
-			);  
-	}
 	//current view side {0:front, 1: right, 2: back, 3: left}
 	var cur_view_side=0;
 	var imagePrefix="/assets/";
+
 	
 	var zoomScale=1.0;//current zoom scale
 	$(document).ready(function(){
+
+		var commentController = new CommentController();
+
 		/* Canvas State */
 		var currentView = 0;
 		var currentGender = getURLParameter("gender"); 
@@ -231,11 +172,14 @@
 						view:currentView, 
 						mode:"zoom", 
 						imageLoader:ImageLoader,
-						saveCallback: updateAnnotations,
-						selectCallback: tagSelectionUpdate});
+						selectCallback: function() {return commentController.tagSelectionUpdate}});
+
+		commentController.setCVState(cvState);
+		var modeEventHandler = new ModeStateHandler(commentController, cvState);
+
 		
 	   /* Setting up annotation box*/
-	   	$("#annotator").css("opacity","0.3");
+	   	$("#annotator").css("opacity",0.0);
 
 		$(".pain_severity").slider({
 			min: 1,
@@ -289,12 +233,12 @@
 		});
 		
 		/* Setting up Mode Control */
-		$('#zoom').bind('click', zoomModeOn);
+		$('#zoom').bind('click', function(){
+			return modeEventHandler.handleEvents("zoom");
+		});
+
 		$("#zoom").trigger('click');
-		$("#draw").css("display", "none");
-		$("#undo").css("display", "none");
 		$("#symptomTitle").css("display", "none");
-		$("#drawBrush").css("display", "none");
 
 		$("#drawBrush").find("div").slider({
 			min: 3,
@@ -310,6 +254,15 @@
 		$("#undo").click(function(){
 			cvState.undoLastDrawing();
 		});
+
+		$('#newDraw').click(function(){
+			modeEventHandler.handleEvents("newDraw", cvState.tagCloud+1);
+		});
+		
+		$('#done_button').click(function(){			
+			modeEventHandler.handleEvents("done",cvState.tagCloud);
+		})
+
 		
 		/* Setting up Zoom Control*/
 		//panning
@@ -388,56 +341,15 @@
 		
 		/* Showing All Annotations */		
 		$("#annotator").find(".pain_annotation").focus(function(obj){
-			tagSelectionUpdate(-2,true);
+			commentController.tagSelectionUpdate(-2,true);
 		});
 		$("#annotator").find(".pain_annotation").focusout(function(obj){
-			tagSelectionUpdate(-2,false);
+			commentController.tagSelectionUpdate(-2,false);
 		});
 		
 		$('#done_button').css("display", "none");
 		
-		/* set up symptom button*/
-		$('#newDraw').click(function(){
-			$("#annotator").css("opacity",1.0);
-			$("#symptomTitle").css("display", "block");
-			$("#symptomTitle").text("Symptom "+(cvState.tagCloud+1))
-			$('#done_button').css("display", "block");
-			cvState.startRecordingNewMsg();
-			cvState.deHighlightCloud();
-
-			this.src = '/assets/plus.png';
-
-			var wasDrawing = ($("#draw")[0].style.opacity==1);
-			if(wasDrawing){
-				$('#done_button').trigger("click");
-				$("#draw")[0].style.opacity = 0.2;
-				$(this).trigger("click");
-				$("#undo").css("display", "none");
-				$("#drawBrush").css("display", "none");
-
-
-			}
-			else{
-				$('#draw').bind('click', drawModeOn);
-				$("#draw")[0].style.opacity = 1;
-				$("#draw").trigger("click");
-				$("#draw").css("display", "inline-block");
-			}
-		});
 		
-		$('#done_button').click(function(){
-			updateAnnotations(cvState.allTags[cvState.tagCloud], cvState.tagCloud);
-			$('#done_button').css("display", "none");
-			$("#annotator").css("opacity",0.3);
-			cvState.stopRecordingNewMsg();
-			cvState.deHighlightCloud();
-
-			$('#draw').unbind('click', drawModeOn);
-			$("#undo").css("display", "none");
-			$("#drawBrush").css("display", "none");
-			$("#draw")[0].style.opacity = 0.2;
-			$("#zoom").trigger("click");
-		})
 	});
 	
 	function getOtherView(direction){

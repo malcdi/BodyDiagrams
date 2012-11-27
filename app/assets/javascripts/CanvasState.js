@@ -50,7 +50,6 @@ function CanvasState(canvas, options) {
 	this.cur_view_side = options.view ? options.view : 0;
 	this.mode = options.mode ? options.mode : "zoom";
 	this.imageLoader = options.imageLoader;
-	this.saveCallback = options.saveCallback;
 	this.selectCallback = options.selectCallback;
 	
 	this.lastX=canvas.width/2;
@@ -75,7 +74,7 @@ function CanvasState(canvas, options) {
 	/* registering mouse events */
 	var myState = this;
 	var canvasDivW = 500;
-	var canvasDivH = 700;
+	var canvasDivH = 730;
 	this.svg= d3.select("#canvasDiv").append("svg")
 		.attr("width", canvasDivW)
 		.attr("height",canvasDivH);
@@ -126,7 +125,7 @@ function CanvasState(canvas, options) {
 	*/
 	this.strokeWidthGuider = this.svg.append("path")
 		.attr("id", "strokeWidthGuider")
-		.attr("d","M130,20L140,20L150,20L160,20L170,20")
+		.attr("d","M100,20L110,20L120,20L130,20L140,20")
 		.style("stroke-width", this.strokeWidth)
 		.style("fill","none")
 		.style("stroke",colorSelector(2))
@@ -251,6 +250,13 @@ CanvasState.prototype.startRecordingNewMsg = function(){
 }
 
 CanvasState.prototype.stopRecordingNewMsg = function(){
+	//cur group
+	var grouper = this.svg.select(".side_" + this.cur_view_side + ".tag_" + this.tagCloud);
+
+	if(! grouper.empty()){
+		grouper.style("opacity",0.3);
+	}
+
 	this.recording = false;
 }
 
@@ -269,9 +275,18 @@ CanvasState.prototype.deHighlightCloud = function(){
 	var bbox = this.svg.select("#boundingBox");
 	if(!bbox.empty())
 		bbox.style("opacity", 0);
+
+	//except when the recent
+	if(this.recording && (this.highlightTagCloud==this.allTags.length-1)) return;
+
+	var grouper = this.svg.select(".side_" + this.cur_view_side + ".tag_" + this.highlightTagCloud);
+	if(!grouper.empty()){
+		grouper.style("opacity", 0.3);
+	}
 }
 
 CanvasState.prototype.highlightCloud = function(index){
+
 	if(index<0) index = this.allTags.length-1;
 
 	var cloudElems = this.allTags[index];
@@ -279,7 +294,14 @@ CanvasState.prototype.highlightCloud = function(index){
 	//ignore if in diff view
 	if(cloudElems[0].view!=this.cur_view_side) return;
 
+	this.deHighlightCloud();
+
 	this.highlightTagCloud = index;
+	var grouper = this.svg.select(".side_" + this.cur_view_side + ".tag_" + this.highlightTagCloud);
+	if(!grouper.empty()){
+		grouper.style("opacity", 0.7);
+	}
+
 
 	var boundingBox = {"x1":1000,"y1":1000,"x2":0,"y2":0};
 	//find bounding region for this cloud
@@ -305,7 +327,7 @@ CanvasState.prototype.highlightCloud = function(index){
 		.style("fill", "#7BCCC4")
 		.style("stroke", "#43A2CA")
 		.style("stroke-width", 3)
-		.style("fill-opacity", "0.2")
+		.style("fill-opacity", "0.05")
 		.style("opacity", 1.0);
 }
 
@@ -426,9 +448,6 @@ var CanvasZoomEventHandler={
 		var delta = e.originalEvent.wheelDelta ? e.originalEvent.wheelDelta/40 : e.originalEvent.detail ? e.originalEvent.detail : 0;
 		if (delta) zoom(delta,myState);
 		return e.preventDefault() && false;
-	},
-	'selectstart': function(e,myState) { 
-		e.preventDefault(); return false; 
 	}
 }
 
@@ -438,6 +457,7 @@ var CanvasDrawEventHandler={
 		myState.regionSelection = null;
 		
 		e.preventDefault();
+		myState.deHighlightCloud();
 		
 		var mouse = myState.getMouse(e);
 		
@@ -452,15 +472,19 @@ var CanvasDrawEventHandler={
 		
 		var grouper = myState.svg.select(".side_" + myState.cur_view_side + ".tag_" + myState.tagCloud);
 
+		var strokeColor = colorSelector(2);
 		if(grouper.empty())
 			grouper = myState.svg.append("svg:g")
 				.attr("class", "side_" + myState.cur_view_side + " tag_" + myState.tagCloud)
 				.attr("opacity", 0.7);
+		else{
+			strokeColor = grouper.select("path").style("stroke");
+		}
 
 		myState.curElemG = grouper.append("svg:path")
 				.style("stroke-width", myState.strokeWidth)
 				.style("fill","none")
-				.style("stroke",colorSelector(2))
+				.style("stroke",strokeColor)
 				.attr("d", myState.line(myState.handSelection.points));
 		},
 		

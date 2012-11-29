@@ -125,7 +125,7 @@ FreeHandTagCanvasElem.prototype.getView = function() {
 	return this.view;
 }
 FreeHandTagCanvasElem.prototype.toJSON = function() {
-	return this.points;
+	return {"points":this.points, "view":this.view};
 }
 
 FreeHandTagCanvasElem.prototype.contains = function(mx, my) {

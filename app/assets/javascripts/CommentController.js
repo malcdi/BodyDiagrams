@@ -1,6 +1,8 @@
-function CommentController (){
+function CommentController (callback){
 
 	this.cvState = null;
+	this.annotatorBoxElem = $("#annotator");
+	this.callback = callback;
 
 	this.setCVState = function(cvState){
 		this.cvState =cvState;
@@ -8,71 +10,146 @@ function CommentController (){
 
 	
 
-	this.saveTagAnnotations = function(tags, severity, type, posture, depth, text)
+	this.saveTagAnnotations = function(newTagContainer, index)
 	{
-		for (var i =0; i<tags.length; i++){
-			tags[i].saveTagAnnotation(severity, type, posture, depth, text);
-		}
-	}
 
-	this.edit = function(index){
-		//highlight or giving full widget to the element with index
-		//transition animation
+		var severity = newTagContainer.find(".pain_severity").slider("value")/20+1;
+		var typeText = newTagContainer.find(".pain_type>#pain_type_tags").val();
+		var posture = newTagContainer.find(".pain_posture>.tag-selected")[0].innerText;
+		var layer = newTagContainer.find(".pain_layer>.tag-selected")[0].innerText;
+		var text = newTagContainer.find(".pain_annotation").val();
 
+		this.cvState.saveTagAnnotation(index, severity, typeText, posture, layer, text);
 	}
 
 	this.editDone = function(index){
 		//highlight or giving full widget to the element with index
 		//transition animation
+
+		//first one
+		var newTagContainer = $("#pain_annotation_list>li:nth-child(1)>div");
 		
+		this.saveTagAnnotations(newTagContainer, index);
+
+		newTagContainer.find(".symptom_id").text(index);
+
+		var listIndex = this.cvState.allTags.length-(index+1);
+		this.animateControl(listIndex, false);
+
+		var self=this;
+		/*newTagContainer.focusout(function(obj){
+			cvState.deHighlightCloud();
+			var index = parseInt(this.id.match("tag_([0-9]+)")[1]);
+
+			var listIndex = self.cvState.allTags.length-(index+1);
+			self.animateControl(listIndex, false);
+
+			//COLLAPSE
+		});*/
 	}
 	this.createNew = function(index){
-		var tags = this.cvState.allTags[index];
-		
-		var severity = $(".pain_severity").slider("value")/20+1;
-		var typeText = $(".pain_type>#pain_type_tags").val();
-		var posture = $(".pain_posture>.tag-selected")[0].innerText;
-		var depth = $(".pain_depth").slider("value")/20+1;
-		var text = $("#annotator").find(".pain_annotation").val();
-		
-		$(".pain_severity").slider("value", 0);
-		$(".pain_depth").slider("value",0);
-		$("#annotator").find(".pain_annotation").val("");
-		
-		this.saveTagAnnotations(tags, severity, typeText, posture, depth, text);
-		
-		var newTagContainer = $('<li><div class="annotator-widget annotator-list" style="position:static;"><ul class="annotator-listing"> <li class="annotator-item"><div class="symptom_id"></div></li><li class="annotator-item"><div class="pain_type"> </div></li><li class="annotator-item"><textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea> </li> </ul></div></li>');
+		var newTagContainer = $("#annotator>div").clone();
+		var self=this;
 
-		var newTextArea = newTagContainer.find(".pain_annotation");
-		newTextArea[0].value = text;
+		newTagContainer.find(".pain_severity").slider({
+			min: 1,
+			max: 10,
+			value: 3,
+			slide: function(event, ui) {
+				var painType = newTagContainer.find(".pain_type>.tag-selected").text();
+				var newCol = cvState.updateGraphics(index, ui.value-1 ,painType);
+				$(this).find("a")[0].style.backgroundImage="none";
+				$(this).find("a")[0].style.backgroundColor= newCol;
+				cvState.highlightCloud(index);
+				self.saveTagAnnotations(newTagContainer, index);
+			}
+		});
 
-		$(".pain_severity").slider("value", 3);
-		$(".pain_severity").find("a")[0].style.backgroundColor="#FCBBA1";
+		newTagContainer.find(".annotator-tag").click(function(){
+			var children = this.parentElement.children;
+			for (var id in children){
+				var classes=children[id].classList;
+				if(classes!=undefined && classes.contains("annotator-tag") &&
+					(classes.contains("tag-selected") || children[id]==this))
+				{
+					$(children[id]).toggleClass("tag-selected");
+				}
+			}
 
-		$(".pain_depth").slider("value",0);
-		$("#pain_type_tags").val("");
-		$("#annotator").find(".pain_annotation").val("");
-		$("#pain_annotation_list").prepend(newTagContainer);
+			self.saveTagAnnotations(newTagContainer, index);
+		});
+
+		newTagContainer.find(".annotator-type-tag").click(function(){
+			var pastStr = newTagContainer.find(".pain_type_tags").val();
+			if(pastStr.indexOf($(this).text())<0){
+				pastStr+=$(this).text() +", ";
+				newTagContainer.find(".pain_type_tags").val(pastStr);
+			}
+		});
+
+		newTagContainer.find(".pain_severity").slider("value", 3);
+		newTagContainer.find(".pain_severity").find("a")[0].style.backgroundColor="#FCBBA1";
+		newTagContainer.find(".symptom_id").text(index);
+
+		$("#pain_annotation_list").prepend("<li></li>");
+		$("#pain_annotation_list>li:nth-child(1)").append(newTagContainer);
+		
+
+		var self= this;
+		self.collapseAll();
+
 		newTagContainer.ready(function(){
-			newTagContainer.find(".pain_annotation").attr("id", "tag_"+index);
-			newTagContainer.find(".pain_type").text("Symptom Type: "+typeText);
-			newTagContainer.find(".pain_annotation")[0].value = text;
-			newTagContainer.find(".symptom_id").text("Symptom "+index); 
+			self.animateControl(0, true);
+			newTagContainer.attr("id", "tag_"+index);
+		});
 
-			newTagContainer.find(".pain_annotation").focus(function(obj){
-				var index = this.id.match("tag_([0-9]+)")[1];
-				this.tagSelectionUpdate(index,true);
+		var self = this;
+		newTagContainer.click(function(obj){
+			//collapse other if any
+			self.collapseAll();
+			cvState.deHighlightCloud();
 
-				//EXPAND
-			});
-			newTagContainer.find(".pain_annotation").focusout(function(obj){
-				var index = this.id.match("tag_([0-9]+)")[1];
-				this.tagSelectionUpdate(index,false);
-
-				//COLLAPSE
-			});
+			//EXPAND
+			var index = parseInt(this.id.match("tag_([0-9]+)")[1]);
+			
+			var listIndex = self.cvState.allTags.length-(index+1);
+			self.animateControl(listIndex, true);
+			cvState.highlightCloud(index);
 
 		});
-		
+	}
+	this.collapseAll = function(){
+		//collapse all others
+		for(var i=0; i<self.cvState.allTags.length; i++){
+			this.animateControl(i, false);
+		}
+			
+	}
+	this.animateControl = function(index, expand){
+		var elemId = "#pain_annotation_list>li:nth-child("+(index+1)+")>div";
+		var listElem = $(elemId);
+		var expanding = expand?'block':'none';
+
+		listElem.find(".pain_severity").css({
+			'display': expanding
+		});
+		listElem.find(".pain_type").css({
+			'display': expanding
+		});
+		listElem.find(".pain_layer").parent().css({
+			'display': expanding
+		});
+		listElem.find(".pain_posture").parent().css({
+			'display': expanding
+		});
+
+		listElem.find(".pain_severity_collapsed").css({
+			'display': expand?'none':'block'
+		});
+
+		listElem.css({
+			'opacity': expand? 1.0:0.4
+		});
+
 	}
 }

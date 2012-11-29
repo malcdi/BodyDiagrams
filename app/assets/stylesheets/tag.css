@@ -48,13 +48,14 @@
 
 #annotator{
 	top: 240px;
-	left: 550px;
+	left: 558px;
 }
 #pain_annotation_list_container{
 	position: absolute;
-	top: 360px;
+	top: 50px;
 	left: 500px;
-	height: 490px;
+	height: 100%;
+	width: 350px;
 	overflow:scroll;
 }
 #pain_annotation_list{
@@ -109,7 +110,7 @@ div.photo-tagger-message {
 
 .annotator-adder,.annotator-outer,.annotator-notice{z-index:9999}
 
-.annotator-adder,.annotator-outer,.annotator-widget,.annotator-notice{position:absolute;font-size:10px;line-height:1}
+.annotator-adder,.annotator-outer,.annotator-widget,.annotator-notice{font-size:10px;line-height:1}
 
 .annotator-hide{display:none;visibility:hidden}.annotator-adder{margin-top:-48px;margin-left:-24px;width:48px;height:48px;background-position:left top}
 

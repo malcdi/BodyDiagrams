@@ -1,9 +1,10 @@
 
 <h1>Tell us about you!</h1>
 <table>
+	<tr ><td id="gender" style="text-align: center;">Male<td> </tr>
 	<tr>
 		<td style="width:150px">
-			<img id="body_view" src="/assets/whole_0.png" onmousedown="event.preventDefault();" 
+			<img id="body_view" src="/assets/male_0.png" onmousedown="event.preventDefault();" 
 				alt="no photo" style="width:150px;"> </img>
 		</td>
 		<td>
@@ -13,7 +14,7 @@
 				Select Gender: 
 				</td>
 				<td>
-					<button type="button" id="gender" style='width: 40px; height:80px;background-image:url("/assets/genderIcon.png")'> </button> 
+					<button type="button" id="genderButton" style='width: 40px; height:80px;background-image:url("/assets/genderIcon.png")'> </button> 
 				</td>
 			</tr>
 			<tr>
@@ -43,13 +44,15 @@
 <script type="text/javascript">
 var imagePrefix="/assets/";
 $(function() {
-	$("#gender").click(function(){
-		if(imagePrefix == "/assets/"){
-			imagePrefix = "/assets/female_";
+	$("#genderButton").click(function(){
+		var gender="male";
+		if($("#gender").text()=="Male"){
+			gender="female"
+			$("#gender").text("Female");
 		} else {
-			imagePrefix = "/assets/";
+			$("#gender").text("Male");
 		}
-		$("#body_view").attr("src",imagePrefix + "whole_0.png");
+		$("#body_view").attr("src",ImageLoader.getBodyImageSrc(gender, 0));
 	});
 	
 	$("#next").click(function(){

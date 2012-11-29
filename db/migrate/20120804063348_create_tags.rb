@@ -3,8 +3,9 @@ class CreateTags < ActiveRecord::Migration
     create_table :tags do |t|
       t.string  :annotate
       t.integer  :severity
-      t.integer  :depth
-      t.integer  :view_side
+      t.string  :layer
+      t.string  :type
+      t.string  :posture
       t.timestamps
     end
   end

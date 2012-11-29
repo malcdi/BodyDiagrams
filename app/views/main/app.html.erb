@@ -57,22 +57,27 @@
 
 	<!-- new draw-->
 	<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 540px">
- 	<div id="symptomTitle" style="font-size:1.2em;padding:5px;display:inline-block;margin-right: 10px;vertical-align:top"></div>
  	<img class="opMode" id="newDraw" src="/assets/plus.png" style="display:inline-block;width:30px;height:30px;"/>
  </div>
 	<!--Hidden annotation box-->
 
 	<div id="annotator" style="position:absolute">
-		<div class="annotator-outer annotator-editor" style = "top:125px;">
+		<div class="annotator-editor">
 			<div class="annotator-widget" >
 				<ul class="annotator-listing">
-					<li class="annotator-item"><div class="pain_severity"style="width:70%;float:right"><span style="margin-left:-2px">1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span style="margin-right:-3px">10</span></div>
-						<span>Symptom Severity:</span>
+					<li class="annotator-item">
+						<span>Symptom Id:</span> 
+						<span class="symptom_id"></span>
 					</li>
 					<li class="annotator-item">
+						<div class="pain_severity" style="width:70%;float:right"><span style="margin-left:-2px">1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span style="margin-right:-3px">10</span></div>
+						<span>Symptom Severity:</span>
+						<div class="pain_severity_collapsed" style="display:none;"></div>
+					</li>
+					<li class="annotator-item">
+						<span>Symptom Type:</span>
+						<textarea class="pain_type_tags" placeholder="Tags..." style="height:30px;padding:5px 8px;" rows="1"></textarea>
 						<div class="pain_type">
-							<span>Symptom Type:</span>
-							<textarea id="pain_type_tags" placeholder="Tags..." style="height:30px;padding:5px 8px;" rows="1"></textarea>
 							<span class="annotator-type-tag">#sharp</span>
 							<span class="annotator-type-tag">#dull</span>
 							<span class="annotator-type-tag">#numb</span>
@@ -83,11 +88,11 @@
 							<span class="annotator-type-tag">#cramping</span>
 							<span class="annotator-type-tag">#pounding</span>
 							<span class="annotator-type-tag">#aching</span>
-
-						</div></li>
+						</div>
+					</li>
 					<li class="annotator-item">
-						<div class="pain_posture annotator-tags">
-							<span>Symptom Layer:</span>
+						<span>Symptom Layer:</span>
+						<div class="pain_layer annotator-tags">
 								<span class="annotator-tag tag-selected">Skin</span>
 								<span class="annotator-tag">Muscle</span>
 								<span class="annotator-tag">Internal</span>
@@ -109,9 +114,9 @@
 				</ul>
 			</div>
 	</div>
-	<button id="done_button" style ="position:absolute;top:90px;left:290px">Done</button>
 	
 </div>
+	<button id="done_button" style ="position:absolute;top:90px;left:850px">Done</button>
 
 </div>
 	
@@ -160,7 +165,7 @@
 	var zoomScale=1.0;//current zoom scale
 	$(document).ready(function(){
 
-		var commentController = new CommentController();
+		var commentController = new CommentController(tagSelectionUpdate);
 
 		/* Canvas State */
 		var currentView = 0;
@@ -180,31 +185,6 @@
 		
 	   /* Setting up annotation box*/
 	   	$("#annotator").css("opacity",0.0);
-
-		$(".pain_severity").slider({
-			min: 1,
-			max: 10,
-			value: 3,
-			slide: function(event, ui) {
-				var painType = $(".pain_type>.tag-selected").text();
-				var newCol = cvState.updateGraphics(cvState.allTags.length-1, ui.value-1 ,painType);
-				$(this).find("a")[0].style.backgroundImage="none";
-				$(this).find("a")[0].style.backgroundColor= newCol;
-				cvState.highlightCloud(-1);
-			}
-		});
-		
-		$(".annotator-tag").click(function(){
-			var children = this.parentElement.children;
-			for (var index in children){
-				var classes=children[index].classList;
-				if(classes!=undefined && classes.contains("annotator-tag") && classes.contains("tag-selected")){
-					$(children[index]).toggleClass("tag-selected");
-				}
-			}
-			$(this).toggleClass("tag-selected");
-		});
-
 		//block interaction if faded.
 	   	$("#annotator").mousedown(function(event){
 	   		if(this.style.opacity<1.0){
@@ -238,7 +218,6 @@
 		});
 
 		$("#zoom").trigger('click');
-		$("#symptomTitle").css("display", "none");
 
 		$("#drawBrush").find("div").slider({
 			min: 3,
@@ -341,15 +320,19 @@
 		
 		/* Showing All Annotations */		
 		$("#annotator").find(".pain_annotation").focus(function(obj){
-			commentController.tagSelectionUpdate(-2,true);
+			tagSelectionUpdate(-2,true);
 		});
 		$("#annotator").find(".pain_annotation").focusout(function(obj){
-			commentController.tagSelectionUpdate(-2,false);
+			tagSelectionUpdate(-2,false);
 		});
 		
 		$('#done_button').css("display", "none");
 		
-		
+		/* Submission */
+
+		$( "#submitTask" ).click(function(){
+			cvState.submitAll(getURLParameter("gender"),  (2012-getURLParameter("birth")));
+		});
 	});
 	
 	function getOtherView(direction){

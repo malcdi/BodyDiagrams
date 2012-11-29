@@ -16,16 +16,7 @@ ActiveRecord::Schema.define(:version => 20120811042031) do
   create_table "hand_tags", :force => true do |t|
     t.integer  "tag_id"
     t.text     "points"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
-
-  create_table "region_tags", :force => true do |t|
-    t.integer  "tag_id"
-    t.integer  "origin_x"
-    t.integer  "origin_y"
-    t.integer  "width"
-    t.integer  "height"
+    t.integer  "view_side"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
@@ -43,8 +34,9 @@ ActiveRecord::Schema.define(:version => 20120811042031) do
   create_table "tags", :force => true do |t|
     t.string   "annotate"
     t.integer  "severity"
-    t.integer  "depth"
-    t.integer  "view_side"
+    t.string   "layer"
+    t.string   "type"
+    t.string   "posture"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.string   "user_id"

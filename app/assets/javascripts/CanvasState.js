@@ -175,11 +175,14 @@ function CanvasState(canvas, options) {
 CanvasState.prototype.setView= function(view){
 	this.cur_view_side = view;
 	this.srcImg.attr("xlink:href",ImageLoader.getBodyImageSrc(this.gender, this.cur_view_side));
-	this.svg.selectAll("path").style("opacity",function(d){
-		if(this.classList.contains(view))
-			return 1;
+	var highlight="HIGHLIGHTTAG";
+	if(this.highlightTagCloud>=0)
+		highlight="tag_"+this.highlightTagCloud;
+	this.svg.selectAll("g").style("opacity",function(d){
+		if(this.classList.contains("side_"+view))
+			return this.classList.contains(highlight)? 1.0:0.3;
 		else if(this.id=="strokeWidthGuider")
-			return 1;
+			return this.classList.contains(highlight)? 1.0:0.3;
 		else return 0;
 	});
 	this.deHighlightCloud();
@@ -194,8 +197,8 @@ CanvasState.prototype.addRegionTagCanvasElem = function(elem){
 	this.needRedraw=true;
 }
 
-CanvasState.prototype.addFreeHandTagCanvasElem = function(elem){
-	var list = this.allTags[this.tagCloud];
+CanvasState.prototype.addFreeHandTagCanvasElem = function(elem, cloud){
+	var list = this.allTags[cloud];
 	list.push(elem);
 }
 
@@ -233,15 +236,53 @@ CanvasState.prototype.getMouse = function(e) {
 	return {x: mx, y: my};
 }
 
-CanvasState.prototype.packGraphicTagInfo = function(){
-	var l = this.allTags.length;
-	var freeHandTags=[];
-	var regionTags=[];
-	for (var i = 0; i < l; i++) {
-		this.allTags[i].transform(this.viewX, this.viewY, this.viewScale);
+
+//save all the annotated tags
+CanvasState.prototype.submitAll = function(gender, age){
+	if(this.allTagData.length==0){
+		alert("please express your symptoms!");
+		return;
 	}
-	return this.allTags;
+	var self=this;
+	$.ajax({
+		type: "GET",
+		url: "postTag",
+		data: {"tagData": JSON.stringify(self.allTagData), "gender":gender, "age":age}
+	}).done(function( tagIdArr ) {
+		self.submitGraphicTags(JSON.parse(tagIdArr));//array of tag ids returned.
+	});
 }
+
+//save graphic tag information for each tag associated.
+CanvasState.prototype.submitGraphicTags = function(tagIdArr){
+	var self=this;
+	var l = this.allTags.length;
+	if (l==0){
+		self.submitComplete();
+	}
+	else{
+		for (var j = 0; j < l; j++) {
+			var tags = this.allTags[j];
+			var len = tags.length;
+			
+			$.ajax({
+				type: "POST",
+				url: "postGraphicTag",
+				data: {"tagId":tagIdArr[j], "freeHand":JSON.stringify(tags)}
+			}).done(function( msg ) {
+				//on last tag data submission
+				if(j==l) self.submitComplete();
+			});
+		}
+	}
+}
+
+//called after submission completed
+CanvasState.prototype.submitComplete = function(){
+	alert("complete");
+	window.location="/main/complete"
+}
+
 
 CanvasState.prototype.startRecordingNewMsg = function(){
 	this.tagCloud +=1;
@@ -283,6 +324,7 @@ CanvasState.prototype.deHighlightCloud = function(){
 	if(!grouper.empty()){
 		grouper.style("opacity", 0.3);
 	}
+	this.highlightTagCloud=-1;
 }
 
 CanvasState.prototype.highlightCloud = function(index){
@@ -364,9 +406,15 @@ CanvasState.prototype.updateGraphics = function(index, severity, type){
 	theTag.setStyle(newPattern);*/
 }
 
-CanvasState.prototype.saveTagAnnotation = function(index, severity, type, posture, depth, text){
-	var theTag = this.allTags[index];
-	theTag.saveTagAnnotation(severity, type, posture, depth, text);
+CanvasState.prototype.saveTagAnnotation = function(index, severity, type, posture, layer, annotation){
+	var tagInfo= {
+		"severity":severity,
+		"annotate": annotation,
+		"layer": layer,
+		"type":type,
+		"posture":posture
+	}
+	this.allTagData[index]=tagInfo;
 }
 
 CanvasState.prototype.setZoomPan = function(deltaX, deltaY, deltaZoom){
@@ -457,7 +505,6 @@ var CanvasDrawEventHandler={
 		myState.regionSelection = null;
 		
 		e.preventDefault();
-		myState.deHighlightCloud();
 		
 		var mouse = myState.getMouse(e);
 		
@@ -468,25 +515,33 @@ var CanvasDrawEventHandler={
 		
 		var globalPoint = myState.tracker.transformedPoint(mouse.x, mouse.y);
 		myState.handSelection.addPoint(globalPoint.x, globalPoint.y);
-		myState.addFreeHandTagCanvasElem(myState.handSelection);
 		
-		var grouper = myState.svg.select(".side_" + myState.cur_view_side + ".tag_" + myState.tagCloud);
+		var tagCloudGroup = myState.tagCloud;
+		if(myState.highlightTagCloud>=0)
+			tagCloudGroup = myState.highlightTagCloud;
+
+		myState.addFreeHandTagCanvasElem(myState.handSelection, tagCloudGroup);
+
+		var grouper = myState.svg.select(".tag_" + tagCloudGroup);
 
 		var strokeColor = colorSelector(2);
 		if(grouper.empty())
 			grouper = myState.svg.append("svg:g")
-				.attr("class", "side_" + myState.cur_view_side + " tag_" + myState.tagCloud)
+				.attr("class", "side_" + myState.cur_view_side + " tag_" + tagCloudGroup)
 				.attr("opacity", 0.7);
 		else{
 			strokeColor = grouper.select("path").style("stroke");
 		}
+
+		myState.deHighlightCloud();
 
 		myState.curElemG = grouper.append("svg:path")
 				.style("stroke-width", myState.strokeWidth)
 				.style("fill","none")
 				.style("stroke",strokeColor)
 				.attr("d", myState.line(myState.handSelection.points));
-		},
+		}
+		,
 		
 	'mousemove': function(e, myState) {
 			var mouse = myState.getMouse(e);

@@ -21,3 +21,12 @@ X pain picker: posture buttons (add icons later)
 - my symptoms --> include a free-hand text box
 
 - my symptoms symptom description on hover
+
+
+
+Amy
+- merge elems to svg
+- severity with ticks
+- symptom types as tags
+- depth-> layer: skin, muscle, internal, bone/joints, neural
+- rearrange/causal-effect relationship

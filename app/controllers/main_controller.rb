@@ -8,11 +8,13 @@ class MainController < ApplicationController
 		hand=JSON.parse(params[:freeHand])
 		hand.each do |elem|
 			handTag = HandTag.new()
-			handTag.points=elem.to_s();
+			handTag.points=elem["points"].to_s();
+			handTag.view_side=elem["view"].to_s();
 			handTag.tag_id=tagId
 			handTag.save()
 		end
 		
+=begin
 		#saving region points
 		region=JSON.parse(params[:region])
 		region.each do |elem|
@@ -24,6 +26,7 @@ class MainController < ApplicationController
 			regionTag.tag_id=tagId
 			regionTag.save()
 		end
+=end
 		render :text=>tagId.to_s+"good"
 	end
 	
@@ -37,8 +40,9 @@ class MainController < ApplicationController
 			@tag.user_id=@user.id
 			@tag.annotate=tagInfo["annotate"]
 			@tag.severity=tagInfo["severity"]
-			@tag.depth=tagInfo["depth"]
-			@tag.view_side=tagInfo["view_side"]
+			@tag.layer=tagInfo["layer"]
+			@tag.type=tagInfo["type"]
+			@tag.posture=tagInfo["posture"]
 			if @tag.valid?
 				@tag.save()
 				tagArr.push(@tag.id)

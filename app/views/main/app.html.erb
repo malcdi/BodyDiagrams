@@ -3,14 +3,27 @@
 	<div>
 		<h1>Body Diagrams</h1>
 	</div>
-	<div style="width:600px">
-		<h4>
-			1: Use the zoom pane to focus <br/> 
-			2: Click and drag to draw; double click to define a rectangular region <br/>
-			3: Click "Done" when you are finished describing a symptom
-		</h4>
+	<div style="width:500px">
+		<span>
+			----------- 1. Read this Prompt  -----------<br/>
+Hello,<br/>
+I was wondering if someone can help me figure out what is going on. For the past week I've been experiencing some serious joint pain. My joints ache all over my body at night; it is worst in my knees and shoulders. The pain is a dull but constant throbbing. Also, when I woke up this morning, my knees and ankles were swollen.<br/>
+<br/>
+I'm 21 years old, very active -- I love sports and especially hiking -- so I doubt this is arthritis. About a month ago I came back from a camping trip with the flu -- chills, fever etc. My muscles ached as though I had been lifting weights, and my neck was really stiff. It took longer than usual to clear (3 weeks). I don't know if this has anything to do with how I'm feeling now, but figured it was worth mentioning.<br/>
+<br/>
+Thanks, peace<br/>
+-MZ
+<br/>
+		</span>
 	</div>
-	<button type="button" id="submitTask">Submit!</button>
+		<div style="width:300px">
+----------- 2. Draw the condition -----------<br/>
+Imagine that you wrote this prompt. Now use the BodyDiagrams interface to communicate the prompt condition. Imagine that you will submit your final result, *excluding the original prompt*, to an online community so that they can give you advice.<br/>
+<br/>
+----------- 3. Click on "Done" to take our survey -----------<br/>
+You will be given a unique code which you will enter into the survey.
+	</div>
+	<button type="button" id="submitTask">Done</button>
 </div>
 <!--Description of the application
 <div id="instructions">
@@ -130,6 +143,7 @@
 
 <script type="text/javascript">
 	var cvState;
+	var userID = "<%=session[:user_id]%>"
 	function getURLParameter(name) {
 			return decodeURIComponent(
 					(location.search.match(RegExp("[?|&]"+name+'=(.+?)(&|$)'))||[,null])[1]
@@ -331,7 +345,8 @@
 		/* Submission */
 
 		$( "#submitTask" ).click(function(){
-			cvState.submitAll(getURLParameter("gender"),  (2012-getURLParameter("birth")));
+			cvState.userID = userID;
+			cvState.submitAll(getURLParameter("gender"));
 		});
 	});
 	

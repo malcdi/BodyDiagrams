@@ -24,8 +24,8 @@ canvas {
 #header div{
   display: inline-block;
   color:white;
-  height: 30px;
   margin-right: 40px;
+  vertical-align:top;
 }
 
 body {

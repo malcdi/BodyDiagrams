@@ -37,15 +37,6 @@ function CommentController (callback){
 		this.animateControl(listIndex, false);
 
 		var self=this;
-		/*newTagContainer.focusout(function(obj){
-			cvState.deHighlightCloud();
-			var index = parseInt(this.id.match("tag_([0-9]+)")[1]);
-
-			var listIndex = self.cvState.allTags.length-(index+1);
-			self.animateControl(listIndex, false);
-
-			//COLLAPSE
-		});*/
 	}
 	this.createNew = function(index){
 		var newTagContainer = $("#annotator>div").clone();

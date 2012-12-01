@@ -238,7 +238,7 @@ CanvasState.prototype.getMouse = function(e) {
 
 
 //save all the annotated tags
-CanvasState.prototype.submitAll = function(gender, age){
+CanvasState.prototype.submitAll = function(gender){
 	if(this.allTagData.length==0){
 		alert("please express your symptoms!");
 		return;
@@ -247,7 +247,7 @@ CanvasState.prototype.submitAll = function(gender, age){
 	$.ajax({
 		type: "GET",
 		url: "postTag",
-		data: {"tagData": JSON.stringify(self.allTagData), "gender":gender, "age":age}
+		data: {"tagData": JSON.stringify(self.allTagData)}
 	}).done(function( tagIdArr ) {
 		self.submitGraphicTags(JSON.parse(tagIdArr));//array of tag ids returned.
 	});
@@ -280,7 +280,7 @@ CanvasState.prototype.submitGraphicTags = function(tagIdArr){
 //called after submission completed
 CanvasState.prototype.submitComplete = function(){
 	alert("complete");
-	window.location="/main/complete"
+	window.location="/main/complete?user_id="+this.userID;
 }
 
 
@@ -525,10 +525,11 @@ var CanvasDrawEventHandler={
 		var grouper = myState.svg.select(".tag_" + tagCloudGroup);
 
 		var strokeColor = colorSelector(2);
-		if(grouper.empty())
+		if(grouper.empty()){
 			grouper = myState.svg.append("svg:g")
 				.attr("class", "side_" + myState.cur_view_side + " tag_" + tagCloudGroup)
 				.attr("opacity", 0.7);
+		}
 		else{
 			strokeColor = grouper.select("path").style("stroke");
 		}

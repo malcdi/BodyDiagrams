@@ -132,7 +132,6 @@ function CanvasState(canvas, options) {
 		.style("opacity", 0);
 		
 	this.svg = this.svg.append("g")
-		.on('selectstart', getEventHandler('selectstart',myState))
 		.on('mouseup', getEventHandler('mouseup',myState))
 		.on('mousewheel', getEventHandler('mousewheel',myState))
 		.on('mousedown', getEventHandler('mousedown',myState))
@@ -152,7 +151,6 @@ function CanvasState(canvas, options) {
 	
 		
 	//fixes a problem where double clicking causes text to get selected on the canvas
-	$("#canvasDiv").find("svg").bind('selectstart', getEventHandler('selectstart',myState));
 	
 	/* double click for making new regionTags
 	canvas.addEventListener('dblclick', function(e) {
@@ -202,17 +200,40 @@ CanvasState.prototype.addFreeHandTagCanvasElem = function(elem, cloud){
 	list.push(elem);
 }
 
+
+CanvasState.prototype.highlightNextUndo = function(){
+	var curLen = this.allTags[this.tagCloud].length;
+	if(curLen>0){
+		var grouper = this.svg.select(".tag_"+this.tagCloud);
+		var toRemove = grouper.select(":last-child");
+		if(!toRemove.empty()){
+			toRemove.style('stroke', 'green');
+		}
+	}		
+}
+
+CanvasState.prototype.deHighlightNextUndo = function(){
+	var curLen = this.allTags[this.tagCloud].length;
+	if(curLen>0){
+		var grouper = this.svg.select(".tag_"+this.tagCloud);
+		var toRemove = grouper.select(":last-child");
+		if(!toRemove.empty()){
+			toRemove.style('stroke', colorSelector(2));
+		}
+	}		
+}
+
 CanvasState.prototype.undoLastDrawing = function(){
-	this.allTags[this.tagCloud].pop();
-	var grouper = this.svg.select(".tag_"+this.tagCloud);
-	if(!grouper.empty())
-	{
-		grouper.select(":last-child").remove();
-		if(grouper.selectAll("path")[0]==null){
-			grouper.remove();
-			this.tagCloud-=1;
+	var curLen = this.allTags[this.tagCloud].length;
+	if(curLen>0){
+		this.allTags[this.tagCloud].pop();
+		var grouper = this.svg.select(".tag_"+this.tagCloud);
+		if(!grouper.empty())
+		{
+			grouper.select(":last-child").remove();
 		}
 	}
+		
 }
 
 // Creates an object with x and y defined,
@@ -427,8 +448,9 @@ CanvasState.prototype.setZoomPan = function(deltaX, deltaY, deltaZoom){
 function getEventHandler(name, myState){
 	
  	return function(e){
-		if(myState.mode=="draw")	
+		if(myState.mode=="draw"){
 			CanvasDrawEventHandler[name](d3.event, myState);
+		}
 		else if(myState.mode=="zoom")	
 			CanvasZoomEventHandler[name](d3.event, myState);
 	};
@@ -441,27 +463,13 @@ var CanvasZoomEventHandler={
 		var globalPoint = myState.tracker.transformedPoint(mouse.x, mouse.y);
 		
 		//see if selection occured
-		
-		var selectedCloud = -1;
-		for (var i = 0; i < myState.allTags.length; i++) {
-			var curTagL = myState.allTags[i];
-			var l = curTagL.length;
-			for(var j=0; j<l; j++){
-				if (curTagL[j].cur_view_side ==myState.cur_view_side && curTagL[j].contains(globalPoint.x, globalPoint.y)) 			
-				{
-					myState.selectCallback(curTagL.indexOf(myState.regionSelection),false);
-					myState.regionSelection = curTagL[j];	
-					myState.selectCallback(i,true);
-
-					myState.dragging = true;
-					myState.dragoffx = globalPoint.x;
-					myState.dragoffy = globalPoint.y;
-					return;
-				}
-
-			}
+		if(myState.dragElem){
+			myState.dragging = true;
+			myState.dragoffx = globalPoint.x;
+			myState.dragoffy = globalPoint.y;
+			return;
 		}
-		myState.selectCallback(selectedCloud,false);
+
 		myState.regionSelection = null;
 		
 		myState.lastX = e.offsetX || (e.pageX - myState.canvas.offsetLeft);
@@ -472,25 +480,52 @@ var CanvasZoomEventHandler={
 		e.preventDefault();
 		myState.lastX = e.offsetX || (e.pageX - canvas.offsetLeft);
 		myState.lastY = e.offsetY || (e.pageY - canvas.offsetTop);
+		var mouse = myState.getMouse(e);
+		var globalPoint =myState.tracker.transformedPoint(mouse.x, mouse.y);
+
 		if (myState.dragStart){
 			var pt = myState.tracker.transformedPoint(myState.lastX,myState.lastY);
 			var newMat = myState.tracker.translate(pt.x-myState.dragStart.x,pt.y-myState.dragStart.y);
 			myState.svg.attr("transform", "matrix("+newMat.a+","+newMat.b+","+newMat.c+","+newMat.d+","+newMat.e+","+newMat.f+")");
 		}
-		
-		/* Non Free Hand */
-		if (myState.dragging){
-			var mouse = myState.getMouse(e);
-			var globalPoint =myState.tracker.transformedPoint(mouse.x, mouse.y);
-			
+		else if (myState.dragging){			
 			myState.regionSelection.moveAll(globalPoint.x - myState.dragoffx, globalPoint.y - myState.dragoffy);
 			myState.dragoffx = globalPoint.x;
-			myState.dragoffy = globalPoint.y;		
+			myState.dragoffy = globalPoint.y;	
+			myState.dragElem.attr('d', myState.line(myState.regionSelection.points));
+		}
+		else{
+			for (var i = 0; i < myState.allTags.length; i++) {
+				var curTagL = myState.allTags[i];
+				var l = curTagL.length;
+				for(var j=0; j<l; j++){
+					if (curTagL[j].view ==myState.cur_view_side && curTagL[j].contains(globalPoint.x, globalPoint.y)) 			
+					{
+						//myState.selectCallback(curTagL.indexOf(myState.regionSelection),false);
+						myState.regionSelection = curTagL[j];	
+						//myState.selectCallback(i,true);
+						var grouper = myState.svg.select(".tag_" + i);
+						myState.dragElem = grouper.select(":nth-child("+(j+1)+")");
+						myState.dragElem.style('stroke', 'green');
+						return;
+					}
+
+				}
+			}
+			myState.regionSelection = null;
+			if(myState.dragElem){
+				myState.dragElem.style('stroke', colorSelector(2));
+				myState.dragElem = null;
+			}
 		}
 	},
 	'mouseup': function(e, myState) {
 		myState.dragStart = null;
 		myState.dragging = false;
+		if(myState.dragElem){
+			myState.dragElem.style('stroke', colorSelector(2));
+			myState.dragElem = null;
+		}
 	},
 	'mousewheel':function(e,myState) { 
 		var delta = e.originalEvent.wheelDelta ? e.originalEvent.wheelDelta/40 : e.originalEvent.detail ? e.originalEvent.detail : 0;
@@ -531,7 +566,11 @@ var CanvasDrawEventHandler={
 				.attr("opacity", 0.7);
 		}
 		else{
-			strokeColor = grouper.select("path").style("stroke");
+			var path = grouper.select("path");
+			if(!path.empty()){
+				strokeColor = path.style("stroke");
+			}
+			
 		}
 
 		myState.deHighlightCloud();
@@ -577,9 +616,7 @@ var CanvasDrawEventHandler={
 		},
 		'mousewheel':function(e,myState) {
 			return false;
-		},
-	'selectstart': function(e,myState) { 
-			e.preventDefault(); return false; }
+		}
 };
 
 

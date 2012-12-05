@@ -167,21 +167,6 @@ FreeHandTagCanvasElem.prototype.moveAll = function(mx, my) {
 	this.maxY +=my;
 }
 
-// Draws this shape to a given context
-FreeHandTagCanvasElem.prototype.draw = function(ctx) {
-	ctx.strokeStyle = this.strokeStyle;
-	ctx.beginPath();
-	for (var i=0; i<this.points.length; i++){
-		
-		if (i==0) ctx.moveTo(this.points[i].x, this.points[i].y);
-		else {
-			ctx.lineTo(this.points[i].x, this.points[i].y);
-			ctx.stroke();
-		}
-	}
-	ctx.closePath();
-}
-
 FreeHandTagCanvasElem.prototype.setStyle = function(strokeStyle) {
 	this.strokeStyle = strokeStyle;
 }

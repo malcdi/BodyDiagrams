@@ -246,7 +246,11 @@ You will be given a unique code which you will enter into the survey.
 		//undo
 		$("#undo").click(function(){
 			cvState.undoLastDrawing();
-		});
+		}).mouseover(function(){
+			cvState.highlightNextUndo();
+		}).mouseleave(function(){
+			cvState.deHighlightNextUndo();
+		})
 
 		$('#newDraw').click(function(){
 			modeEventHandler.handleEvents("newDraw", cvState.tagCloud+1);

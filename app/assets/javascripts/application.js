@@ -11,5 +11,18 @@
 // GO AFTER THE REQUIRES BELOW.
 //
 //= require jquery
+//= require jquery/jquery-ui-1.8.21.custom.min
 //= require jquery_ujs
-//= require_tree .
+//= require d3.v2.min
+//= require toolbox
+//= require propertyToolbox
+//= require zoomControl
+//= require historyManager
+//= require tagElem
+//= require freehandElem
+//= require regionElem
+//= require canvasState
+//= require modeEventHandler
+//= require imageLoader
+
+//= require CommentController

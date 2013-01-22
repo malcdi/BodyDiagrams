@@ -1,9 +1,4 @@
 
-<div id = "header">
-	<div>
-		<h1>Body Diagrams</h1>
-	</div>
-</div>
 <!--Description of the application
 <div id="instructions">
 <p> FREE HAND: mouse down and drag </p>
@@ -12,125 +7,67 @@
 
 
 <div style="position: relative; margin-left: 10px; margin-right: 10px;">
-<div id="content-panel">
-<div id="canvasDiv" style="width:500px; height:730px;z-index: 1000"></div>
+	<div id="content-panel">
+		<div id="canvasDiv" style="width:500px; height:730px;z-index: 1000"></div>
 
-<!-- Zoom/Drag Control -->
-<div id="opModeControl" style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 15px; width:500px">
- 	<img class="opMode" id="zoom" src="/assets/dragHand.png" style="width:30px;height:30px;"/>
- 	<span id ="drawSet" style="display:inline-block;">
-	 	<img class="opMode" id="draw" src="/assets/drawIconInactive.png" style="width:30px;height:30px;"/>
-	 	<img class="opMode" id="undo" src="/assets/undoInactive.png" style="width:30px;height:30px; float:right;margin-left:300px"/>
-	 	<div id="drawBrush" style="width:80px;height:30px;display:inline-block;">
-	 		<img src="/assets/paint_brush.png" style="width:20px;height:20px;"/>
-	 		<div style="width:60px;margin:0px 10px;display:inline-block;"></div>
-	 	</div>
-	</span>
-</div>
+	<!-- Zoom/Drag Control -->
+		<div id="toolboxes">
+		 	<!--
+		 	<div id="drawBrush" style="width:80px;height:30px;display:inline-block;">
+		 		<img src="/assets/paint_brush.png" style="width:20px;height:20px;"/>
+		 		<div style="width:60px;margin:0px 10px;display:inline-block;"></div>
+		 	</div>
+		 	-->
 
-<!-- Zoom Control -->
-<div id="zoomControl">
-	<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; "><div style="position: absolute; left: 16px; top: 17px; width:48px; height: 47px; overflow: hidden; "><img style="position: absolute; left: 0px; top: 0px; border: 0px; padding: 0px; margin: 0px;width:48px; height:370px " src="/assets/mapcontrols.png"></div></div>
-	
-	<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; " id="compass"><div style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " title="Pan down"></div></div>
-	
-	<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 101; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
-	
-	<div style="position: absolute; left: 16px; top: 131px; width: 59px; height: 146px; overflow: hidden; " id="lmcslider"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
-	
-	<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
-	
-	<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
-</div>
-
-	<!-- Rotate left right image -->
-	<img class="rotation" id="left" src="/assets/dragHand.png"/>
-	<img class="rotation" id="right" src="/assets/dragHand.png"/>
-
-	<!-- new draw-->
-	<div style="display:inline-block;vertical-align:top; position: absolute; top: 15px; left: 540px">
- 	<img class="opMode" id="newDraw" src="/assets/plus.png" style="display:inline-block;width:30px;height:30px;"/>
- </div>
-	<!--Hidden annotation box-->
-
-	<div id="annotator" style="position:absolute">
-		<div class="annotator-editor">
-			<div class="annotator-widget" >
-				<ul class="annotator-listing">
-					<li class="annotator-item">
-						<span>Symptom Id:</span> 
-						<span class="symptom_id"></span>
-					</li>
-					<li class="annotator-item">
-						<div class="pain_severity" style="width:70%;float:right"><span style="margin-left:-2px">1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span style="margin-right:-3px">10</span></div>
-						<span>Symptom Severity:</span>
-						<div class="pain_severity_collapsed" style="display:none;"></div>
-					</li>
-					<li class="annotator-item">
-						<span>Symptom Type:</span>
-						<textarea class="pain_type_tags" placeholder="Tags..." style="height:30px;padding:5px 8px;" rows="1"></textarea>
-						<div class="pain_type">
-							<span class="annotator-type-tag">#sharp</span>
-							<span class="annotator-type-tag">#dull</span>
-							<span class="annotator-type-tag">#numb</span>
-							<span class="annotator-type-tag">#hot</span>
-							<span class="annotator-type-tag">#sensitive</span>
-							<span class="annotator-type-tag">#itchy</span>
-							<span class="annotator-type-tag">#shooting</span>
-							<span class="annotator-type-tag">#cramping</span>
-							<span class="annotator-type-tag">#pounding</span>
-							<span class="annotator-type-tag">#aching</span>
-						</div>
-					</li>
-					<li class="annotator-item">
-						<span>Symptom Layer:</span>
-						<div class="pain_layer annotator-tags">
-								<span class="annotator-tag tag-selected">Skin</span>
-								<span class="annotator-tag">Muscle</span>
-								<span class="annotator-tag">Internal</span>
-								<span class="annotator-tag">Bone/Joint</span>
-								<span class="annotator-tag">Neural</span>
-						</div>
-					</li>
-					<li class="annotator-item">
-						<div class="pain_posture annotator-tags">
-							<span>Symptom Postures:</span>
-							<span class="annotator-tag tag-selected">Stand</span>
-							<span class="annotator-tag">Walk</span>
-							<span class="annotator-tag">Sit</span>
-							<span class="annotator-tag">Lie</span>
-					</div></li>
-					<li class="annotator-item">
-						<textarea class="pain_annotation" placeholder="Comments…" rows= "4"></textarea>
-					</li>
-				</ul>
+		 	<div class="prop_expand" id="prop_severity_expand">
+				<div>Symptom Severity:</div>
 			</div>
-	</div>
-	
-</div>
-	<button id="done_button" style ="position:absolute;top:90px;left:850px">Done</button>
 
+		 	<div class="prop_expand" id="prop_type_expand">
+				<div>Symptom Type:</div>
+				<textarea id="pain_type_tags" placeholder="Tags..." style="height:30px;padding:5px 8px;" rows="1"></textarea>
+			</div>
+
+		 	<div class="prop_expand" id="prop_layer_expand">
+				<span>Symptom Layer:</span>
+			</div>
+
+		 	<div class="prop_expand" id="prop_freq_expand">
+					<span>Symptom Postures:</span>
+			</div>
+		</div>
+
+		<!-- Rotate left right image -->
+		<div id="rotation_toolbox"> </div>
+
+		<!-- Zoom Control -->
+		<div id="zoomControl">
+			<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; "><div style="position: absolute; left: 16px; top: 17px; width:48px; height: 47px; overflow: hidden; "><img style="position: absolute; left: 0px; top: 0px; border: 0px; padding: 0px; margin: 0px;width:48px; height:370px " src="/assets/mapcontrols.png"></div></div>
+			
+			<div style="position: absolute; left: 6px; top: 40px; width: 90px; height: 90px; " id="compass"><div style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " title="Pan down"></div></div>
+			
+			<div style="position: absolute; left: 34px; top: 113px; width: 22px; height: 22px; overflow: hidden; z-index: 101; " guidedhelpid="zoom_in"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
+			
+			<div style="position: absolute; left: 16px; top: 131px; width: 59px; height: 146px; overflow: hidden; " id="lmcslider"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+			
+			<div style="position: absolute; left: 16px; top: 277px; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out"></div></div>
+			
+			<div style="position: absolute; left: 35px; top: 131px; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+		</div>
+
+	</div>
+	<ul id="history_container"></ul>
 </div>
 	
-	<!-- Tag Annotations-->
-	<div id="pain_annotation_list_container">
-		<ul id="pain_annotation_list" >
-			
-		</ul>
-	</div>
-	
-        <div id="instruction_container" style="position:absolute;top:10px;left:950px;width:400px">
+        <div id="instruction_container" style="position:absolute;top:10px;left:770px;width:400px">
 
 		<h1><font color="#990000">INSTRUCTIONS</font></h1>
 		<h2>1. Read this Prompt</h2>
                 <font size="3">
                 Hello,<br/>
-                I was wondering if someone can help me figure out what is going on. For the past week I've been experiencing some serious joint pain. My joints ache all over my body at night; it is worst\
- in my knees and shoulders. The pain is a dull but constant throbbing. Also, when I woke up this morning, my knees and ankles were swollen.<br/>
+                I was wondering if someone can help me figure out what is going on. For the past week I've been experiencing some serious joint pain. My joints ache all over my body at night; it is worst in my knees and shoulders. The pain is a dull but constant throbbing. Also, when I woke up this morning, my knees and ankles were swollen.<br/>
                 <br/>
-                I'm 21 years old, very active -- I love sports and especially hiking -- so I doubt this is arthritis. About a month ago I came back from a camping trip with the flu -- chills, fever etc. \
-My muscles ached as though I had been lifting weights, and my neck was really stiff. It took longer than usual to clear (3 weeks). I don't know if this has anything to do with how I'm feeling now, but fi\
-gured it was worth mentioning.<br/>
+                I'm 21 years old, very active -- I love sports and especially hiking -- so I doubt this is arthritis. About a month ago I came back from a camping trip with the flu -- chills, fever etc.My muscles ached as though I had been lifting weights, and my neck was really stiff. It took longer than usual to clear (3 weeks). I don't know if this has anything to do with how I'm feeling now, but figured it was worth mentioning.<br/>
                 <br/>
                 Thanks, peace<br/>
                 -MZ
@@ -138,8 +75,7 @@ gured it was worth mentioning.<br/>
                 </font>
 
                 <h2>2. Draw the condition</h2>
-                <font size="3">Imagine that you wrote this prompt. Now use the BodyDiagrams interface to communicate the prompt condition. Imagine that you will submit your final result, *excluding the o\
-riginal prompt*, to an online community so that they can give you advice.<br/>
+                <font size="3">Imagine that you wrote this prompt. Now use the BodyDiagrams interface to communicate the prompt condition. Imagine that you will submit your final result, *excluding the original prompt*, to an online community so that they can give you advice.<br/>
                 </font>
 
                 <h2>3. Click on "SUBMIT" to take our survey</h2>
@@ -152,7 +88,8 @@ riginal prompt*, to an online community so that they can give you advice.<br/>
                 </div>
 
 <script type="text/javascript">
-	var cvState;
+	var bigBro={};
+
 	var userID = "<%=session[:user_id]%>"
 	function getURLParameter(name) {
 			return decodeURIComponent(
@@ -161,7 +98,7 @@ riginal prompt*, to an online community so that they can give you advice.<br/>
 	}
 	
 	function tagSelectionUpdate(index, select){
-		cvState.deHighlightCloud();
+		bigBro.cvState.deHighlightCloud();
 		if(index<0)
 		{
 			$("#annotator > div.annotator-widget").css({
@@ -178,35 +115,39 @@ riginal prompt*, to an online community so that they can give you advice.<br/>
 				theTagC.addClass('annotator-list');
 			}
 		}
-		cvState.highlightCloud(index);
+		bigBro.cvState.highlightCloud(index);
 	}	
 
-	//current view side {0:front, 1: right, 2: back, 3: left}
-	var cur_view_side=0;
-	var imagePrefix="/assets/";
-
-	
-	var zoomScale=1.0;//current zoom scale
 	$(document).ready(function(){
-
-		var commentController = new CommentController(tagSelectionUpdate);
+		bigBro.commentController = new CommentController(tagSelectionUpdate);
+		bigBro.ImageLoader = new window.ImageLoader();
+		bigBro.ModeEventHandler = new window.ModeEventHandler();
+		bigBro.currentView = 0;
+		bigBro.currentGender = getURLParameter("gender"); 
 
 		/* Canvas State */
-		var currentView = 0;
-		var currentGender = getURLParameter("gender"); 
+		//current view side {0:front, 1: right, 2: back, 3: left}
+
 		var canvasElem=document.getElementById("canvasDiv");
 		canvasElem.width=$(canvasElem).parent().width();
-		cvState = new CanvasState(document.getElementById("canvasDiv"),
-						{gender:currentGender, 
-						view:currentView, 
-						mode:"zoom", 
-						imageLoader:ImageLoader,
-						selectCallback: function() {return commentController.tagSelectionUpdate}});
+		bigBro.cvState = new CanvasState(document.getElementById("canvasDiv"),
+						{bigBro:bigBro});
 
-		commentController.setCVState(cvState);
-		var modeEventHandler = new ModeStateHandler(commentController, cvState);
-
+		bigBro.commentController.setCVState(bigBro.cvState);
+		var toolbox = new window.Toolbox("#toolboxes", "#rotation_toolbox", bigBro);
+		var propToolbox = new window.PropertyToolbox("#toolboxes", bigBro);
 		
+		bigBro.cvState.setCallbacks({selectCallback: function(x, y) {
+			return propToolbox.activatePropertyControls(x,y);}
+		});
+
+		/* Setting up Zoom Control*/
+		var zoomController = new window.ZoomControl(bigBro);
+		zoomController.setupControls();
+
+		bigBro.historyManager = new window.HistoryManager('#history_container', bigBro);
+
+
 	   /* Setting up annotation box*/
 	   	$("#annotator").css("opacity",0.0);
 		//block interaction if faded.
@@ -226,22 +167,8 @@ riginal prompt*, to an online community so that they can give you advice.<br/>
 			cvState.deHighlightCloud();
 			//undo draw line?
 		});
-
-		//tagging
-		$(".annotator-type-tag").click(function(){
-			var pastStr = $("#pain_type_tags").val();
-			if(pastStr.indexOf($(this).text())<0){
-				pastStr+=$(this).text() +", ";
-				$("#pain_type_tags").val(pastStr);
-			}
-		});
 		
 		/* Setting up Mode Control */
-		$('#zoom').bind('click', function(){
-			return modeEventHandler.handleEvents("zoom");
-		});
-
-		$("#zoom").trigger('click');
 
 		$("#drawBrush").find("div").slider({
 			min: 3,
@@ -253,98 +180,6 @@ riginal prompt*, to an online community so that they can give you advice.<br/>
 
 		});
 
-		//undo
-		$("#undo").click(function(){
-			cvState.undoLastDrawing();
-		}).mouseover(function(){
-			cvState.highlightNextUndo();
-		}).mouseleave(function(){
-			cvState.deHighlightNextUndo();
-		})
-
-		$('#newDraw').click(function(){
-			modeEventHandler.handleEvents("newDraw", cvState.tagCloud+1);
-		});
-		
-		$('#done_button').click(function(){			
-			modeEventHandler.handleEvents("done",cvState.tagCloud);
-		})
-
-		
-		/* Setting up Zoom Control*/
-		//panning
-		$('#compass div').click(function(){
-			switch(this.title){
-				case "Pan left":
-					cvState.setZoomPan(-2, 0, 0);
-					break;
-				case "Pan right":
-					cvState.setZoomPan(2, 0, 0);
-					break;
-				case "Pan up":
-					cvState.setZoomPan(0, -2, 0);
-					break;
-				case "Pan down":
-					cvState.setZoomPan(0,2, 0);
-					break;
-			}
-		})
-		
-		var sliderElem = $('#lmczbg')[0];
-		//zoom in/out
-		$('div[title="Zoom In"]').click(function(){
-			if(parseInt(sliderElem.style.top) > 0){
-				var newY = parseInt(sliderElem.style.top)-10;
-				newY = Math.max(Math.min(137, newY), 0);
-				sliderElem.style.top = newY +"px";
-				cvState.setZoomPan(0,0,0.75);
-			}
-		});
-		$('div[title="Zoom Out"]').click(function(){
-			if(parseInt(sliderElem.style.top) < 137){
-				var newY = parseInt(sliderElem.style.top)+10;
-				newY = Math.max(Math.min(137, newY), 0);
-				sliderElem.style.top = newY +"px";
-				cvState.setZoomPan(0,0,-0.75);
-			}
-		});
-		
-		//slider zoom
-		$('#lmczb').mousedown(function(e){
-			e.preventDefault();
-			var oldY = parseInt(sliderElem.style.top);
-			var newY = (e.pageY - this.offsetTop) -60;
-			sliderElem.style.top = Math.max(Math.min(137, newY), 0) + "px";
-			cvState.setZoomPan(0, 0, (oldY-newY)*10/137);
-			this.dragStart = true;
-		});
-		$('#lmczb').mousemove(function(e){
-			e.preventDefault();
-			if(this.dragStart){
-				var newY = (e.pageY - this.offsetTop) -60;
-				newY = Math.max(Math.min(137, newY), 0);
-				var lastY = parseInt(sliderElem.style.top);
-				sliderElem.style.top = newY + "px";
-				cvState.setZoomPan(0, 0, (lastY-newY)*10/137);
-			}
-		});
-		$('#lmczb').mouseup(function(e){
-			this.dragStart= false;
-		});
-		
-		/* Setting up Rotation Control */
-		$("#left").attr("src",ImageLoader.getBodyImageSrc(currentGender, 1));
-		$("#right").attr("src",ImageLoader.getBodyImageSrc(currentGender, 3));
-		var padding = $("#left").width() + parseInt($("#left").css("padding"))*2 + parseInt($("#left").css("margin"))*2
-		$("#right").css({left: canvasElem.width- padding});
-		
-		$(".rotation").click(function(){
-			currentView = getView(currentView, this.id);
-			this.src = ImageLoader.getBodyImageSrc(currentGender, getView(currentView, this.id));
-			var otherDirection = getOtherView(this.id);
-				$("#"+otherDirection)[0].src = ImageLoader.getBodyImageSrc(currentGender, getView(currentView,  otherDirection));
-			cvState.setView(currentView);
-		});
 		
 		/* Showing All Annotations */		
 		$("#annotator").find(".pain_annotation").focus(function(obj){
@@ -363,159 +198,4 @@ riginal prompt*, to an online community so that they can give you advice.<br/>
 			cvState.submitAll(getURLParameter("gender"));
 		});
 	});
-	
-	function getOtherView(direction){
-		if (direction=="left")
-			return "right"
-		else if(direction=="right")
-			return "left"
-		return "";
-	}
-	
-	function getView(curView, direction){
-		if (direction=="left")
-			return (curView+1)%4
-		else if(direction=="right")
-			return (curView+3)%4
-		return 0;
-	}
-	
-	/*var cvState =null;//new CanvasState(document.getElementById("canvas"));//second pane: zoomed canvas
-	var zcvState = null;//new ZoomCanvasState(document.getElementById("canvas"), cvState, zoomCallback, tagDoneCallback);//first pane: main canvas
-	cvState.setViewState(0,0,1.0); */
-	/*
-	function translateTagInfo(tagInfo){
-		var severity="no pain";
-		if(tagInfo.depth==10) output="no pain";
-		else if(tagInfo.depth==20) output="mild pain";
-		else if(tagInfo.depth==30) output="mild pain";
-		else if(tagInfo.depth==40) output="discomforting";
-		else if(tagInfo.depth==50) output="moderate";
-		else if(tagInfo.depth==60) output="distressing";
-		else if(tagInfo.depth==70) output="severe";
-		else if(tagInfo.depth==80) output="intense";
-		else if(tagInfo.depth==90) output="very severe";
-		else if(tagInfo.depth==100) output="unbearable";
-		tagInfo.severity=severity;
-		
-		var depth="skin";
-		if(tagInfo.depth==25) output="beneath skin";
-		if(tagInfo.depth==50) output="core";
-		if(tagInfo.depth==75) output="close to opposite";
-		if(tagInfo.depth==100) output="opposite side";
-		tagInfo.depth=depth;
-		return tagInfo;
-	}
-	//callback after "done" button clicked for tag
-	function tagDoneCallback(){
-		//update drawing canvas
-		cvState.flush();
-	
-		//updating my_symptoms tab
-		$("#my_symptoms").accordion("destroy");
-		var symptomLogger= $("#my_symptoms");
-		var TagInfo=translateTagInfo(packTagInfo());
-		
-		symptomLogger.append($("<h3><a href='#'>"+TagInfo.annotate+"</a></h3>"));
-		symptomLogger.append($("<div><div>severity: "+TagInfo.severity+
-													"</div><div>depth: "+TagInfo.depth+"</div></div>"));
-		
-		setTimeout(function(){
-			$("#my_symptoms").accordion();
-			$("#my_symptoms").accordion("resize");
-		}, 100);
-		
-		//resetting pain_panel tab
-		document.getElementById("tag_annotate").value="";
-		$("#tag_pain_severity").find("a")[0].innerHTML="";
-		$( ".pain_type_slider" ).slider( "option", "value", 0 );
-		$("#tag_pain_severity").find("a")[0].style.backgroundColor="#E6E6E6";
-	}
-	
-	//returns annotated tag information from pain tab.
-	function packTagInfo(){
-		var annotation=document.getElementById("tag_annotate").value;
-		var severity=$("#tag_pain_severity").slider( "option", "value" );
-		var depth=$("#tag_pain_depth").slider( "option", "value" );
-		return {"annotate":annotation, "severity":severity, "depth":depth, "view_side":cur_view_side};
-	}
-	
-	//called when zoom button is clicked.
-	function zoomCallback(x, y, w, h){
-		var originalW=document.getElementById("body_view").width;
-		var marginBuffer = (330 - originalW)/2;
-		var standardW=330;
-		zoomScale=standardW/w;
-		var zoomImg=document.getElementById("zoom_body_view");
-		zoomImg.style.width=originalW*zoomScale+"px";
-		zoomImg.style.left=(marginBuffer*zoomScale - x*zoomScale)+"px";
-		zoomImg.style.top="-"+y*zoomScale+"px";
-		cvState.setViewState(x,y,zoomScale);
-	}
-	*/
-	/*
-	//set up buttons & panels & tabs
-	$(function() {
-		$("#my_symptoms").accordion();
-		$("#symptomTypes").buttonset();
-		$("#tag_pain_severity").slider({
-			step:10,
-			slide: function(event, ui) {
-				this.children[0].innerHTML=ui.value/10;
-				var greenValue=Math.floor(ui.value*255/100);
-				var redValue=255-greenValue;
-				this.children[0].style.backgroundImage="none";
-				this.children[0].style.backgroundColor="rgb("+greenValue+","+redValue+",0)";
-			}
-		});
-		$("#tag_pain_depth").slider({
-			step:25
-		});
-		$(".pain_type_slider").find("a").css({
-			textDecoration:"none",
-			textAlign:"center"
-		});
-		
-		//set up with user's information
-		if(getURLParameter("gender")=="female"){
-			imagePrefix="/assets/female_";
-			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-	}	
-		
-		//buttons
-		$( "#rotateLeft" ).click(function(){
-			cvState.flush();
-			cur_view_side = (cur_view_side+1)%4;
-			zcvState.setCurViewSide(cur_view_side);
-			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-		});
-		$( "#rotateRight" ).click(function(){
-			cvState.flush();
-			cur_view_side = (cur_view_side+3)%4;
-			zcvState.setCurViewSide(cur_view_side);
-			$("#body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-			$("#zoom_body_view").attr("src",imagePrefix + "whole_"+cur_view_side+".png");
-		});
-		$( "#undo" ).click(function(){
-			cvState.undoLastDrawing(cvState);
-		});
-		$( "#submitTask" ).click(function(){
-			zcvState.submitAll(getURLParameter("gender"),  (2012-getURLParameter("birth")));
-		});
-		$( "#tagDone" ).click(function(){
-			var tagInfo=packTagInfo();
-			console.log(tagInfo);
-			if(tagInfo.severity=="0%") {
-				alert("please set symptom severity level");
-			}
-			else if(tagInfo.annotate=="") {
-				alert("please describe the symptom");
-			}
-			else{
-				zcvState.saveTagInfo(tagInfo);
-			}
-		});
-	});*/
 </script>

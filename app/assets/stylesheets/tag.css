@@ -1,27 +1,5 @@
 
-/**/
-.rotation{
-	width:20px;
-	position: absolute;
-	top: 580px;
-	margin:10px;
-	padding: 10px;
-	min-height:120px;
-	-webkit-box-shadow: 0 2px 7px rgba(0, 0, 0, 0.5);
-	-webkit-border-radius: 10px;
-}
 
-.rotation:hover{
-	border:solid 2px purple;
-}
-
-.opMode{
-	-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
-	-webkit-border-radius: 5px;
-}
-.opMode:hover{
-	border:solid 2px rgb(108, 204, 128);
-}
 
 /* CSS for tagged class*/
 .tagged {

@@ -1,0 +1,21 @@
+.thumbnail{
+	border:solid 1px #B3B3B3; 
+	background-color:white;
+	
+}
+.highlighted.thumbnail{
+	border:solid 2px blue;
+}
+#history_container{
+	position:absolute;
+	left:525px;
+	top:-10px;
+	height:100%;
+	width: 175px;
+	background-color: #EBEBEB;
+	list-style-type:none;
+	li{
+		margin-top:20px;
+	}
+	z-index: -10000;
+}

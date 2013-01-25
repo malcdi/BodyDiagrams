@@ -2,8 +2,16 @@ class window.ZoomControl
   constructor:(bigBro)->
     @bigBro = bigBro
 
-  setupControls: ()->
+  setupControls: (left, top)->
     _cvState = @bigBro.cvState
+
+    $('#compass').css({"left":left+"px", "top":top+"px"})
+    $('#compassHolder').css({"left":left+"px", "top":top+"px"})
+    $('#lmczoom').css({"left":(left+28)+"px", "top":(top+73)+"px"})
+    $('#lmcslider').css({"left":(left+10)+"px", "top":(top+91)+"px"})
+    $('#lmczo').css({"left":(left+10)+"px", "top":(top+237)+"px"})
+    $('#lmczb').css({"left":(left+29)+"px", "top":(top+91)+"px"})
+
     $("#compass div").click ->
       switch @title
         when "Pan left"
@@ -16,6 +24,7 @@ class window.ZoomControl
           _cvState.setZoomPan 0, 2, 0
 
     sliderElem = $("#lmczbg")[0]
+    offsetTop = 245
 
     #zoom in/out
     $("div[title=\"Zoom In\"]").click ->
@@ -37,7 +46,7 @@ class window.ZoomControl
     $("#lmczb").mousedown (e) ->
       e.preventDefault()
       oldY = parseInt(sliderElem.style.top)
-      newY = (e.pageY - @offsetTop) - 60
+      newY = (e.pageY - offsetTop)
       sliderElem.style.top = Math.max(Math.min(137, newY), 0) + "px"
       _cvState.setZoomPan 0, 0, (oldY - newY) * 10 / 137
       @dragStart = true
@@ -45,7 +54,7 @@ class window.ZoomControl
     $("#lmczb").mousemove (e) ->
       e.preventDefault()
       if @dragStart
-        newY = (e.pageY - @offsetTop) - 60
+        newY = (e.pageY - offsetTop)
         newY = Math.max(Math.min(137, newY), 0)
         lastY = parseInt(sliderElem.style.top)
         sliderElem.style.top = newY + "px"

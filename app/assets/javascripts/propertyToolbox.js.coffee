@@ -111,8 +111,9 @@ class window.PropertyToolbox
       .attr('placeholder', 'Annotate...')
       .attr('rows',1)
       .on('keyup', ->
-        _.bigBro.cvState.uploadTagProperties({"prop_annotation":this.value})
-        
+        window.trigger({
+          type:'updateProperty', 
+          message:{"prop_annotation":this.value}})
         )
     @Annotation.append('img')
       .attr("src", "/assets/property/annotation.png")

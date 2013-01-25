@@ -12,17 +12,19 @@
 //
 //= require jquery
 //= require jquery/jquery-ui-1.8.21.custom.min
+//= require jquery/jquery.multiselect.min
 //= require jquery_ujs
 //= require d3.v2.min
+//= require utilities
 //= require toolbox
 //= require propertyToolbox
+//= require propertyPopup
 //= require zoomControl
 //= require historyManager
 //= require tagElem
 //= require freehandElem
 //= require regionElem
 //= require canvasState
-//= require modeEventHandler
 //= require imageLoader
+//= require eventListener
 
-//= require CommentController

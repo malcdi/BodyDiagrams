@@ -1,12 +1,10 @@
 class window.Toolbox   
 
   # initially sets up and controls the tool box
-  constructor: (parent, rotationParent, global)->
-    @bigBro = global
+  constructor: (parent, rotationParent, @bigBro)->
     @control = d3.select(parent).append("div")
       .attr("id", "toolbox_control")
       .attr("class","toolbox_container")
-      .style("border-right", "2px solid grey")
 
     @currentMode
 
@@ -17,14 +15,14 @@ class window.Toolbox
 
     # rotation
     @setupRotationControls(rotationParent)
-    $('#rect_drag').trigger('click')
+    $('#drag').trigger('click')
 
 
   # Helper Functions #
   getView: (curView, direction) ->
     if direction is "rotation_left"
-      return (curView + 1) % 4
-    else return (curView + 3) % 4  if direction is "rotation_right"
+      return (curView + 3) % 4
+    else return (curView + 1) % 4  if direction is "rotation_right"
     0
 
   getOtherView: (direction) ->
@@ -38,7 +36,7 @@ class window.Toolbox
   updateCurrent: (highlight)->
     if highlight
       @currentMode.control.attr("src", @currentMode.on)
-        .style("border", "solid 2px rgb(108, 204, 128)")
+        .style("border", "solid 2px #FFB6C1")
     else
       @currentMode.control.attr("src", @currentMode.off)
         .style("border", "")
@@ -50,24 +48,14 @@ class window.Toolbox
     $("#" + otherDirection)[0].src = @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, @getView(@bigBro.currentView, otherDirection))
     @bigBro.cvState.setView @bigBro.currentView
 
+    #rotate the view in historymanager
+    @bigBro.historyManager.setView @bigBro.currentView
+
   # Event Handlers End #
 
   # SETUP #
   setupControls: ->
     _ = this
-    #rect drag
-    @Modes.rect_drag = {}
-    @Modes.rect_drag.on = "/assets/dragHand.png"
-    @Modes.rect_drag.off = "/assets/dragHandInactive.png"
-    @Modes.rect_drag.control = @control.append("img")
-      .attr("id", "rect_drag")
-      .attr("class", "opMode")
-      .attr("src", @Modes.rect_drag.off) #TODO
-      .on("click", -> 
-        _.updateCurrent(false)
-        _.currentMode = _.Modes.rect_drag
-        _.bigBro.cvState.setMode "zoom"
-        _.updateCurrent(true))
 
     #drag
     @Modes.drag = {}
@@ -120,18 +108,18 @@ class window.Toolbox
 
     @currentMode = @Modes.drag
 
-  
-
   setupRotationControls: (parent)->
     _ = this
     left = d3.select(parent).append("img")
       .attr("id", "rotation_left")
-      .attr("src", @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, 1))
+      .attr("src", @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, 3))
+      .style("top", (_.bigBro.height - 150)+"px")
       .on("click", -> _.rotate(@id))
 
     right = d3.select(parent).append("img")
       .attr("id", "rotation_right")
-      .attr("src", @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, 3))
+      .style("top", (_.bigBro.height - 150)+"px")
+      .attr("src", @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, 1))
       .on("click", -> _.rotate(@id))
       
     padding = left[0][0].offsetLeft + parseInt(left.style("padding"))*4

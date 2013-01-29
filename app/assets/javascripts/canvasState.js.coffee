@@ -53,6 +53,7 @@ class window.CanvasState
 
     @zoomEventHandler = new window.CanvasZoomHandler(this)
     @drawEventHandler = new window.CanvasDrawHandler(this)
+    @summaryManager = new window.SummaryManager(this)
 
   setView: (view) ->
     _=@
@@ -132,40 +133,18 @@ class window.CanvasState
     @tracker.transformedPoint({x:mx, y:my})
 
   submitAll: (gender) ->
-    if @allTagData.length is 0
+    if @allTags.length is 0
       alert "please express your symptoms!"
       return
     self = this
+
     $.ajax(
-      type: "GET"
+      type: "POST"
       url: "postTag"
       data:
-        tagData: JSON.stringify(self.allTagData)
-    ).done (tagIdArr) ->
-      self.submitGraphicTags JSON.parse(tagIdArr)
-
-
-  submitGraphicTags: (tagIdArr) ->
-    self = this
-    l = @allTags.length
-    if l is 0
+        tagData: JSON.stringify(self.allTags)
+    ).done (msg) ->
       self.submitComplete()
-    else
-      j = 0
-
-      while j < l
-        tags = @allTags[j]
-        len = tags.length
-        $.ajax(
-          type: "POST"
-          url: "postGraphicTag"
-          data:
-            tagId: tagIdArr[j]
-            freeHand: JSON.stringify(tags)
-        ).done (msg) ->
-          self.submitComplete()  if j is l
-
-        j++
 
   submitComplete: ->
     alert "complete"
@@ -173,11 +152,10 @@ class window.CanvasState
 
   updateOpacityLevels: (frameNum, hide)->
     newOpacity = (if hide then 0.3 else 1.0)
-    newClass = (if hide then 'summary disabled' else 'summary')
 
     @svg.select("#tag_#{frameNum}")
       .style("opacity", newOpacity)
-    @getSummary(frameNum).attr('class', newClass)
+    @summaryManager.hideOrShow(frameNum, hide)
 
   changeFrame: (newFrameIndex)->
     @updateOpacityLevels(@highlighted.frame, true)
@@ -205,94 +183,10 @@ class window.CanvasState
     
   uploadTagProperties: (properties, index) ->
     frameElems = @allTags[index.frame]
+    console.log "saving properties"
+    console.log properties
     frameElems[index.sub].saveProperties(properties)
   # END ##########
-
-  # SUMMARY ##############
-  textBoxHeight = 20
-  textBoxWidth = 150
-  iconHeight = 25
-  smallIconHeight = 20
-
-  setupSummary: (summaryParent)->
-    summaryParent.append('rect')
-      .attr('width', textBoxWidth) #TODO
-      .attr('height', 20)
-      .attr('fill', 'white')
-      .attr('stroke', 'grey')
-      .attr('stroke-width', 1)
-      .attr('y', iconHeight)
-    summaryParent.append('image')
-      .attr('class', 'prop_severity')
-      .attr('height', iconHeight)
-      .attr('width', iconHeight)
-      .attr('x', textBoxWidth-iconHeight)
-    summaryParent.append('g')
-      .attr('class', 'prop_freq')
-      .attr('y', iconHeight-smallIconHeight)
-    summaryParent.append('text')
-      .attr('class', 'prop_annotation')
-      .attr('y', iconHeight)
-
-  closeSummary:(frameIndex, subIndex)->
-    summaryItem = @getSummary(frameIndex, subIndex)
-    if summaryItem
-      summaryItem.attr('class', 'summary disabled')
-
-  getSummary:(frameIndex, subIndex) ->
-    group = @svg.select("#tag_#{frameIndex}")
-    if subIndex is undefined
-      return group.selectAll('g.summary')
-    d3.select(group.selectAll('g.summary')[0][subIndex])
-
-  appendingTspan:(target, word)->
-    target.append("tspan")
-      .attr("x", 0)
-      .attr("dy", "1.0em")
-      .text(word);  
-
-  setTextInSummary:(elem, words)->
-    for word in words
-      lastChild = elem.select(':last-child')
-      if lastChild.empty() or word=="\n"
-        @appendingTspan(elem, word)
-      else if lastChild.node().offsetWidth < textBoxWidth-10
-        lastChild.text(lastChild.text()+ word)
-      else if lastChild.node().offsetTop>textBoxHeight+10
-        lastChild.text(lastChild.text()+'...')
-        return
-      else if word != ''
-        @appendingTspan(elem, word)
-
-  updateSummaryContent:(summaryParent, properties)->
-    for k,v of properties
-      element = summaryParent.select('.'+k)
-      switch k
-        when "prop_annotation"
-          @setTextInSummary(element, v)
-        when "prop_severity"
-          element.attr("xlink:href", "/assets/property/severity_#{v}.png")
-        when "prop_freq"
-          images = element.selectAll('image').data(v)
-          images.enter()
-            .append('image')
-            .attr('height', smallIconHeight)
-            .attr('width', smallIconHeight)
-            .attr('x', (d,i)->textBoxWidth-iconHeight-smallIconHeight*(i+1))
-            .attr("xlink:href", (d)->"/assets/posture/#{d}.png")
-          images.exit()
-
-  updateSummary: (frameIndex, subIndex, updateContent)->
-    properties = @allTags[frameIndex][subIndex].getProperties()
-    summaryItem = @getSummary(frameIndex, subIndex)
-
-    if summaryItem
-      box = @getBoundingBox(frameIndex, subIndex)
-      summaryItem.attr('class', 'summary')
-        .attr('transform',"translate(#{box.x+box.w},#{box.y})")
-      if updateContent then @updateSummaryContent(summaryItem, properties)
-
-  #  SUMMARY END #################
 
   #  Highlights #################
   deHighlightFrame: ->   
@@ -315,7 +209,7 @@ class window.CanvasState
     frameElems[sub].box
 
   highlightFrame: (index, subIndex) ->
-    @closeSummary(index, subIndex)
+    @summaryManager.closeSummary(index, subIndex)
     index = @allTags.length - 1  if index < 0
     frameElems = @allTags[index]
     return  if not frameElems or frameElems.length < 1
@@ -339,6 +233,18 @@ class window.CanvasState
     @highlighted.frame >= 0 and @highlighted.sub>=0
 
   # HIGHLIGGHTS END ##############
+
+  #### SUMMARY STUFF
+  updateSummary: (frameIndex, subIndex, updateContent)->
+    properties = @allTags[frameIndex][subIndex].getProperties()
+    summaryItem = @summaryManager.getSummary(frameIndex, subIndex)
+
+    if summaryItem
+      box = @getBoundingBox(frameIndex, subIndex)
+      summaryItem.attr('class', 'summary')
+        .attr('transform',"translate(#{box.x+box.w},#{box.y})")
+      if updateContent then @summaryManager.updateSummaryContent(summaryItem, properties)
+  ########
 
   setMode: (modeName) ->
     @mode = modeName
@@ -445,18 +351,9 @@ class window.CanvasState
     subIndex = grouper.node().childNodes.length
     tagGroup = grouper.append("g")
     self = @
-    #summaries
-    summary = tagGroup.append('g')
-      .attr('class', 'summary disabled')
-      .attr('frame', tagFrameGroup)
-      .attr('sub', subIndex)
-      .on('click', ()->
-        frameGroup = d3.select(this).attr('frame')
-        subIndex = d3.select(this).attr('sub')
-        self.highlightFrame(+frameGroup, subIndex)
-      )
 
-    @setupSummary(summary)
+    @summaryManager.setupSummary(tagGroup, tagGroup, subIndex)
+
     #path tag
     tagGroup.append("svg:path")
       .style("stroke-width", @strokeWidth)

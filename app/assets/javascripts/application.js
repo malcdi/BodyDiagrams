@@ -20,6 +20,7 @@
 //= require propertyPopup
 //= require zoomControl
 //= require historyManager
+//= require summaryManager
 //= require tagElem/tagElem
 //= require tagElem/freehandElem
 //= require tagElem/regionElem

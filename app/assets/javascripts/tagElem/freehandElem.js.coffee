@@ -11,6 +11,7 @@ class window.FreehandElem extends window.TagElem
   toJSON: ->
     points: @points
     view: @view
+    property: @property
 
   addPoint: (x_t, y_t) ->
     @updateBound(x_t, y_t)

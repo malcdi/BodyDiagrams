@@ -1,107 +1,120 @@
 class window.HistoryManager
-  imgW: 75
-  imgH: 175
-  width: 125
-  height: 182.5
-  scale: 4
 
   constructor:(parent, @bigBro)->
     @container=d3.select(parent)
     @width = 125
-    @height = window.innerHeight-@bigBro.height
+    @height = window.innerHeight-@bigBro.height-25
     @imgRatio = 3/7
     @imgH = @height
     @imgW = @imgH*@imgRatio 
     @offLeft = (@width - @imgW) / 2
     @offTop = 0
+    @scaleFactor = @bigBro.cvState.srcImg.attr('height')/@height
 
     @bigOffLeft = parseInt(@bigBro.cvState.srcImg.attr("x"))
     @bigOffTop = parseInt(@bigBro.cvState.srcImg.attr("y"))
+    @oldClassVar =""
     _ = this
 
     @line = d3.svg.line().x((d) ->
-        (d.x-_.bigOffLeft)/4
+        (d.x-_.bigOffLeft)/_.scaleFactor
       ).y((d) ->
-        (d.y-_.bigOffTop)/4
+        (d.y-_.bigOffTop)/_.scaleFactor
       ).interpolate("linear")
-
-    @container.append('button')
-      .attr('id', "addNew")
-      .text("addNew")
-      .on('click', ()->
-        data = _.bigBro.cvState.markHistoryDataForCurrent()
-        _.addNew(data)
-        _.highlightWindow(data.index)
-      )
 
     @numHistory = 0
     @highlightedIndex = -1
-    $('#addNew').click()
 
-  updateImgSize: ()->
-    @offLeft = (@width - @height*@imgRatio) / 4
-    @offTop = 0
-    for i of @svgGroup
-      offset = @getOffsetForIndex(i)
-      @svgGroup[i]
-        .attr("transform", "scale(0.5) translate("+offset.left+","+offset.top+")")
-
-  getOffsetForIndex: (index)->
-    offset = {}
-    offset.left = @offLeft
-    offset.top = @offTop
-    switch index
-      when 1
-        offset.left = @offLeft*3 + @imgW
-      when 2
-        offset.top = @offTop*3 + @imgH
-      when 3
-        offset.left = @offLeft*3 + @imgW
-        offset.top = @offTop*3 + @imgH
-    return offset
+    #button
+    buttonClass = 'thumbnail button'
+    buttonSVG = @container.append("li")
+      .attr('id', "addNew")
+      .append("svg")
+        .attr('width', @width+"px")
+        .attr('height', @height+"px")
+        .attr('class', buttonClass)
+        .on('click', ()->
+          _.addNew()
+        )
+        .on('mouseover',()->
+          d3.select(this).attr('class', "#{buttonClass} mouseover")
+        )
+        .on('mouseout',()->
+          d3.select(this).attr('class', buttonClass)
+        )
+    buttonSVG.append('text')
+          .attr('x', 25)
+          .attr('y', 100)
+          .text("click here to start")
+    buttonSVG.append('text')
+          .attr('x', 25)
+          .attr('y', 130)
+          .text("with a new frame")
+      
+    @addNew()
 
   setView: (viewId)->
     if @svg.select('path').empty()
-      @svgGroup[viewId] = @svgGroup[@cur_view_side]
-      @svgGroup[@cur_view_side] = undefined
-      @svgGroup[viewId].select("image").attr "xlink:href", @bigBro.ImageLoader.getBodyImageSrc(@gender, viewId)
+      @svg.select("image").attr "xlink:href", @bigBro.ImageLoader.getBodyImageSrc(@gender, viewId)
     @cur_view_side = viewId
+    console.log @cur_view_side
 
-  addNew: (data)->
-    @svg = @container.append("li").append("svg")
+  findThumbnailTag: (frameIndex, subIndex)->
+    svgGroup = @container.select("svg:nth-child(#{frameIndex+1})")
+    return null if svgGroup.empty()
+    svgGroup.select("path:nth-child(#{subIndex+2})")
+
+  moveThumbnailTag: (frameIndex, subIndex, dataPoints)->
+    thumbTag = @findThumbnailTag(frameIndex, subIndex)
+    return if thumbTag==null
+    thumbTag.attr("d", @line(dataPoints))
+
+
+  addNew: ()->
+    data = @bigBro.cvState.startNewFrame() #notify canvas state
+    _=@
+    @svg = @container.insert("li", "#addNew").append("svg")
       .attr('width', this.width)
       .attr('height', this.height)
       .attr('class', 'thumbnail')
+      .attr('frame_id', data.index)
+      .on('mouseover',()->
+        this.oldClass = d3.select(this).attr("class")
+        d3.select(this).attr('class', "#{this.oldClass} mouseover")
+      )
+      .on('mouseout',()->
+        d3.select(this).attr('class', this.oldClass)
+      )
+      .on('click',()->
+        d3Elem = d3.select(this)
+        _.container.select("svg.highlighted").attr('class', "thumbnail")
+        this.oldClass = "highlighted thumbnail"
+        d3Elem.attr('class', this.oldClass)
+        $(window).trigger(
+          {type:'frameChanged', message: d3Elem.attr('frame_id')}
+        )
+      )
 
     @cur_view_side = data.cur_view_side
     @gender = data.gender
 
-    @svgGroup = []
-    @svgGroup[@cur_view_side] = @svg.append("g")
+    @svg = @svg.append("g")
       .attr("class", "thumbnail")
+      .attr("view_side", @cur_view_side)
       .attr("transform", "translate("+@offLeft+","+@offTop+")")
 
-    @svgGroup[@cur_view_side].append("image")
+    @svg.append("image")
       .attr("width", this.imgW).attr("height", this.imgH)
       .attr("xlink:href", @bigBro.ImageLoader.getBodyImageSrc(@gender, @cur_view_side))
+    
     @numHistory += 1
+    @highlightWindow(data.index)
 
   addNewTag: (dataPoints)->
-    if @svgGroup[@cur_view_side] is undefined
-      if @svgGroup.length is 1
-        @updateImgSize()
+    if +@svg.attr("view_side")!=+@cur_view_side
+      @addNew()
 
-      #compute offsets
-      offset = @getOffsetForIndex(@cur_view_side)
-      # append new
-      @svgGroup[@cur_view_side] = @svg.append("g")
-      .attr("class", "thumbnail")
-      .attr("transform", "scale(0.5) translate("+offset.left+","+offset.top+")")
-      @svgGroup[@cur_view_side].append("image")
-        .attr("width", @imgW).attr("height", @imgH)
-        .attr("xlink:href", @bigBro.ImageLoader.getBodyImageSrc(@gender, @cur_view_side))
-    
-    @svgGroup[@cur_view_side].append("svg:path")
+    @svg.append("svg:path")
       .style("stroke-width", 1)
       .style("fill", "none").style("stroke", colorSelector(2))
       .attr("d", @line(dataPoints))

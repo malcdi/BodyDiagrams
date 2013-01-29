@@ -1,9 +1,12 @@
 class window.ZoomControl
   constructor:(bigBro)->
     @bigBro = bigBro
+    @moveFactor = 5
+    @zoomFactor = 1.0
 
   setupControls: (left, top)->
     _cvState = @bigBro.cvState
+    _ = this
 
     $('#compass').css({"left":left+"px", "top":top+"px"})
     $('#compassHolder').css({"left":left+"px", "top":top+"px"})
@@ -15,13 +18,13 @@ class window.ZoomControl
     $("#compass div").click ->
       switch @title
         when "Pan left"
-          _cvState.setZoomPan -2, 0, 0
+          _cvState.setZoomPan -_.moveFactor, 0, 0
         when "Pan right"
-          _cvState.setZoomPan 2, 0, 0
+          _cvState.setZoomPan _.moveFactor, 0, 0
         when "Pan up"
-          _cvState.setZoomPan 0, -2, 0
+          _cvState.setZoomPan 0, -_.moveFactor, 0
         when "Pan down"
-          _cvState.setZoomPan 0, 2, 0
+          _cvState.setZoomPan 0, _.moveFactor, 0
 
     sliderElem = $("#lmczbg")[0]
     offsetTop = 245
@@ -29,17 +32,19 @@ class window.ZoomControl
     #zoom in/out
     $("div[title=\"Zoom In\"]").click ->
       if parseInt(sliderElem.style.top) > 0
-        newY = parseInt(sliderElem.style.top) - 10
-        newY = Math.max(Math.min(137, newY), 0)
-        sliderElem.style.top = newY + "px"
-        _cvState.setZoomPan 0, 0, 0.75
+        zoomOK = _cvState.setZoomPan 0, 0, _.zoomFactor
+        if zoomOK
+          newY = parseInt(sliderElem.style.top) - 15*_.zoomFactor
+          newY = Math.max(Math.min(137, newY), 0)
+          sliderElem.style.top = newY + "px"
 
     $("div[title=\"Zoom Out\"]").click ->
       if parseInt(sliderElem.style.top) < 137
-        newY = parseInt(sliderElem.style.top) + 10
-        newY = Math.max(Math.min(137, newY), 0)
-        sliderElem.style.top = newY + "px"
-        _cvState.setZoomPan 0, 0, -0.75
+        zoomOK = _cvState.setZoomPan 0, 0, -_.zoomFactor
+        if zoomOK
+          newY = parseInt(sliderElem.style.top) + 15*_.zoomFactor
+          newY = Math.max(Math.min(137, newY), 0)
+          sliderElem.style.top = newY + "px"
 
 
     #slider zoom
@@ -47,9 +52,10 @@ class window.ZoomControl
       e.preventDefault()
       oldY = parseInt(sliderElem.style.top)
       newY = (e.pageY - offsetTop)
-      sliderElem.style.top = Math.max(Math.min(137, newY), 0) + "px"
-      _cvState.setZoomPan 0, 0, (oldY - newY) * 10 / 137
-      @dragStart = true
+      zoomOK = _cvState.setZoomPan 0, 0, (oldY - newY)*15*_.zoomFactor/137
+      if zoomOK
+        sliderElem.style.top = Math.max(Math.min(137, newY), 0) + "px"
+        @dragStart = true
 
     $("#lmczb").mousemove (e) ->
       e.preventDefault()
@@ -57,8 +63,9 @@ class window.ZoomControl
         newY = (e.pageY - offsetTop)
         newY = Math.max(Math.min(137, newY), 0)
         lastY = parseInt(sliderElem.style.top)
-        sliderElem.style.top = newY + "px"
-        _cvState.setZoomPan 0, 0, (lastY - newY) * 10 / 137
+        zoomOK = _cvState.setZoomPan 0, 0, (lastY - newY)*15*_.zoomFactor/137
+        if zoomOK
+          sliderElem.style.top = newY + "px"
 
     $("#lmczb").mouseup (e) ->
       @dragStart = false

@@ -97,7 +97,7 @@
   }
   
   function tagSelectionUpdate(index, select){
-    bigBro.cvState.deHighlightCloud();
+    bigBro.cvState.deHighlightFrame();
     if(index<0)
     {
       $("#annotator > div.annotator-widget").css({
@@ -114,7 +114,7 @@
         theTagC.addClass('annotator-list');
       }
     }
-    bigBro.cvState.highlightCloud(index);
+    bigBro.cvState.highlightFrame(index);
   } 
 
   $(document).ready(function(){

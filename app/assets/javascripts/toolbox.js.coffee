@@ -46,10 +46,8 @@ class window.Toolbox
     $("#" + id)[0].src = @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, @getView(@bigBro.currentView, id))
     otherDirection = @getOtherView(id)
     $("#" + otherDirection)[0].src = @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, @getView(@bigBro.currentView, otherDirection))
-    @bigBro.cvState.setView @bigBro.currentView
+    $(window).trigger({type:'rotated', message:@bigBro.currentView})
 
-    #rotate the view in historymanager
-    @bigBro.historyManager.setView @bigBro.currentView
 
   # Event Handlers End #
 
@@ -102,9 +100,15 @@ class window.Toolbox
       .attr("id", "undo")
       .attr("class", "opMode")
       .attr("src", "/assets/undo.png")
-      .on("click", -> _.bigBro.cvState.undoLastDrawing())
-      .on("mouseover", -> _.bigBro.cvState.highlightNextUndo())
-      .on("mouseleave", -> _.bigBro.cvState.deHighlightNextUndo())
+      .on("click", ->  
+        $(window).trigger({type:'last_undo_click'})
+      )
+      .on("mouseover", ->  
+        $(window).trigger({type:'last_undo_mouseover'})
+      )
+      .on("mouseleave", -> 
+        $(window).trigger({type:'last_undo_mouseout'})
+      )
 
     @currentMode = @Modes.drag
 

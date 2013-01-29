@@ -17,7 +17,8 @@ window.colorSelector = (severity) ->
     "#A50F15"
   else if severity is 8
     "#67000D"
-  else "#67000D"  if severity is 9
+  else if severity is "default"
+    "#FFB6C1"
 
 window.trackSVGTransforms = (tracker, svg) ->
   xform = svg.createSVGMatrix()
@@ -64,14 +65,7 @@ window.trackSVGTransforms = (tracker, svg) ->
     xform
 
   pt = svg.createSVGPoint()
-  tracker.transformedPoint = (x, y) ->
-    pt.x = x
-    pt.y = y
+  tracker.transformedPoint = (point) ->
+    pt.x = point.x
+    pt.y = point.y
     pt.matrixTransform xform.inverse()
-
-window.zoom = (clicks, myState) ->
-  pt = myState.tracker.transformedPoint(myState.lastZoom.x, myState.lastZoom.y)
-  factor = Math.pow(1.1, clicks)
-  myState.tracker.scale factor, factor
-  newMat = myState.tracker.getTransform()
-  myState.svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"

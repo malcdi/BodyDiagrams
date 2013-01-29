@@ -11,22 +11,12 @@ class window.CanvasState
     
     @allTags = [] #all freehand elems
 
-    #for drawing
-    @dragging = false # Keep track of when we are dragging
-    @mouseDownForFreeHand = false
-    
-    # the current selected object.
-    @handSelection = null
-    @dragOff={"x":0, "y":0}
-
     #drawing parameters
     @strokeWidth = 3
     
     #recording states
-    @tagCloud = -1
-    @highlightTagCloud = -1
-    @highlightTagSub = -1
-    @recording = false
+    @tagFrame = -1
+    @highlighted = {frame:-1, sub:-1}
     
     #SETS up using options
     @gender = (if options then options.currentGender else "male")
@@ -47,7 +37,6 @@ class window.CanvasState
       .attr("width", options.width).attr("height", options.height)
 
     @svg = @svg.append("g")
-      .on("mouseup", cv.getEventHandler("mouseup"))
       .on("mousewheel", cv.getEventHandler("mousewheel"))
       .on("mousedown", cv.getEventHandler("mousedown"))
       .on("mousemove", cv.getEventHandler("mousemove"))
@@ -62,53 +51,72 @@ class window.CanvasState
       .attr("height", imgH)
       .attr("xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side))
 
+    @zoomEventHandler = new window.CanvasZoomHandler(this)
+    @drawEventHandler = new window.CanvasDrawHandler(this)
+
   setView: (view) ->
+    _=@
     @cur_view_side = view
     @srcImg.attr "xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side)
-    @svg.selectAll("g").style "opacity", (d) ->
-      if @classList.contains("side_" + view) 
-        if @classList.contains("tag_"+@tagCloud)
+    @svg.selectAll("g.frameGroup").style "opacity", (d) ->
+      if this.attributes.view_side.value is "#{view}"
+        if this.id is "tag_#{_.highlighted.frame}"
           return 1.0
         else 
           return 0.3
-      0
-    @deHighlightCloud()
+      else
+        return 0
+    @deHighlightFrame()
 
   getView: ->
     @cur_view_side
 
+  setStrokeWidth: (width) ->
+    @strokeWidth = width
+
+
   addRegionTagCanvasElem: (elem) ->
-    @allTags[@tagCloud].allTags.push elem
+    @allTags[@tagFrame].allTags.push elem
     @needRedraw = true
 
-  addFreehandElem: (elem, cloud) ->
-    list = @allTags[cloud]
+  addFreehandElem: (elem, frame) ->
+    list = @allTags[frame]
     list.push elem
-    @allTags[cloud].length - 1
+    @allTags[frame].length - 1
 
-  highlightNextUndo: ->
-    if @allTags[@tagCloud]
-      curLen = @allTags[@tagCloud].length
+  # DELETES ###################
+
+  showNextUndo: ->
+    if @allTags[@highlighted.frame]
+      curLen = @allTags[@highlighted.frame].length
       if curLen > 0
-        grouper = @svg.select(".tag_" + @tagCloud)
+        grouper = @svg.select("#tag_#{@highlighted.frame}")
         toRemove = grouper.select(":last-child")
         toRemove.style "stroke", "#FC9272"  unless toRemove.empty()
 
-  deHighlightNextUndo: ->
-    curLen = @allTags[@tagCloud].length
+  hideNextUndo: ->
+    curLen = @allTags[@highlighted.frame].length
     if curLen > 0
-      grouper = @svg.select(".tag_" + @tagCloud)
+      grouper = @svg.select("#tag_#{@highlighted.frame}")
       toRemove = grouper.select(":last-child")
       toRemove.style "stroke", colorSelector(2)  unless toRemove.empty()
 
-  undoLastDrawing: ->
-    curLen = @allTags[@tagCloud].length
-    if curLen > 0
-      @allTags[@tagCloud].pop()
-      grouper = @svg.select(".tag_" + @tagCloud)
-      grouper.select(":last-child").remove()  unless grouper.empty()
+  deleteTag: (frameIndex, subIndex)->
+    console.log "#{frameIndex}, #{subIndex}"
+    if frameIndex is undefined
+      frameIndex = @highlighted.frame
 
-  getMouse: (e) ->
+    curLen = @allTags[frameIndex].length
+    if curLen > 0
+      if subIndex is undefined
+        subIndex = curLen-1
+      @allTags[frameIndex].splice(subIndex, 1)
+      grouper = @svg.select("#tag_#{@highlighted.frame}")
+      grouper.select("g:nth-child(#{subIndex+1})").remove()  unless grouper.empty()
+
+  # DELETE END ###################
+
+  getPoint: (e) ->
     element = @canvas
     offsetX = 0
     offsetY = 0
@@ -121,8 +129,7 @@ class window.CanvasState
         break unless (element = element.offsetParent)
     mx = e.pageX - offsetX
     my = e.pageY - offsetY
-    x: mx
-    y: my
+    @tracker.transformedPoint({x:mx, y:my})
 
   submitAll: (gender) ->
     if @allTagData.length is 0
@@ -164,139 +171,168 @@ class window.CanvasState
     alert "complete"
     window.location = "/main/complete?user_id=" + @userID
 
+  updateOpacityLevels: (frameNum, hide)->
+    newOpacity = (if hide then 0.3 else 1.0)
+    newClass = (if hide then 'summary disabled' else 'summary')
 
-  stopRecordingNewMsg: ->
-    grouper = @svg.select(".side_" + @cur_view_side + ".tag_" + @tagCloud)
-    @recording = false
+    @svg.select("#tag_#{frameNum}")
+      .style("opacity", newOpacity)
+    @getSummary(frameNum).attr('class', newClass)
 
-  startRecordingNewMsg: ->
-    @tagCloud += 1
+  changeFrame: (newFrameIndex)->
+    @updateOpacityLevels(@highlighted.frame, true)
+    @highlighted.frame = newFrameIndex
+    @updateOpacityLevels(@highlighted.frame, false)
+    
+  startNewFrame: ()->
+    @updateOpacityLevels(@highlighted.frame, true)
+    #create new
+    @tagFrame += 1
+    @highlighted.frame = @tagFrame
     @allTags.push []
-    @recording = true
 
-  opaqueCurrent: ()->
-    @svg.select(".tag_" + @tagCloud)
-      .style("opacity", 0.3)
-    $(window).trigger({
-      type: "opaqueCurrent",
-      message:@tagCloud
-      })
-
-  markHistoryDataForCurrent: ()->
-    @opaqueCurrent()
-    @startRecordingNewMsg()
     data = {}
     data.gender = @gender
     data.cur_view_side = @cur_view_side
-    data.index = @tagCloud
+    data.index = @tagFrame
     return data
 
-  setStrokeWidth: (width) ->
-    @strokeWidth = width
-
-  flush = ->
-    @allTags = []
-
-  getTacProperties: () ->
-    if @hasHighlightedSelection()
-      subIndex = Math.max(@highlightTagSub, 0)
-      return @allTags[@highlightTagCloud][subIndex].getProperties()
+  # HIGHLIGHTED TAG PROPERTY MANAGEMENT ##########
+  getHighlightedTagProperties: () ->
+    if @isHighlighted()
+      return @allTags[@highlighted.frame][@highlighted.sub].getProperties()
     return {}
     
-  uploadTagProperties: (properties) ->
-    if @hasHighlightedSelection()
-      cloudElems = @allTags[@highlightTagCloud]
-      sIndex = 0
-      fIndex = cloudElems.length
-      if @highlightTagSub>=0
-        sIndex = @highlightTagSub
-        fIndex = sIndex + 1
-      i = sIndex
+  uploadTagProperties: (properties, index) ->
+    frameElems = @allTags[index.frame]
+    frameElems[index.sub].saveProperties(properties)
+  # END ##########
 
-      while i < fIndex
-        tagElem = cloudElems[i]
-        tagElem.saveProperties(properties)
-        i++
+  # SUMMARY ##############
+  textBoxHeight = 20
+  textBoxWidth = 150
+  iconHeight = 25
+  smallIconHeight = 20
 
-  #Highlights
-  deHighlightCloud: ->
-    bbox = @svg.select("#boundingBox")
-    bbox.style "opacity", 0  unless bbox.empty()    
-    grouper = @svg.select(".side_" + @cur_view_side + ".tag_" + @highlightTagCloud)
+  setupSummary: (summaryParent)->
+    summaryParent.append('rect')
+      .attr('width', textBoxWidth) #TODO
+      .attr('height', 20)
+      .attr('fill', 'white')
+      .attr('stroke', 'grey')
+      .attr('stroke-width', 1)
+      .attr('y', iconHeight)
+    summaryParent.append('image')
+      .attr('class', 'prop_severity')
+      .attr('height', iconHeight)
+      .attr('width', iconHeight)
+      .attr('x', textBoxWidth-iconHeight)
+    summaryParent.append('g')
+      .attr('class', 'prop_freq')
+      .attr('y', iconHeight-smallIconHeight)
+    summaryParent.append('text')
+      .attr('class', 'prop_annotation')
+      .attr('y', iconHeight)
 
-    index = @highlightTagCloud
-    subIndex = @highlightTagSub
-    if index>=0 and subIndex>=0
+  closeSummary:(frameIndex, subIndex)->
+    summaryItem = @getSummary(frameIndex, subIndex)
+    if summaryItem
+      summaryItem.attr('class', 'summary disabled')
+
+  getSummary:(frameIndex, subIndex) ->
+    group = @svg.select("#tag_#{frameIndex}")
+    if subIndex is undefined
+      return group.selectAll('g.summary')
+    d3.select(group.selectAll('g.summary')[0][subIndex])
+
+  appendingTspan:(target, word)->
+    target.append("tspan")
+      .attr("x", 0)
+      .attr("dy", "1.0em")
+      .text(word);  
+
+  setTextInSummary:(elem, words)->
+    for word in words
+      lastChild = elem.select(':last-child')
+      if lastChild.empty() or word=="\n"
+        @appendingTspan(elem, word)
+      else if lastChild.node().offsetWidth < textBoxWidth-10
+        lastChild.text(lastChild.text()+ word)
+      else if lastChild.node().offsetTop>textBoxHeight+10
+        lastChild.text(lastChild.text()+'...')
+        return
+      else if word != ''
+        @appendingTspan(elem, word)
+
+  updateSummaryContent:(summaryParent, properties)->
+    for k,v of properties
+      element = summaryParent.select('.'+k)
+      switch k
+        when "prop_annotation"
+          @setTextInSummary(element, v)
+        when "prop_severity"
+          element.attr("xlink:href", "/assets/property/severity_#{v}.png")
+        when "prop_freq"
+          images = element.selectAll('image').data(v)
+          images.enter()
+            .append('image')
+            .attr('height', smallIconHeight)
+            .attr('width', smallIconHeight)
+            .attr('x', (d,i)->textBoxWidth-iconHeight-smallIconHeight*(i+1))
+            .attr("xlink:href", (d)->"/assets/posture/#{d}.png")
+          images.exit()
+
+  updateSummary: (frameIndex, subIndex, updateContent)->
+    properties = @allTags[frameIndex][subIndex].getProperties()
+    summaryItem = @getSummary(frameIndex, subIndex)
+
+    if summaryItem
+      box = @getBoundingBox(frameIndex, subIndex)
+      summaryItem.attr('class', 'summary')
+        .attr('transform',"translate(#{box.x+box.w},#{box.y})")
+      if updateContent then @updateSummaryContent(summaryItem, properties)
+
+  #  SUMMARY END #################
+
+  #  Highlights #################
+  deHighlightFrame: ->   
+    grouper = @svg.select("#tag_#{@highlighted.frame}")
+    if @isHighlighted()
       $(window).trigger({
         type:'highlighted', 
-        message:{highlight:false, data:{tagIdStr:"#{index}_#{subIndex}"}}
+        message:{highlight:false}
       })
-    @highlightTagCloud = -1
-    @highlightTagSub = -1
+      #open up summary
+      @updateSummary(@highlighted.frame, @highlighted.sub, true)
 
-  getBoundingBox:(index, subIndex)->
-    box =
-      x: 1000
-      y: 1000
-      x2: 0
-      y2: 0
+    @highlighted.sub = -1
 
-    sIndex = 0
-    fIndex = @allTags[index]
-    if subIndex>=0
-      @highlightTagSub = subIndex
-      sIndex = subIndex
-      fIndex = sIndex + 1
-    i = sIndex
+  getBoundingBox:(frame, sub)->
+    frameElems = @allTags[frame]
+    frameElems[sub].box
 
-    cloudElems = @allTags[index]
-    while i < fIndex
-      tagElem = cloudElems[i]
-      box.x = tagElem.x  if tagElem.x < box.x
-      box.y = tagElem.y  if tagElem.y < box.y
-      box.x2 = tagElem.x + tagElem.w  if tagElem.x + tagElem.w > box.x2
-      box.y2 = tagElem.y + tagElem.h if tagElem.y + tagElem.h > box.y2
-      i++
-    box
-
-  highlightCloud: (index, subIndex) ->
+  highlightFrame: (index, subIndex) ->
+    @closeSummary(index, subIndex)
     index = @allTags.length - 1  if index < 0
-    cloudElems = @allTags[index]
-    return  if not cloudElems or cloudElems.length < 1
-    return  unless cloudElems[0].view is @cur_view_side
-    @deHighlightCloud()
+    frameElems = @allTags[index]
+    return  if not frameElems or frameElems.length < 1
+    return  unless frameElems[0].view is @cur_view_side
+    @deHighlightFrame()
 
-    @highlightTagCloud = index
-    grouper = @svg.select(".side_" + @cur_view_side + ".tag_" + @highlightTagCloud)
-    grouper.style "opacity", 1.0  unless grouper.empty()
+    @highlighted.frame = index
+    @highlighted.sub = subIndex    
     boundingBox = @getBoundingBox(index, subIndex)
-    bbox = @svg.select("#boundingBox")
-    bbox = @svg.append("rect").attr("id", "boundingBox")  if bbox.empty()
-    bbox.attr("x", boundingBox.x).attr("y", boundingBox.y)
-      .attr("width", boundingBox.x2- boundingBox.x)
-      .attr("height", boundingBox.y2 - boundingBox.y)
-      .style("fill", "#7BCCC4").style("stroke", "#43A2CA")
-      .style("stroke-width", 3)
-      .style("fill-opacity", "0.05").style "opacity", 0.0
-    
     
     $(window).trigger({
       type:'highlighted', 
-      message:{highlight:true, box:bbox, 
-      data:{tagIdStr:"#{index}_#{subIndex}", properties:@getTacProperties()}}
+      message: {highlight:true, box:boundingBox, 
+      properties: @getHighlightedTagProperties(),index: @highlighted}
     })
 
-  moveHighlightBox: (mx, my) ->
-    bbox = @svg.select("#boundingBox")
-    if bbox
-      newX = parseInt(bbox.attr("x"))+mx
-      newY = parseInt(bbox.attr("y"))+my
-      bbox.attr("x", newX).attr("y", newY)
-      if @highlightTagCloud>=0 and @highlightTagSub>=0
-        $(window).trigger({
-          type:'highlightBoxMove', 
-          message:{ box:bbox, data:{tagIdStr:"#{@highlightTagCloud}_#{@highlightTagSub}"}}
-        })
+  isHighlighted: ->
+    @highlighted.frame >= 0 and @highlighted.sub>=0
+
+  # HIGHLIGGHTS END ##############
 
   setMode: (modeName) ->
     @mode = modeName
@@ -306,58 +342,119 @@ class window.CanvasState
       @canvas.style.cursor = "url('/assets/drawHand.png'), auto"
 
   updateGraphics: (index, severity, type) ->
-    grouper = @svg.select(".side_" + @cur_view_side + ".tag_" + index)
+    grouper = @svg.select("#tag_#{index}")
     col = colorSelector(severity)
     grouper.selectAll("path").style "stroke", col  unless grouper.empty()
     col
 
-  hasHighlightedSelection: ->
-    @highlightTagCloud >= 0
+  #MOVING AROUND STUFF ###########
+
+  findCenter:(sx, sy, tx, ty)->
+    centerX = (tx+(+@srcImg.attr('x'))+(+@srcImg.attr('width')/2))
+    centerY = (ty+(+@srcImg.attr('y'))+(+@srcImg.attr('height')/2))
+    {x:centerX, y:centerY}
+
+  imgBoundWDrag:(center, dragX, dragY, dragCheck)->
+    xOUB = (center.x-60<0 and (!dragCheck or dragX<0)) or (center.x+60>+$('svg').attr('width') and (!dragCheck or dragX>0))
+    yOUB = (center.y<0 and (!dragCheck or dragY<0)) or (center.y>+$('svg').attr('height') and (!dragCheck or dragY>0))
+    {x:!xOUB, y:!yOUB}
+
+  imageInBound: (dragX, dragY)->
+    mat = @svg.attr('transform')
+    if mat
+      matchedStr = mat.match /matrix\((.*),(.*),(.*),(.*),(.*),(.*)\)/
+    return true if matchedStr is null or matchedStr is undefined
+    center = @findCenter(+matchedStr[1], +matchedStr[4], +matchedStr[5], +matchedStr[6])
+    return @imgBoundWDrag(center, dragX, dragY, true)
+    
+
+  zoom: (clicks) ->
+    pt = @tracker.transformedPoint(@lastZoom.x, @lastZoom.y)
+    factor = Math.pow(1.1, clicks)
+    @tracker.scale factor, factor
+    newMat = @tracker.getTransform()
+    center = @findCenter(newMat.a, newMat.d, newMat.e, newMat.f)
+    boundness = @imgBoundWDrag(center, 0, 0, false)
+    if boundness.x and boundness.y
+      @svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
+      return true
+    false
 
   setZoomPan: (deltaX, deltaY, deltaZoom) ->
     @tracker.translate deltaX, deltaY
     @lastZoom.x = @canvas.width / 2
     @lastZoom.y = @canvas.height / 2
-    zoom deltaZoom, this
+    return @zoom deltaZoom
 
-  elementUnderneath: (pt) ->
-    i = 0
-    while i < this.allTags.length
-      curTagL = this.allTags[i]
-      l = curTagL.length
-      j = 0
+  moveElement: (elem, movePixel)->
+    elem.tag.moveAll movePixel #update points stored in tag
+    @updateSummary(elem.frameIndex, elem.subIndex,false)
+    elem.graphicTag.select('path').attr "d", @line(elem.tag.points) #move path elem
+    $(window).trigger({
+      type:'tagMoving', 
+      message:{ box:elem.tag.box}
+    }) #notify moving tag
+    
+  unsetDraggable: (elem)->
+    elem.graphicTag.select('path').style "stroke", colorSelector('default')
 
-      while j < l
-        if curTagL[j].view is this.cur_view_side and curTagL[j].contains(pt.x, pt.y)
-          this.handSelection = curTagL[j]
-          grouper = this.svg.select(".tag_" + i)
-          this.dragElem = grouper.select(":nth-child(" + (j + 1) + ")")
-          return this.dragElem
-        j++
-      i++
+  setDraggable: (elem)->
+    elem.graphicTag.select('path').style "stroke", 'black'
+
+  #MOVING AROUND STUFF DONE ###########
+
+  elemUnderneath: (pt) -> 
+    curTagL = @allTags[@highlighted.frame]
+    l = curTagL.length
+    j = 0
+
+    while j < l
+      if curTagL[j].view is @cur_view_side and curTagL[j].contains(pt.x, pt.y)
+        grouper = @svg.select("#tag_#{@highlighted.frame}")
+        return {frameIndex:@highlighted.frame, subIndex:j, tag:curTagL[j], graphicTag:grouper.select("g:nth-child(#{j+1})")}
+      j++
     return null
 
-  getGrouper: (tagCloudGroup)->
-    grouper = @svg.select(".side_"+@cur_view_side+".tag_" + tagCloudGroup)
+  getGrouper: (tagFrameGroup)->
+    grouper = @svg.select("#tag_#{tagFrameGroup}")
     if grouper.empty()
       # create the group 
       grouper = @svg.append("svg:g")
-        .attr("class", "side_" + @cur_view_side + " tag_" + tagCloudGroup)
+        .attr("id", "tag_#{tagFrameGroup}")
+        .attr("view_side", @cur_view_side)
+        .attr('class','frameGroup')
     grouper
 
-  newTag: (grouper)->
-    strokeColor = colorSelector(2)
+
+  newTag: (tagFrameGroup, grouper)->
+    strokeColor = colorSelector("default")
     unless (path = grouper.select("path")).empty()
       strokeColor = path.style("stroke")
 
-    grouper.append("svg:path")
+    subIndex = grouper.node().childNodes.length
+    tagGroup = grouper.append("g")
+    self = @
+    #summaries
+    summary = tagGroup.append('g')
+      .attr('class', 'summary disabled')
+      .attr('frame', tagFrameGroup)
+      .attr('sub', subIndex)
+      .on('click', ()->
+        frameGroup = d3.select(this).attr('frame')
+        subIndex = d3.select(this).attr('sub')
+        self.highlightFrame(+frameGroup, subIndex)
+      )
+
+    @setupSummary(summary)
+    #path tag
+    tagGroup.append("svg:path")
       .style("stroke-width", @strokeWidth)
       .style("fill", "none").style("stroke", strokeColor)
       .attr("d", @line(@handSelection.points))
 
-  createInSvg: (tagCloudGroup)->
-    grouper = @getGrouper(tagCloudGroup)
-    @curElem = @newTag(grouper)
+  createInSvg: (tagFrameGroup)->
+    grouper = @getGrouper(tagFrameGroup)
+    @curElem = @newTag(tagFrameGroup, grouper)
 
   drawInSvg: ()->
     @curElem.attr "d", @line(@handSelection.points)
@@ -366,124 +463,11 @@ class window.CanvasState
     cv = @
     (e) ->
       if cv.mode is "draw"
-        CanvasDrawEventHandler[name] d3.event, cv
-      else CanvasZoomEventHandler[name] d3.event, cv if cv.mode is "zoom"
+        cv.drawEventHandler[name] d3.event
+      else cv.zoomEventHandler[name] d3.event
 
+  openSummary: (index, subIndex)-> 
 
-CanvasZoomEventHandler =
-  mousedown: (e, cv) ->
-    e.preventDefault()
-    mouse = cv.getMouse(e)
-    globalPoint = cv.tracker.transformedPoint(mouse.x, mouse.y)
-    if cv.dragElem
-      cv.dragging = true
-      cv.dragOff.x = globalPoint.x
-      cv.dragOff.y = globalPoint.y
-      #highlight the elem
-      cv.highlightCloud cv.handSelection.cloudIndex, cv.handSelection.tagIndex
-
-      return
-    cv.handSelection = null
-    cv.lastZoom.x = e.offsetX or (e.pageX - cv.canvas.offsetLeft)
-    cv.lastZoom.y = e.offsetY or (e.pageY - cv.canvas.offsetTop)
-    cv.dragStart = cv.tracker.transformedPoint(cv.lastZoom.x, cv.lastZoom.y)
-
-  mousemove: (e, cv) ->
-    e.preventDefault()
-    cv.lastZoom.x = e.offsetX or (e.pageX - canvas.offsetLeft)
-    cv.lastZoom.y = e.offsetY or (e.pageY - canvas.offsetTop)
-    mouse = cv.getMouse(e)
-    globalPoint = cv.tracker.transformedPoint(mouse.x, mouse.y)
-    if cv.dragStart
-      #moving around background image
-      pt = cv.tracker.transformedPoint(cv.lastZoom.x, cv.lastZoom.y)
-      newMat = cv.tracker.translate(pt.x - cv.dragStart.x, pt.y - cv.dragStart.y)
-      cv.svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
-    else if cv.dragging
-      #moving around the element
-      mx = globalPoint.x - cv.dragOff.x
-      my = globalPoint.y - cv.dragOff.y
-      cv.handSelection.moveAll mx,my 
-      cv.moveHighlightBox mx,my
-
-      cv.dragOff.x = globalPoint.x
-      cv.dragOff.y = globalPoint.y
-      cv.dragElem.attr "d", cv.line(cv.handSelection.points)
-    else
-      elemUnder = cv.elementUnderneath(globalPoint)
-      if elemUnder is null
-        cv.handSelection = null
-        if cv.dragElem
-          cv.dragElem.style "stroke", colorSelector(2)
-          cv.dragElem = null
-      else
-        cv.dragElem.style "stroke", "#FC9272"
-
-  mouseup: (e, cv) ->
-    cv.dragStart = null
-    cv.dragging = false
-    if cv.dragElem
-      cv.dragElem.style "stroke", colorSelector(2)
-      cv.dragElem = null
-
-  mousewheel: (e, cv) ->
-    delta = (if e.originalEvent.wheelDelta then e.originalEvent.wheelDelta / 40 else (if e.originalEvent.detail then e.originalEvent.detail else 0))
-    zoom delta, cv  if delta
-    e.preventDefault() and false
-
-CanvasDrawEventHandler =
-  mousedown: (e, cv) ->
-    return  unless cv.recording
-    cv.handSelection = null
-    e.preventDefault()
-    mouse = cv.getMouse(e)
-    cv.mouseDownForFreeHand = true
-    cv.deHighlightCloud()
-
-    #creating a new free hand tag
-    cv.handSelection = new FreehandElem("#F89393", cv.cur_view_side)
-    globalPoint = cv.tracker.transformedPoint(mouse.x, mouse.y)
-    cv.handSelection.addPoint globalPoint.x, globalPoint.y
-
-    #find out the cloud it belongs to
-    tagCloudGroup = cv.tagCloud
-    tagCloudGroup = cv.highlightTagCloud  if cv.hasHighlightedSelection()
-    cv.handSelection.cloudIndex = tagCloudGroup
-    cv.handSelection.tagIndex = cv.addFreehandElem(cv.handSelection, tagCloudGroup)
-
-    #create the element in svg
-    cv.createInSvg(tagCloudGroup)
-
-
-  mousemove: (e, cv) ->
-    mouse = cv.getMouse(e)
-    e.preventDefault()
-    if cv.mouseDownForFreeHand
-      globalPoint = cv.tracker.transformedPoint(mouse.x, mouse.y)
-      cv.handSelection.addPoint globalPoint.x, globalPoint.y
-      cv.drawInSvg()
-      return
-
-  mouseup: (e, cv) ->
-    if cv.mouseDownForFreeHand
-      cv.mouseDownForFreeHand = false
-      unless cv.handSelection.isValidElem()
-        cv.undoLastDrawing()
-      else
-        cv.drawInSvg()
-        $(window).trigger({
-          type:'newTag', 
-          message:{"points":cv.handSelection.points}
-        })
-
-        #highlight cloud
-        cv.highlightCloud cv.handSelection.cloudIndex, cv.handSelection.tagIndex
-        
-      return
-    cv.dragging = false
-
-  mousewheel: (e, cv) ->
-    false
 
     
 

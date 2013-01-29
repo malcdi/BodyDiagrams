@@ -51,7 +51,7 @@ function CommentController (callback){
 				var newCol = cvState.updateGraphics(index, ui.value-1 ,painType);
 				$(this).find("a")[0].style.backgroundImage="none";
 				$(this).find("a")[0].style.backgroundColor= newCol;
-				cvState.highlightCloud(index);
+				cvState.highlightFrame(index);
 				self.saveTagAnnotations(newTagContainer, index);
 			}
 		});
@@ -98,14 +98,14 @@ function CommentController (callback){
 		newTagContainer.click(function(obj){
 			//collapse other if any
 			self.collapseAll();
-			cvState.deHighlightCloud();
+			cvState.deHighlightFrame();
 
 			//EXPAND
 			var index = parseInt(this.id.match("tag_([0-9]+)")[1]);
 			
 			var listIndex = self.cvState.allTags.length-(index+1);
 			self.animateControl(listIndex, true);
-			cvState.highlightCloud(index);
+			cvState.highlightFrame(index);
 
 		});
 	}

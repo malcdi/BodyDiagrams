@@ -1,17 +1,21 @@
 .thumbnail{
 	border:solid 1px #FFB6C1; 
 	background-color:white;
-	
 }
 .highlighted.thumbnail{
-	border:solid 2px #FFB6C1;
+	border:solid 3px #FFB6C1;
+}
+.mouseover.thumbnail{
+	border:solid 2px brown;
+}
+.highlighted.mouseover.thumbnail{
+	border:solid 2px brown;
 }
 #history_container{
 	position:absolute;
 	top:700px;
 	left:-10px;
 	width:100%;
-	height: 175px;
 	background-color: #EBEBEB;
 	list-style-type:none;
 	li{

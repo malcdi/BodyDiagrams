@@ -92,14 +92,14 @@ class window.CanvasState
       if curLen > 0
         grouper = @svg.select("#tag_#{@highlighted.frame}")
         toRemove = grouper.select(":last-child")
-        toRemove.style "stroke", "#FC9272"  unless toRemove.empty()
+        toRemove.style "stroke", colorSelector('highlight')  unless toRemove.empty()
 
   hideNextUndo: ->
     curLen = @allTags[@highlighted.frame].length
     if curLen > 0
       grouper = @svg.select("#tag_#{@highlighted.frame}")
       toRemove = grouper.select(":last-child")
-      toRemove.style "stroke", colorSelector(2)  unless toRemove.empty()
+      toRemove.style "stroke", colorSelector('default')  unless toRemove.empty()
 
   deleteTag: (frameIndex, subIndex)->
     console.log "#{frameIndex}, #{subIndex}"
@@ -111,8 +111,8 @@ class window.CanvasState
       if subIndex is undefined
         subIndex = curLen-1
       @allTags[frameIndex].splice(subIndex, 1)
-      grouper = @svg.select("#tag_#{@highlighted.frame}")
-      grouper.select("g:nth-child(#{subIndex+1})").remove()  unless grouper.empty()
+      pathGroup = @getPathGroup(frameIndex, subIndex)
+      pathGroup.remove()  unless pathGroup.empty()
 
   # DELETE END ###################
 
@@ -302,6 +302,9 @@ class window.CanvasState
         type:'highlighted', 
         message:{highlight:false}
       })
+      pathGroup = @getPathGroup(@highlighted.frame, @highlighted.sub)
+      unless pathGroup.empty()
+        pathGroup.select('path').style('stroke', colorSelector('default'))
       #open up summary
       @updateSummary(@highlighted.frame, @highlighted.sub, true)
 
@@ -322,6 +325,9 @@ class window.CanvasState
     @highlighted.frame = index
     @highlighted.sub = subIndex    
     boundingBox = @getBoundingBox(index, subIndex)
+    pathGroup = @getPathGroup(index, subIndex)
+    unless pathGroup.empty()
+      pathGroup.select('path').style('stroke', colorSelector('highlight'))
     
     $(window).trigger({
       type:'highlighted', 
@@ -343,7 +349,7 @@ class window.CanvasState
 
   updateGraphics: (index, severity, type) ->
     grouper = @svg.select("#tag_#{index}")
-    col = colorSelector(severity)
+    col = colorSelector('default')
     grouper.selectAll("path").style "stroke", col  unless grouper.empty()
     col
 
@@ -396,10 +402,11 @@ class window.CanvasState
     }) #notify moving tag
     
   unsetDraggable: (elem)->
+    return if(elem.frameIndex==@highlighted.frame and elem.subIndex==@highlighted.sub)
     elem.graphicTag.select('path').style "stroke", colorSelector('default')
 
   setDraggable: (elem)->
-    elem.graphicTag.select('path').style "stroke", 'black'
+    elem.graphicTag.select('path').style "stroke", colorSelector('highlight')
 
   #MOVING AROUND STUFF DONE ###########
 
@@ -425,9 +432,13 @@ class window.CanvasState
         .attr('class','frameGroup')
     grouper
 
+  getPathGroup:(frame, sub)->
+    grouper = @svg.select("#tag_#{frame}")
+    if grouper.empty() then return null
+    grouper.select("g:nth-child(#{sub+1})")
 
   newTag: (tagFrameGroup, grouper)->
-    strokeColor = colorSelector("default")
+    strokeColor = colorSelector('default')
     unless (path = grouper.select("path")).empty()
       strokeColor = path.style("stroke")
 

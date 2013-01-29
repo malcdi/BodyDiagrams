@@ -10,15 +10,18 @@
 		display:block;
 	}
 	.opMode:hover{
-		border:solid 2px #FFB6C1;
+		border:solid 2px #996d73;
 		cursor:pointer;
+	}
+	.opMode.selected{
+		border:solid 2px #996d73;
 	}
 	.opMode.disabled:hover{
 		border:solid 2px white;
 		cursor:default;
 	}
 	.opMode.tag-selected{
-		border:solid 2px #FFB6C1;
+		border:solid 2px #996d73;
 	}
 	.prop_expand{
 		display:none;

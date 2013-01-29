@@ -2,7 +2,7 @@ class window.TagElem
   selBoxPadding = 2
 
   constructor: (strokeStyle, view) ->
-    @strokeStyle = strokeStyle or colorSelector("default")
+    @strokeStyle = strokeStyle or colorSelector('default')
     @box = {
       x:1000
       y:1000

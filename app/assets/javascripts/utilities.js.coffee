@@ -1,24 +1,9 @@
-window.colorSelector = (severity) ->
-  if severity is 0
-    "#FFF5F0"
-  else if severity is 1
-    "#FEE0D2"
-  else if severity is 2
-    "#FFB6C1"
-  else if severity is 3
-    "#FFB6C1"
-  else if severity is 4
-    "#FB6A4A"
-  else if severity is 5
-    "#EF3B2C"
-  else if severity is 6
-    "#CB181D"
-  else if severity is 7
-    "#A50F15"
-  else if severity is 8
-    "#67000D"
-  else if severity is "default"
-    "#FFB6C1"
+window.colorSelector = (option) ->
+  switch option
+    when 'default'
+      "#FFB6C1"
+    when 'highlight'
+      "#996d73"
 
 window.trackSVGTransforms = (tracker, svg) ->
   xform = svg.createSVGMatrix()

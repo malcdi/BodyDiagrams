@@ -36,10 +36,10 @@ class window.Toolbox
   updateCurrent: (highlight)->
     if highlight
       @currentMode.control.attr("src", @currentMode.on)
-        .style("border", "solid 2px #FFB6C1")
+        .attr("class", "opMode selected")
     else
       @currentMode.control.attr("src", @currentMode.off)
-        .style("border", "")
+        .attr("class", "opMode")
 
   rotate: (id)->
     @bigBro.currentView = @getView(@bigBro.currentView, id)

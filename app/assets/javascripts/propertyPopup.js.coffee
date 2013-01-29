@@ -70,7 +70,7 @@ class window.PropertyPopup
           )
 
   setDefaultPropertyValues:()->
-    @setPropertyValueInControl("prop_severity", [])
+    @setPropertyValueInControl("prop_severity", "")
     @setPropertyValueInControl("prop_freq", [])
     @setPropertyValueInControl("prop_annotation", "")
     

@@ -79,19 +79,19 @@ class window.HistoryManager
       .attr('class', 'thumbnail')
       .attr('frame_id', data.index)
       .on('mouseover',()->
-        this.oldClass = d3.select(this).attr("class")
-        d3.select(this).attr('class', "#{this.oldClass} mouseover")
+        className = d3.select(this).attr("class")
+        d3.select(this).attr('class', "#{className} mouseover")
       )
       .on('mouseout',()->
-        d3.select(this).attr('class', this.oldClass)
+        className = d3.select(this).attr("class")
+        d3.select(this).attr('class', className.replace(' mouseover', ''))
       )
       .on('click',()->
-        d3Elem = d3.select(this)
-        _.container.select("svg.highlighted").attr('class', "thumbnail")
-        this.oldClass = "highlighted thumbnail"
-        d3Elem.attr('class', this.oldClass)
+        index = d3.select(this).attr('frame_id')
+        _.highlightWindow(index)
+        _.svg = d3.select(this)
         $(window).trigger(
-          {type:'frameChanged', message: d3Elem.attr('frame_id')}
+          {type:'frameChanged', message: index}
         )
       )
 
@@ -116,7 +116,7 @@ class window.HistoryManager
 
     @svg.append("svg:path")
       .style("stroke-width", 1)
-      .style("fill", "none").style("stroke", colorSelector(2))
+      .style("fill", "none").style("stroke", colorSelector('default'))
       .attr("d", @line(dataPoints))
 
   highlightWindow: (index)->

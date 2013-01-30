@@ -16,6 +16,7 @@
 //= require jquery_ujs
 //= require d3.v2.min
 //= require utilities
+//= require eventManager
 //= require toolbox
 //= require propertyPopup
 //= require zoomControl
@@ -26,6 +27,7 @@
 //= require tagElem/regionElem
 //= require event/canvasEventHandler
 //= require event/canvasDrawHandler
+//= require event/canvasRectDrawHandler
 //= require event/canvasZoomHandler
 //= require canvasState
 //= require imageLoader

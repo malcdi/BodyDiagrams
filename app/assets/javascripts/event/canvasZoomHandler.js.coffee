@@ -36,7 +36,7 @@ class window.CanvasZoomHandler extends CanvasEventHandler
     else if @draggedAmt>=0
       #moving around the element
       movePixel = {mx:tPoint.x - @dragOff.x, my:tPoint.y - @dragOff.y}
-      #TODO
+
       @canvasState.moveElement(@dragElem, movePixel)
       @dragOff = tPoint
       @draggedAmt+=1
@@ -50,12 +50,14 @@ class window.CanvasZoomHandler extends CanvasEventHandler
   mouseup: (e) ->
     $(window).unbind('mouseup')
     if @draggedAmt>0
-      $(window).trigger({
+      window.triggerEvent({
         type:'tagMovingDone', 
         message:{ frameIndex:@dragElem.frameIndex, subIndex:@dragElem.subIndex, dataPoints:@dragElem.tag.points}
       })
     else if @draggedAmt==0
       @canvasState.highlightFrame(@dragElem.frameIndex, @dragElem.subIndex)
+    else 
+      window.triggerEvent({type:'imageMovingDone'})
 
     @dragStart = null
     @draggedAmt = -1

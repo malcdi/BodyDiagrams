@@ -13,43 +13,40 @@ class window.CanvasDrawHandler extends CanvasEventHandler
     @canvasState.deHighlightFrame()
 
     #creating a new free hand tag
-    @canvasState.handSelection = new FreehandElem("#F89393", @canvasState.cur_view_side)
+    @handSelection = new FreehandElem("#F89393", @canvasState.cur_view_side)
     tPoint = @canvasState.getPoint(e)
-    @canvasState.handSelection.addPoint tPoint.x, tPoint.y
+    @handSelection.addPoint tPoint.x, tPoint.y
 
     #find out the frame it belongs to
     tagFrameGroup = @canvasState.highlighted.frame
-    @canvasState.handSelection.frameIndex = tagFrameGroup
-    @canvasState.handSelection.tagIndex = @canvasState.addFreehandElem(@canvasState.handSelection, tagFrameGroup)
+    @handSelection.frameIndex = tagFrameGroup
+    @handSelection.tagIndex = @canvasState.addTagElem(@handSelection, tagFrameGroup)
 
     #create the element in svg
-    @canvasState.createInSvg(tagFrameGroup)
+    @curElem = @canvasState.createInSvg(tagFrameGroup, @handSelection.type)
 
   mousemove: (e) ->
     e.preventDefault()
     if @mouseDownForFreeHand
       tPoint = @canvasState.getPoint(e)
-      @canvasState.handSelection.addPoint tPoint.x, tPoint.y
-      @canvasState.drawInSvg()
+      @handSelection.addPoint tPoint.x, tPoint.y
+      @canvasState.drawInSvg(@curElem, @handSelection)
       return
 
   mouseup: (e) ->
     $(window).unbind('mouseup')
     if @mouseDownForFreeHand
       @mouseDownForFreeHand = false
-      unless @canvasState.handSelection.isValidElem()
-        @canvasState.deleteTag(@canvasState.handSelection.frameIndex, @canvasState.handSelection.tagIndex)
+      unless @handSelection.isValidElem()
+        @canvasState.deleteTag(@handSelection.frameIndex, @handSelection.tagIndex)
       else
-        @canvasState.drawInSvg()
-        $(window).trigger({
+        @canvasState.drawInSvg(@curElem, @handSelection)
+        window.triggerEvent({
           type:'newTag', 
-          message:{"points":@canvasState.handSelection.points}
+          message:{type:@handSelection.type, data:@handSelection.points}
         })
 
         #highlight frame
-        @canvasState.highlightFrame @canvasState.handSelection.frameIndex, @canvasState.handSelection.tagIndex
+        @canvasState.highlightFrame @handSelection.frameIndex, @handSelection.tagIndex
         
       return
-
-  mousewheel: (e) ->
-    false

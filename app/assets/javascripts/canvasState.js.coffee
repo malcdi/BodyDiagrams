@@ -21,7 +21,7 @@ class window.CanvasState
     #SETS up using options
     @gender = (if options then options.currentGender else "male")
     @cur_view_side = (if options then options.currentView else 0)
-    @mode = (if options.mode then options.mode else "zoom")
+    @mode = (if options.mode then options.mode else "drag")
     @imageLoader = options.imageLoader
     
     # Zoom related variables
@@ -37,9 +37,9 @@ class window.CanvasState
       .attr("width", options.width).attr("height", options.height)
 
     @svg = @svg.append("g")
-      .on("mousewheel", cv.getEventHandler("mousewheel"))
-      .on("mousedown", cv.getEventHandler("mousedown"))
-      .on("mousemove", cv.getEventHandler("mousemove"))
+      .call((selection)->
+        window.eventManager.setup('svgCanvas', selection, cv)
+      )
    
     # add image
     imgRatio = 3/7
@@ -51,8 +51,10 @@ class window.CanvasState
       .attr("height", imgH)
       .attr("xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side))
 
-    @zoomEventHandler = new window.CanvasZoomHandler(this)
+    @dragEventHandler = new window.CanvasZoomHandler(this)
     @drawEventHandler = new window.CanvasDrawHandler(this)
+    @rectDrawEventHandler = new window.CanvasRectDrawHandler(this)
+
     @summaryManager = new window.SummaryManager(this)
 
   setView: (view) ->
@@ -72,21 +74,32 @@ class window.CanvasState
   getView: ->
     @cur_view_side
 
+  getEventHandler:(name)->
+    _ = @
+    ()->
+      switch _.mode
+        when "drag"
+          _.dragEventHandler[name] d3.event
+        when "draw"
+          _.drawEventHandler[name] d3.event
+        when "rect_draw"
+          _.rectDrawEventHandler[name] d3.event
+
   setStrokeWidth: (width) ->
     @strokeWidth = width
 
+  updateStrokeColor:(frame, sub, col)->
+    tagGroup = @getTagGroup(frame, sub)
+    unless tagGroup.empty()
+      svgTagElem = tagGroup.select('.tag')
+        .style('stroke', col)
 
-  addRegionTagCanvasElem: (elem) ->
-    @allTags[@tagFrame].allTags.push elem
-    @needRedraw = true
-
-  addFreehandElem: (elem, frame) ->
+  addTagElem: (elem, frame) ->
     list = @allTags[frame]
     list.push elem
     @allTags[frame].length - 1
 
-  # DELETES ###################
-
+  # DELETES ###################a
   showNextUndo: ->
     if @allTags[@highlighted.frame]
       curLen = @allTags[@highlighted.frame].length
@@ -103,7 +116,6 @@ class window.CanvasState
       toRemove.style "stroke", colorSelector('default')  unless toRemove.empty()
 
   deleteTag: (frameIndex, subIndex)->
-    console.log "#{frameIndex}, #{subIndex}"
     if frameIndex is undefined
       frameIndex = @highlighted.frame
 
@@ -112,8 +124,8 @@ class window.CanvasState
       if subIndex is undefined
         subIndex = curLen-1
       @allTags[frameIndex].splice(subIndex, 1)
-      pathGroup = @getPathGroup(frameIndex, subIndex)
-      pathGroup.remove()  unless pathGroup.empty()
+      tagGroup = @getTagGroup(frameIndex, subIndex)
+      tagGroup.remove()  unless tagGroup.empty()
 
   # DELETE END ###################
 
@@ -158,6 +170,8 @@ class window.CanvasState
     @summaryManager.hideOrShow(frameNum, hide)
 
   changeFrame: (newFrameIndex)->
+    view_side = @getGrouper(newFrameIndex).attr('view_side')
+    @setView(+view_side)
     @updateOpacityLevels(@highlighted.frame, true)
     @highlighted.frame = newFrameIndex
     @updateOpacityLevels(@highlighted.frame, false)
@@ -169,6 +183,7 @@ class window.CanvasState
     @highlighted.frame = @tagFrame
     @allTags.push []
 
+  getCurrentFrameData:->
     data = {}
     data.gender = @gender
     data.cur_view_side = @cur_view_side
@@ -183,8 +198,6 @@ class window.CanvasState
     
   uploadTagProperties: (properties, index) ->
     frameElems = @allTags[index.frame]
-    console.log "saving properties"
-    console.log properties
     frameElems[index.sub].saveProperties(properties)
   # END ##########
 
@@ -192,13 +205,11 @@ class window.CanvasState
   deHighlightFrame: ->   
     grouper = @svg.select("#tag_#{@highlighted.frame}")
     if @isHighlighted()
-      $(window).trigger({
+      window.triggerEvent({
         type:'highlighted', 
         message:{highlight:false}
       })
-      pathGroup = @getPathGroup(@highlighted.frame, @highlighted.sub)
-      unless pathGroup.empty()
-        pathGroup.select('path').style('stroke', colorSelector('default'))
+      @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector('default'))
       #open up summary
       @updateSummary(@highlighted.frame, @highlighted.sub, true)
 
@@ -206,7 +217,7 @@ class window.CanvasState
 
   getBoundingBox:(frame, sub)->
     frameElems = @allTags[frame]
-    frameElems[sub].box
+    frameElems[sub].getRectBound()
 
   highlightFrame: (index, subIndex) ->
     @summaryManager.closeSummary(index, subIndex)
@@ -219,11 +230,9 @@ class window.CanvasState
     @highlighted.frame = index
     @highlighted.sub = subIndex    
     boundingBox = @getBoundingBox(index, subIndex)
-    pathGroup = @getPathGroup(index, subIndex)
-    unless pathGroup.empty()
-      pathGroup.select('path').style('stroke', colorSelector('highlight'))
+    @updateStrokeColor(index, subIndex, colorSelector('highlight'))
     
-    $(window).trigger({
+    window.triggerEvent({
       type:'highlighted', 
       message: {highlight:true, box:boundingBox, 
       properties: @getHighlightedTagProperties(),index: @highlighted}
@@ -248,16 +257,13 @@ class window.CanvasState
 
   setMode: (modeName) ->
     @mode = modeName
-    if @mode is "zoom"
-      @canvas.style.cursor = "default"
-    else if @mode is "draw"
-      @canvas.style.cursor = "url('/assets/drawHand.png'), auto"
-
-  updateGraphics: (index, severity, type) ->
-    grouper = @svg.select("#tag_#{index}")
-    col = colorSelector('default')
-    grouper.selectAll("path").style "stroke", col  unless grouper.empty()
-    col
+    switch @mode
+      when "drag"
+        @canvas.style.cursor = "default"
+      when "draw"
+        @canvas.style.cursor = "url('/assets/drawHand.png'), auto"
+      when "rect_draw"
+        @canvas.style.cursor = "crosshair"
 
   #MOVING AROUND STUFF ###########
 
@@ -298,21 +304,25 @@ class window.CanvasState
     @lastZoom.y = @canvas.height / 2
     return @zoom deltaZoom
 
+  getGraphicSvgElem:(parent)->
+    parent.select('.tag')
+
   moveElement: (elem, movePixel)->
     elem.tag.moveAll movePixel #update points stored in tag
     @updateSummary(elem.frameIndex, elem.subIndex,false)
-    elem.graphicTag.select('path').attr "d", @line(elem.tag.points) #move path elem
-    $(window).trigger({
+    @drawInSvg(@getGraphicSvgElem(elem.graphicTag), elem.tag)
+
+    window.triggerEvent({
       type:'tagMoving', 
-      message:{ box:elem.tag.box}
+      message:{ box:elem.tag.getRectBound()}
     }) #notify moving tag
     
   unsetDraggable: (elem)->
     return if(elem.frameIndex==@highlighted.frame and elem.subIndex==@highlighted.sub)
-    elem.graphicTag.select('path').style "stroke", colorSelector('default')
+    @updateStrokeColor(elem.frameIndex, elem.subIndex, colorSelector('default'))
 
   setDraggable: (elem)->
-    elem.graphicTag.select('path').style "stroke", colorSelector('highlight')
+    @updateStrokeColor(elem.frameIndex, elem.subIndex, colorSelector('highlight'))
 
   #MOVING AROUND STUFF DONE ###########
 
@@ -338,46 +348,46 @@ class window.CanvasState
         .attr('class','frameGroup')
     grouper
 
-  getPathGroup:(frame, sub)->
+  getTagGroup:(frame, sub)->
     grouper = @svg.select("#tag_#{frame}")
     if grouper.empty() then return null
     grouper.select("g:nth-child(#{sub+1})")
 
-  newTag: (tagFrameGroup, grouper)->
+  newTag: (tagFrameGroup, grouper, type)->
     strokeColor = colorSelector('default')
-    unless (path = grouper.select("path")).empty()
-      strokeColor = path.style("stroke")
 
     subIndex = grouper.node().childNodes.length
     tagGroup = grouper.append("g")
+      .attr('tag_type', type)
     self = @
 
-    @summaryManager.setupSummary(tagGroup, tagGroup, subIndex)
+    @summaryManager.setupSummary(tagGroup, tagFrameGroup, subIndex)
+    elem = null
+    switch type
+      when 'hand'
+        #path tag
+        elem = tagGroup.append("path")
+      when 'region'
+        elem = tagGroup.append("rect")
 
-    #path tag
-    tagGroup.append("svg:path")
-      .style("stroke-width", @strokeWidth)
+    elem.style("stroke-width", @strokeWidth)
       .style("fill", "none").style("stroke", strokeColor)
-      .attr("d", @line(@handSelection.points))
+      .attr('class', 'tag')
 
-  createInSvg: (tagFrameGroup)->
+  # creates and retuns created drawn element
+  createInSvg: (tagFrameGroup, type)->
     grouper = @getGrouper(tagFrameGroup)
-    @curElem = @newTag(tagFrameGroup, grouper)
+    @newTag(tagFrameGroup, grouper, type)
 
-  drawInSvg: ()->
-    @curElem.attr "d", @line(@handSelection.points)
-
-  getEventHandler: (name) ->
-    cv = @
-    (e) ->
-      if cv.mode is "draw"
-        cv.drawEventHandler[name] d3.event
-      else cv.zoomEventHandler[name] d3.event
-
-  openSummary: (index, subIndex)-> 
-
-
-    
-
-
+  drawInSvg: (elem, dataElem)->
+    switch dataElem.type
+      when 'hand'
+        elem.attr "d", @line(dataElem.points)
+      when 'region'
+        box = dataElem.getRectBound()
+        elem.attr('x', box.x)
+          .attr('y', box.y)
+          .attr('width', box.w)
+          .attr('height', box.h)
+  
 

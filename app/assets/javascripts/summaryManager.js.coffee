@@ -1,22 +1,20 @@
 class window.SummaryManager
   constructor:(@canvasState)->
-
-
+    
   textBoxHeight = 20
   textBoxWidth = 150
   iconHeight = 25
   smallIconHeight = 20
 
   setupSummary: (tagGroup, frame, sub)->
+    _ = this
     #summaries
     summaryParent = tagGroup.append('g')
       .attr('class', 'summary disabled')
       .attr('frame', frame)
       .attr('sub', sub)
-      .on('click', ()->
-        frameGroup = d3.select(this).attr('frame')
-        subIndex = d3.select(this).attr('sub')
-        self.highlightFrame(+frameGroup, subIndex)
+      .call((selection)->
+        window.eventManager.setup('summary', selection, _)
       )
 
     summaryParent.append('rect')
@@ -32,7 +30,7 @@ class window.SummaryManager
       .attr('width', iconHeight)
       .attr('x', textBoxWidth-iconHeight)
     summaryParent.append('g')
-      .attr('class', 'prop_freq')
+      .attr('class', 'prop_posture')
       .attr('y', iconHeight-smallIconHeight)
     summaryParent.append('text')
       .attr('class', 'prop_annotation')
@@ -85,7 +83,7 @@ class window.SummaryManager
           @setTextInSummary(element, v)
         when "prop_severity"
           element.attr("xlink:href", "/assets/property/severity_#{v}.png")
-        when "prop_freq"
+        when "prop_posture"
           images = element.selectAll('image').data(v)
           images.enter()
             .append('image')

@@ -32,12 +32,12 @@ class window.PropertyPopup
 
   closePopup: ()->
     @property.attr('class', 'disabled')
-    $(window).trigger({
+    window.triggerEvent({
       type:'updateProperty', 
       message:{properties: @getAllValues(), index:@property.index}
     })
     $('#prop_annotation_text').removeClass('open')
-    $("#prop_freq").multiselect("uncheckAll")
+    $("#prop_posture").multiselect("uncheckAll")
     @property.index = null
 
   getOffset: (d3Bound)->
@@ -61,7 +61,7 @@ class window.PropertyPopup
         $('#prop_severity_'+value).toggleClass("tag-selected")
       else
         $('#prop_severity_minor').toggleClass("tag-selected")
-    else if prop is "prop_freq"
+    else if prop is "prop_posture"
       for v in value
           $("#"+prop).multiselect("widget")
           .find(":checkbox").each(()->
@@ -71,7 +71,7 @@ class window.PropertyPopup
 
   setDefaultPropertyValues:()->
     @setPropertyValueInControl("prop_severity", "")
-    @setPropertyValueInControl("prop_freq", [])
+    @setPropertyValueInControl("prop_posture", [])
     @setPropertyValueInControl("prop_annotation", "")
     
   updateProperty:(properties, index)->
@@ -84,7 +84,7 @@ class window.PropertyPopup
   # RETRIEVING VALUES FROM the POPUP
 
   getAllValues: ()->
-    {prop_severity: @getSeverityVal(), prop_freq:@getFreqVal(), prop_annotation:@getAnnotationVal()}
+    {prop_severity: @getSeverityVal(), prop_posture:@getFreqVal(), prop_annotation:@getAnnotationVal()}
 
   getSeverityVal:()->
     selected = @PropControls.severity.select(".tag-selected")
@@ -92,7 +92,7 @@ class window.PropertyPopup
     selected.attr("id").substring(14)
 
   getFreqVal:()->
-    $.map($("#prop_freq").multiselect("getChecked"), (val, i)->
+    $.map($("#prop_posture").multiselect("getChecked"), (val, i)->
             val.value)
 
   getAnnotationVal:()->
@@ -121,17 +121,16 @@ class window.PropertyPopup
         .attr('class', 'opMode')
         .attr('id', 'prop_severity_'+severity)
         .attr('src', '/assets/property/severity_'+severity+'.png')
-        .on('click', ()-> 
-          selected = $(this.parentElement).find(".tag-selected")
-          selected.toggleClass("tag-selected")
-          $(this).toggleClass("tag-selected")
+        .call((selection)->
+          window.eventManager.setup('severityPropIcon', selection, _)
         )
+
     $('#prop_severity_minor').attr('class','opMode tag-selected')
 
     #FREQ
 
     @PropControls.freq = @property.append("select")
-      .attr("id", "prop_freq")
+      .attr("id", "prop_posture")
       .attr("name", "frequency_selection")
       .attr("multiple", "multiple")
 
@@ -140,7 +139,7 @@ class window.PropertyPopup
         .attr("value", freq)
         .text(freq)
 
-    $("#prop_freq").multiselect({
+    $("#prop_posture").multiselect({
         noneSelectedText: 'Select causing postures'
         selectedList: 4
       })

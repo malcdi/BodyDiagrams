@@ -15,13 +15,14 @@ class MainController < ApplicationController
 			tagGroup.each do |tagInfo|
 				puts tagInfo
 				@tag = Tag.new()
+				@tag.user_id=user.id
 
 				tagProperty = tagInfo["property"]
-				@tag.user_id=user.id
-				@tag.annotate=tagProperty["prop_annotation"]
-				@tag.severity=tagProperty["prop_severity"]
-				@tag.posture=tagProperty["prop_freq"].join(",")
-				debugger
+				if !tagProperty.empty?
+					@tag.annotate=tagProperty["prop_annotation"]
+					@tag.severity=tagProperty["prop_severity"]
+					@tag.posture=tagProperty["prop_posture"].join(",")
+				end
 
 				@tag.view_side=tagInfo["view"]
 				@tag.tag_group=tagGroupIndex
@@ -36,6 +37,17 @@ class MainController < ApplicationController
 			end
 		end
 		render :text=> "success"
+	end
+
+	def logEvent
+		user = User.find(session[:user_id])
+		event = Event.new()
+		event.target = params[:targetName]
+		event.action = params[:actionName]
+		event.user_id = user.id
+		event.save()
+
+		render :text=>"success"
 	end
 
 end

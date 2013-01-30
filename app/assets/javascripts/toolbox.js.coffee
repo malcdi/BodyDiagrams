@@ -1,7 +1,7 @@
 class window.Toolbox   
 
   # initially sets up and controls the tool box
-  constructor: (parent, rotationParent, @bigBro)->
+  constructor: (parent, rotationParent)->
     @control = d3.select(parent).append("div")
       .attr("id", "toolbox_control")
       .attr("class","toolbox_container")
@@ -42,11 +42,11 @@ class window.Toolbox
         .attr("class", "opMode")
 
   rotate: (id)->
-    @bigBro.currentView = @getView(@bigBro.currentView, id)
-    $("#" + id)[0].src = @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, @getView(@bigBro.currentView, id))
+    window.bigBro.currentView = @getView(window.bigBro.currentView, id)
+    $("#" + id)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(window.bigBro.currentView, id))
     otherDirection = @getOtherView(id)
-    $("#" + otherDirection)[0].src = @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, @getView(@bigBro.currentView, otherDirection))
-    $(window).trigger({type:'rotated', message:@bigBro.currentView})
+    $("#" + otherDirection)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(window.bigBro.currentView, otherDirection))
+    window.triggerEvent({type:'rotated', message:window.bigBro.currentView})
 
 
   # Event Handlers End #
@@ -63,24 +63,18 @@ class window.Toolbox
       .attr("id", "drag")
       .attr("class", "opMode")
       .attr("src",  @Modes.drag.off) #TODO
-      .on("click", -> 
-        _.updateCurrent(false)
-        _.currentMode = _.Modes.drag
-        _.bigBro.cvState.setMode "zoom"
-        _.updateCurrent(true))
+      .call (selection)-> 
+        window.eventManager.setup('toolbox', selection, _)
 
     @Modes.rect_draw = {}
-    @Modes.rect_draw.on = "/assets/drawIcon.png"
-    @Modes.rect_draw.off = "/assets/drawIconInactive.png"
+    @Modes.rect_draw.on = "/assets/drawRect.png"
+    @Modes.rect_draw.off = "/assets/drawRect.png"
     @Modes.rect_draw.control = @control.append("img")
       .attr("id", "rect_draw")
       .attr("class", "opMode")
-      .attr("src", @Modes.rect_draw.off) #TODO
-      .on("click", -> 
-        _.updateCurrent(false)
-        _.currentMode = _.Modes.rect_draw
-        _.bigBro.cvState.setMode "draw"
-        _.updateCurrent(true))
+      .attr("src", @Modes.rect_draw.off)
+      .call (selection)-> 
+        window.eventManager.setup('toolbox', selection, _)
 
     @Modes.draw = {}
     @Modes.draw.on = "/assets/drawIcon.png"
@@ -89,26 +83,16 @@ class window.Toolbox
       .attr("id", "draw")
       .attr("class", "opMode")
       .attr("src", @Modes.draw.off) #TODO
-      .on("click", -> 
-        _.updateCurrent(false)
-        _.currentMode = _.Modes.draw
-        _.bigBro.cvState.setMode "draw"
-        _.updateCurrent(true))
+      .call (selection)-> 
+        window.eventManager.setup('toolbox', selection, _)
 
     #undo
     @control.append("img")
       .attr("id", "undo")
       .attr("class", "opMode")
       .attr("src", "/assets/undo.png")
-      .on("click", ->  
-        $(window).trigger({type:'last_undo_click'})
-      )
-      .on("mouseover", ->  
-        $(window).trigger({type:'last_undo_mouseover'})
-      )
-      .on("mouseleave", -> 
-        $(window).trigger({type:'last_undo_mouseout'})
-      )
+      .call (selection)-> 
+        window.eventManager.setup('toolbox_undo', selection, _)
 
     @currentMode = @Modes.drag
 
@@ -116,17 +100,19 @@ class window.Toolbox
     _ = this
     left = d3.select(parent).append("img")
       .attr("id", "rotation_left")
-      .attr("src", @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, 3))
-      .style("top", (_.bigBro.height - 150)+"px")
-      .on("click", -> _.rotate(@id))
+      .attr("src", window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, 3))
+      .style("top", (window.bigBro.height - 150)+"px")
+      .call (selection)-> 
+        window.eventManager.setup('rotate', selection, _)
 
     right = d3.select(parent).append("img")
       .attr("id", "rotation_right")
-      .style("top", (_.bigBro.height - 150)+"px")
-      .attr("src", @bigBro.ImageLoader.getBodyImageSrc(@bigBro.currentGender, 1))
-      .on("click", -> _.rotate(@id))
+      .style("top", (window.bigBro.height - 150)+"px")
+      .attr("src", window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, 1))
+      .call (selection)-> 
+        window.eventManager.setup('rotate', selection, _)
       
     padding = left[0][0].offsetLeft + parseInt(left.style("padding"))*4
-    leftMargin = @bigBro.cvState.canvas.clientWidth - padding
+    leftMargin = window.bigBro.cvState.canvas.clientWidth - padding
     right.style("left", leftMargin+"px")
   # SETUP END #

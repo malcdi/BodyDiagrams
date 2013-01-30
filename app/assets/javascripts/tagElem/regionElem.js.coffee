@@ -1,47 +1,32 @@
 class window.RegionElem extends window.TagElem
 
-  constructor: (x, y, w, h, fill) ->
-  
-    # This is a very simple and unsafe constructor. 
-    # All we're doing is checking if the values exist.
-    # "x || 0" just means "if there is a value for x, use that. Otherwise use 0."
-    @x = x or 0
-    @y = y or 0
-    @w = w or 0
-    @h = h or 0
-    @fill = fill or "#AAAAAA"
+  constructor: (strokeStyle, view) ->
+    super(strokeStyle, view)
+    @type = 'region'
+    @origin_x =0
+    @origin_y =0
 
   toJSON: ->
-    origin_x: @x
-    origin_y: @y
-    height: @h
-    width: @w
+    rect:@getRectBound()
 
-  transform: (x, y, scale) ->
-    @x = @x / scale + x
-    @y = @y / scale + y
-    @w = @w / scale
-    @h = @h / scale
+  setOrigin: (pt) ->
+    @origin_x = pt.x
+    @origin_y = pt.y
+    @box.x_min =  @origin_x
+    @box.y_min =  @origin_y
 
-  draw: (ctx, thisElemOnSelect, selectionHandles) ->
-    ctx.fillStyle = "#AAAAAA"
-    ctx.globalAlpha = 0.1
-    ctx.fillRect @x, @y, @w, @h
-    if thisElemOnSelect
-      ctx.globalAlpha = 1.0
-      ctx.strokeStyle = "#AAAAAA"
-      ctx.lineWidth = selectionWidth
-      ctx.strokeRect @x, @y, @w, @h
-      half = mySelBoxSize / 2
-
-  setCoordinates: (minX, minY, maxX, maxY) ->
-    @x = minX
-    @y = minY
-    @w = maxX - minX
-    @h = maxY - minY
-
-  contains: (mx, my) ->
-    selBoxPadding = 2
-    return false  if mx < @x - selBoxPadding or mx > @x + @w + selBoxPadding
-    return false  if my < @y - selBoxPadding or my > @y + @h + selBoxPadding
+  isValidElem: ->
     true
+
+  updateRegion:(pt)->
+    if pt.x < @origin_x
+      @box.x_max = @origin_x
+      @box.x_min = pt.x
+    else
+      @box.x_max = pt.x
+
+    if pt.y < @origin_y
+      @box.y_max = @origin_y
+      @box.y_min = pt.y
+    else
+      @box.y_max = pt.y

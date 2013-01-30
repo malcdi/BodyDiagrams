@@ -1,18 +1,18 @@
 class window.HistoryManager
 
-  constructor:(parent, @bigBro)->
+  constructor:(parent)->
     @container=d3.select(parent)
     @width = 125
-    @height = window.innerHeight-@bigBro.height-25
+    @height = window.innerHeight-window.bigBro.height-25
     @imgRatio = 3/7
     @imgH = @height
     @imgW = @imgH*@imgRatio 
     @offLeft = (@width - @imgW) / 2
     @offTop = 0
-    @scaleFactor = @bigBro.cvState.srcImg.attr('height')/@height
+    @scaleFactor = window.bigBro.cvState.srcImg.attr('height')/@height
 
-    @bigOffLeft = parseInt(@bigBro.cvState.srcImg.attr("x"))
-    @bigOffTop = parseInt(@bigBro.cvState.srcImg.attr("y"))
+    @bigOffLeft = parseInt(window.bigBro.cvState.srcImg.attr("x"))
+    @bigOffTop = parseInt(window.bigBro.cvState.srcImg.attr("y"))
     @oldClassVar =""
     _ = this
 
@@ -21,6 +21,13 @@ class window.HistoryManager
       ).y((d) ->
         (d.y-_.bigOffTop)/_.scaleFactor
       ).interpolate("linear")
+    @scaledBox = (box)->
+      {
+        x:(box.x-_.bigOffLeft)/_.scaleFactor
+        y:(box.y-_.bigOffTop)/_.scaleFactor
+        w:box.w/_.scaleFactor
+        h:box.h/_.scaleFactor
+      }
 
     @numHistory = 0
     @highlightedIndex = -1
@@ -33,15 +40,10 @@ class window.HistoryManager
         .attr('width', @width+"px")
         .attr('height', @height+"px")
         .attr('class', buttonClass)
-        .on('click', ()->
-          _.addNew()
-        )
-        .on('mouseover',()->
-          d3.select(this).attr('class', "#{buttonClass} mouseover")
-        )
-        .on('mouseout',()->
-          d3.select(this).attr('class', buttonClass)
-        )
+        .call (selection)-> 
+          eventManager.setup('newFrameButton', selection, _, buttonClass)
+
+
     buttonSVG.append('text')
           .attr('x', 25)
           .attr('y', 100)
@@ -53,16 +55,18 @@ class window.HistoryManager
       
     @addNew()
 
+  getAllGraphicSvgElem:(parent)->
+    parent.selectAll('path,rect')
+
   setView: (viewId)->
-    if @svg.select('path').empty()
-      @svg.select("image").attr "xlink:href", @bigBro.ImageLoader.getBodyImageSrc(@gender, viewId)
+    if @getAllGraphicSvgElem(@svg).empty()
+      @svg.select("image").attr "xlink:href", window.bigBro.ImageLoader.getBodyImageSrc(@gender, viewId)
     @cur_view_side = viewId
-    console.log @cur_view_side
 
   findThumbnailTag: (frameIndex, subIndex)->
     svgGroup = @container.select("svg:nth-child(#{frameIndex+1})")
     return null if svgGroup.empty()
-    svgGroup.select("path:nth-child(#{subIndex+2})")
+    d3.select @getAllGraphicSvgElem(svgGroup)[0][subIndex]
 
   moveThumbnailTag: (frameIndex, subIndex, dataPoints)->
     thumbTag = @findThumbnailTag(frameIndex, subIndex)
@@ -71,30 +75,17 @@ class window.HistoryManager
 
 
   addNew: ()->
-    data = @bigBro.cvState.startNewFrame() #notify canvas state
+    window.bigBro.cvState.startNewFrame() #notify canvas state
+    data = window.bigBro.cvState.getCurrentFrameData() 
     _=@
     @svg = @container.insert("li", "#addNew").append("svg")
       .attr('width', this.width)
       .attr('height', this.height)
       .attr('class', 'thumbnail')
       .attr('frame_id', data.index)
-      .on('mouseover',()->
-        className = d3.select(this).attr("class")
-        d3.select(this).attr('class', "#{className} mouseover")
-      )
-      .on('mouseout',()->
-        className = d3.select(this).attr("class")
-        d3.select(this).attr('class', className.replace(' mouseover', ''))
-      )
-      .on('click',()->
-        index = d3.select(this).attr('frame_id')
-        _.highlightWindow(index)
-        _.svg = d3.select(this)
-        $(window).trigger(
-          {type:'frameChanged', message: index}
-        )
-      )
-
+      .call (selection)-> 
+        eventManager.setup('frame', selection, _)
+        
     @cur_view_side = data.cur_view_side
     @gender = data.gender
 
@@ -105,19 +96,29 @@ class window.HistoryManager
 
     @svg.append("image")
       .attr("width", this.imgW).attr("height", this.imgH)
-      .attr("xlink:href", @bigBro.ImageLoader.getBodyImageSrc(@gender, @cur_view_side))
+      .attr("xlink:href", window.bigBro.ImageLoader.getBodyImageSrc(@gender, @cur_view_side))
     
     @numHistory += 1
     @highlightWindow(data.index)
 
-  addNewTag: (dataPoints)->
+  addNewTag: (msg)->
     if +@svg.attr("view_side")!=+@cur_view_side
       @addNew()
+    svgElem = null
+    switch msg.type
+      when 'hand'
+        svgElem = @svg.append("path")
+          .attr("d", @line(msg.data))
+      when 'region'
+        scaledBox = @scaledBox(msg.data)
+        svgElem = @svg.append("rect")
+          .attr('x', scaledBox.x)
+          .attr('y', scaledBox.x)
+          .attr('width', scaledBox.w)
+          .attr('height', scaledBox.h)
 
-    @svg.append("svg:path")
-      .style("stroke-width", 1)
+    svgElem.style("stroke-width", 1)
       .style("fill", "none").style("stroke", colorSelector('default'))
-      .attr("d", @line(dataPoints))
 
   highlightWindow: (index)->
     historyW = @container.selectAll("svg")[0][index]

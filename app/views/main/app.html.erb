@@ -71,6 +71,7 @@
 
 <script type="text/javascript">
   var bigBro={};
+  var eventManager;
 
   var userID = "<%=session[:user_id]%>"
   function getURLParameter(name) {
@@ -112,6 +113,7 @@
     $('#content-panel').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
     $('#canvasDiv').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
 
+    eventManager = new window.EventManager();
     bigBro.propToolbox = new window.PropertyPopup("#toolboxes");
     bigBro.cvState = new CanvasState("#canvasDiv", {
       width:bigBro.width,
@@ -119,16 +121,16 @@
       margin:20,
       currentGender:bigBro.currentGender,
       currentView:bigBro.currentView,
-      mode:"zoom",
+      mode:"drag",
       imageLoader:bigBro.ImageLoader
     });
 
-    bigBro.historyManager = new window.HistoryManager('#history_container', bigBro);
-    var toolbox = new window.Toolbox("#toolboxes", "#rotation_toolbox", bigBro);
+    bigBro.historyManager = new window.HistoryManager('#history_container');
+    var toolbox = new window.Toolbox("#toolboxes", "#rotation_toolbox");
     
     
     /* Setting up Zoom Control*/
-    var zoomController = new window.ZoomControl(bigBro);
+    var zoomController = new window.ZoomControl();
     zoomController.setupControls(-20, 150);
 
     /* Submission */
@@ -137,7 +139,5 @@
       bigBro.cvState.userID = userID;
       bigBro.cvState.submitAll();
     });
-
-    window.attachEventListeners()
   });
 </script>

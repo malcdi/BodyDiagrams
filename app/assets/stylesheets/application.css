@@ -35,12 +35,8 @@ body {
 
 #content-panel {
   background-color:#FFFFFF;
-  width:500px;
-  height:750px;
   overflow:hidden;
   display:inline-block;
-  padding: 10px;
-  border-right: 5px solid grey;
 }
 
 #instructions{

@@ -11,12 +11,19 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120811042031) do
+ActiveRecord::Schema.define(:version => 20130129223937) do
+
+  create_table "events", :force => true do |t|
+    t.integer  "user_id"
+    t.string   "target"
+    t.string   "action"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "hand_tags", :force => true do |t|
     t.integer  "tag_id"
     t.text     "points"
-    t.integer  "view_side"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
@@ -34,9 +41,9 @@ ActiveRecord::Schema.define(:version => 20120811042031) do
   create_table "tags", :force => true do |t|
     t.string   "annotate"
     t.integer  "severity"
-    t.string   "layer"
-    t.string   "type"
     t.string   "posture"
+    t.integer  "view_side"
+    t.integer  "tag_group"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.string   "user_id"

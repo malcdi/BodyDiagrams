@@ -1,0 +1,28 @@
+.thumbnail{
+	border:solid 1px #FFB6C1; 
+	background-color:white;
+}
+.highlighted.thumbnail{
+	border:solid 3px #996d73;
+}
+.mouseover.thumbnail{
+	border:solid 2px #996d73;
+}
+.highlighted.mouseover.thumbnail{
+	border:solid 2px #996d73;
+}
+#history_container{
+	position:absolute;
+	top:700px;
+	left:-10px;
+	width:100%;
+	background-color: #EBEBEB;
+	list-style-type:none;
+	li{
+		margin-top:20px;
+		display:inline;
+		margin-right: 20px;
+	}
+	z-index: -10000;
+	border-top: 2px solid black;
+}

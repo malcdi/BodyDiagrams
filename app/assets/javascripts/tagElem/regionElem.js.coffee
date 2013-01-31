@@ -8,6 +8,8 @@ class window.RegionElem extends window.TagElem
 
   toJSON: ->
     rect:@getRectBound()
+    view: @view
+    property: @property
 
   setOrigin: (pt) ->
     @origin_x = pt.x

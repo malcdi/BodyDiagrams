@@ -86,7 +86,7 @@ class window.SummaryManager
       switch k
         when "prop_annotation"
           unless v
-            v = ""
+            v= ""
           @setTextInSummary(element, v)
         when "prop_severity"
           element.attr("xlink:href", "/assets/property/severity_#{v}.png")

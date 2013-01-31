@@ -1,0 +1,89 @@
+
+#toolboxes {
+	.opMode {
+		-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+		-webkit-border-radius: 5px;
+		width:30px;
+		height:30px;
+		margin: 2px;
+		border:solid 2px white;
+		display:block;
+	}
+	.opMode:hover{
+		border:solid 2px #996d73;
+		cursor:pointer;
+	}
+	.opMode.selected{
+		border:solid 2px #996d73;
+	}
+	.opMode.disabled:hover{
+		border:solid 2px white;
+		cursor:default;
+	}
+	.opMode.tag-selected{
+		border:solid 2px #996d73;
+	}
+	.prop_expand{
+		display:none;
+		position:absolute;
+		border-top:1px solid rgba(133,133,133,0.11);
+	}
+
+	.prop_expand{
+		border-top:2px solid rgba(122,122,122,0.2);
+		-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+		-webkit-border-radius: 5px;
+		background-color:white;
+	}
+
+
+	.annotator-tag{display:inline-block;padding:0 8px;margin-bottom:2px;line-height:1.6;font-weight:bold;background-color:#e6e6e6;-webkit-border-radius:8px;-moz-border-radius:8px;-o-border-radius:8px;border-radius:8px}
+	.annotator-tag:hover {cursor:pointer}
+	.tag-selected{background-image: -webkit-linear-gradient(top, #D7ECFA 0%, #B6DBF5 100%)}
+	.annotator-type-tag{display:inline-block;padding:0 8px;margin-bottom:2px;background-color:transparent;background-image: -webkit-linear-gradient(top, #D7ECFA 0%, #B6DBF5 100%);-webkit-border-radius:4px;-moz-border-radius:4px;-o-border-radius:4px;border-radius:4px;-webkit-background-clip:padding-box;color:black;}
+	.annotator-type-tag .annotator-type-tag:hover {cursor:pointer}
+}
+#toolboxes{
+	div.toolbox_container{
+		display:inline-block;
+		z-index:1000;
+	}
+	vertical-align:top; 
+	position: absolute; 
+	top: 15px; left: 0px;
+
+	#toolbox_property{
+		&.disabled{
+			display:none;
+		}
+		position:absolute;
+		-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+		-webkit-border-radius: 5px;
+		border:solid 2px white;
+		background-color:white;
+		img{
+			width:30px;
+			height:30px;
+			display:inline-block;
+		}
+		textarea{
+			height:30px;padding:5px 8px;
+			width:220px;
+			display:inline-block;
+		}
+		z-index:1000;
+	}
+}
+/**/
+#rotation_toolbox img{
+	width:20px;
+	position: absolute;
+	margin:10px;
+	padding: 10px;
+	min-height:120px;
+	-webkit-box-shadow: 0 2px 7px rgba(0, 0, 0, 0.5);
+	-webkit-border-radius: 10px;
+	&:hover{
+		border:solid 2px purple;
+	}
+}

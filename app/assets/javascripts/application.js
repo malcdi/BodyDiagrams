@@ -11,5 +11,25 @@
 // GO AFTER THE REQUIRES BELOW.
 //
 //= require jquery
+//= require jquery/jquery-ui-1.8.21.custom.min
+//= require jquery/jquery.multiselect.min
 //= require jquery_ujs
-//= require_tree .
+//= require d3.v2.min
+//= require utilities
+//= require eventManager
+//= require toolbox
+//= require propertyPopup
+//= require zoomControl
+//= require historyManager
+//= require summaryManager
+//= require tagElem/tagElem
+//= require tagElem/freehandElem
+//= require tagElem/regionElem
+//= require event/canvasEventHandler
+//= require event/canvasDrawHandler
+//= require event/canvasRectDrawHandler
+//= require event/canvasZoomHandler
+//= require canvasState
+//= require imageLoader
+//= require eventListener
+

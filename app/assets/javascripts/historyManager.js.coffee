@@ -38,7 +38,8 @@ class window.HistoryManager
       .append("svg")
         .attr('width', @width+"px")
         .attr('height', @height+"px")
-        .attr('class', buttonClass)
+        .attr('title', 'select to create a new frame')
+        .attr('class', buttonClass+" tooltip")
         .call (selection)-> 
           eventManager.setup('newFrameButton', selection, _, buttonClass)
 
@@ -94,10 +95,13 @@ class window.HistoryManager
       .attr('width', this.width)
       .attr('height', this.height)
       .attr('class', 'thumbnail')
+      .attr('title', 'select this frame')
       .attr('frame_id', data.index)
       .attr("view_side", data.cur_view_side)
       .call (selection)-> 
         eventManager.setup('frame', selection, _)
+    $(svg.node()).tooltip({ position: 
+      { my: "left center", at: "center top" } });
         
     @cur_view_side = data.cur_view_side
     @gender = data.gender

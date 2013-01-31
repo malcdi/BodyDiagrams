@@ -105,8 +105,8 @@ class window.PropertyPopup
     _ = this
     #annotation box
     @property.append('textarea')
-      .attr('id', 'prop_annotation_text')
-      .attr('placeholder', 'Annotate...')
+      .attr('id', 'prop_annotation_text tooltip')
+      .attr('placeholder', 'Describe your symptom here...')
       .attr('rows',3)
 
     @PropControls = {}
@@ -119,24 +119,26 @@ class window.PropertyPopup
 
     for severity in @SEVERITY
       @PropControls.severity.append('img')
-        .attr('class', 'opMode')
+        .attr('class', 'opMode tooltip')
         .attr('id', 'prop_severity_'+severity)
         .attr('src', '/assets/property/severity_'+severity+'.png')
+        .attr("title", "#{severity}")
         .call((selection)->
           window.eventManager.setup('severityPropIcon', selection, _)
         )
 
-    $('#prop_severity_minor').attr('class','opMode tag-selected')
+    $('#prop_severity_minor').attr('class','opMode tag-selected tooltip')
 
     #Posture
     @PropControls.posture = @property.append("select")
       .attr("id", "prop_posture")
       .attr("name", "posture_selection")
+      .attr("title", "Postures that cause the symptom")
       .attr("multiple", "multiple")
 
     for posture in @POSTURES
       @PropControls.posture.append("option")
-        .attr("value", posture)
+        .attr("value", posture) 
         .text(posture)
 
     $("#prop_posture").multiselect({
@@ -162,15 +164,17 @@ class window.PropertyPopup
     ###
 
     @property.append('img')
-      .attr('class', 'opMode button')
+      .attr('class', 'opMode button tooltip')
       .attr('src', '/assets/done.png')
+      .attr('title', 'save')
       .call((selection)->
           window.eventManager.setup('popup_done', selection, _)
         )
 
     @property.append('img')
-      .attr('class', 'opMode button')
+      .attr('class', 'opMode button tooltip')
       .attr('src', '/assets/delete.png')
+      .attr('title', 'delete this one')
       .call((selection)->
           window.eventManager.setup('popup_delete', selection, _)
         )

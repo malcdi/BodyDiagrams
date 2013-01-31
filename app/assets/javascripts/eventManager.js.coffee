@@ -83,14 +83,18 @@ class window.EventManager
 
       when 'popup_done'
         selection.on("click",->
+          _.logEvent(eventTarget, 'click') #LOG
           window.bigBro.cvState.deHighlightFrame()
         )
 
       when 'popup_delete'
         selection.on("click",->
-          host.closePopup()
-          deletedTag = window.bigBro.cvState.deleteTag()
-          window.bigBro.historyManager.deleteTag deletedTag
+          _.logEvent(eventTarget, 'click') #LOG
+          if host.isPoppupOpen()
+            index = host.openPopupIndex()
+            host.closePopup()
+            deletedTag = window.bigBro.cvState.deleteTag(index.frame, index.sub)
+            window.bigBro.historyManager.deleteTag deletedTag
         )
         
       when 'rotate'
@@ -101,23 +105,23 @@ class window.EventManager
 
       when 'move_compass'
         selection.on("click", ->
-          _.logEvent(eventTarget, @title) #LOG
-          switch @title
-            when "Pan left"
+          _.logEvent(eventTarget, @id) #LOG
+          switch @id
+            when "pan_left"
               window.bigBro.cvState.setZoomPan -host.moveFactor, 0, 0
-            when "Pan right"
+            when "pan_right"
               window.bigBro.cvState.setZoomPan host.moveFactor, 0, 0
-            when "Pan up"
+            when "pan_up"
               window.bigBro.cvState.setZoomPan 0, -host.moveFactor, 0
-            when "Pan down"
+            when "pan_down"
               window.bigBro.cvState.setZoomPan 0, host.moveFactor, 0
         )
 
       when 'zoom_button'
         selection.on("click", ->
-          _.logEvent(eventTarget, @title) #LOG
-          zoomDirection = (if @title=="Zoom In" then 1 else -1)
-          zoomMaxedCheck = (if @title=="Zoom In" then (parseInt(arg.style.top) > 0) else (parseInt(arg.style.top) < 137))
+          _.logEvent(eventTarget, @id) #LOG
+          zoomDirection = (if @id=="zoom_in" then 1 else -1)
+          zoomMaxedCheck = (if @id=="zoom_in" then (parseInt(arg.style.top) > 0) else (parseInt(arg.style.top) < 137))
           if zoomMaxedCheck
             zoomOK = window.bigBro.cvState.setZoomPan 0, 0, zoomDirection*host.zoomFactor
             if zoomOK

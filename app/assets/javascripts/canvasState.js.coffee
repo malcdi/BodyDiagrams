@@ -289,7 +289,7 @@ class window.CanvasState
     mat = @svg.attr('transform')
     if mat
       matchedStr = mat.match /matrix\((.*),(.*),(.*),(.*),(.*),(.*)\)/
-    return true if matchedStr is null or matchedStr is undefined
+    return {x:true, y:true} if matchedStr is null or matchedStr is undefined
     center = @findCenter(+matchedStr[1], +matchedStr[4], +matchedStr[5], +matchedStr[6])
     console.log @imgBoundWDrag(center, dragX, dragY, true)
     return @imgBoundWDrag(center, dragX, dragY, true)

@@ -20,7 +20,7 @@ class window.CanvasState
     
     #SETS up using options
     @gender = (if options then options.currentGender else "male")
-    @cur_view_side = (if options then options.currentView else 0)
+    @cur_view_side = 0
     @mode = (if options.mode then options.mode else "drag")
     @imageLoader = options.imageLoader
     
@@ -57,22 +57,30 @@ class window.CanvasState
 
     @summaryManager = new window.SummaryManager(this)
 
+  # View Side related #
+
+  changeFrame: (newFrameIndex)->
+    view_side = @getGrouper(newFrameIndex).attr('view_side')
+    @highlighted.frame = newFrameIndex
+    @setView(+view_side)
+
   setView: (view) ->
     _=@
     @cur_view_side = view
     @srcImg.attr "xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side)
-    @svg.selectAll("g.frameGroup").style "opacity", (d) ->
-      if this.attributes.view_side.value is "#{view}"
-        if this.id is "tag_#{_.highlighted.frame}"
-          return 1.0
-        else 
-          return 0.3
-      else
-        return 0
     @deHighlightFrame()
+    @updateOpacityLevels()
+
+  updateViewStatus: (view)->
+    @getGrouper(@highlighted.frame).attr('view_side', view)
 
   getView: ->
     @cur_view_side
+
+  rotatable:->
+    @allTags[@highlighted.frame].length==0
+
+  ####################
 
   getEventHandler:(name)->
     _ = @
@@ -104,28 +112,29 @@ class window.CanvasState
     if @allTags[@highlighted.frame]
       curLen = @allTags[@highlighted.frame].length
       if curLen > 0
-        grouper = @svg.select("#tag_#{@highlighted.frame}")
-        toRemove = grouper.select(":last-child")
-        toRemove.style "stroke", colorSelector('highlight')  unless toRemove.empty()
+        @updateStrokeColor(@highlighted.frame, curLen-1, colorSelector('highlight'))
 
   hideNextUndo: ->
-    curLen = @allTags[@highlighted.frame].length
-    if curLen > 0
-      grouper = @svg.select("#tag_#{@highlighted.frame}")
-      toRemove = grouper.select(":last-child")
-      toRemove.style "stroke", colorSelector('default')  unless toRemove.empty()
+    if @allTags[@highlighted.frame]
+      curLen = @allTags[@highlighted.frame].length
+      if curLen > 0
+        @updateStrokeColor(@highlighted.frame, curLen-1, colorSelector('default'))
 
-  deleteTag: (frameIndex, subIndex)->
-    if frameIndex is undefined
-      frameIndex = @highlighted.frame
+  #deletes the tag at frame and sub index from the data and SVG
+  # returns deleted
+  deleteTag: (frame, sub)->
+    if frame is undefined
+      frame = @highlighted.frame
 
-    curLen = @allTags[frameIndex].length
+    elemDeleted = null
+    curLen = @allTags[frame].length
     if curLen > 0
-      if subIndex is undefined
-        subIndex = curLen-1
-      @allTags[frameIndex].splice(subIndex, 1)
-      tagGroup = @getTagGroup(frameIndex, subIndex)
+      if sub is undefined
+        sub = curLen-1
+      elemDeleted = @allTags[frame].splice(sub, 1)
+      tagGroup = @getTagGroup(frame, sub)
       tagGroup.remove()  unless tagGroup.empty()
+    elemDeleted[0]
 
   # DELETE END ###################
 
@@ -162,26 +171,25 @@ class window.CanvasState
     alert "complete"
     window.location = "/main/complete?user_id=" + @userID
 
-  updateOpacityLevels: (frameNum, hide)->
-    newOpacity = (if hide then 0.3 else 1.0)
+  updateOpacityLevels: ()->
+    _= @
+    @svg.selectAll("g.frameGroup").style "opacity", (d) ->
+      unless +this.attributes.getNamedItem("view_side").value is _.cur_view_side
+        return 0
+      else if this.id is "tag_#{_.highlighted.frame}"
+        return 1.0
+      else 
+        return 0.3
+    @summaryManager.updateSummaryDisplay @highlighted.frame
 
-    @svg.select("#tag_#{frameNum}")
-      .style("opacity", newOpacity)
-    @summaryManager.hideOrShow(frameNum, hide)
-
-  changeFrame: (newFrameIndex)->
-    view_side = @getGrouper(newFrameIndex).attr('view_side')
-    @setView(+view_side)
-    @updateOpacityLevels(@highlighted.frame, true)
-    @highlighted.frame = newFrameIndex
-    @updateOpacityLevels(@highlighted.frame, false)
-    
   startNewFrame: ()->
-    @updateOpacityLevels(@highlighted.frame, true)
+    @deHighlightFrame()
     #create new
     @tagFrame += 1
     @highlighted.frame = @tagFrame
     @allTags.push []
+    @getGrouper(@tagFrame)
+    @updateOpacityLevels()
 
   getCurrentFrameData:->
     data = {}
@@ -219,8 +227,8 @@ class window.CanvasState
     frameElems = @allTags[frame]
     frameElems[sub].getRectBound()
 
-  highlightFrame: (index, subIndex) ->
-    @summaryManager.closeSummary(index, subIndex)
+  highlightFrame: (index, sub) ->
+    @summaryManager.closeSummary(index, sub)
     index = @allTags.length - 1  if index < 0
     frameElems = @allTags[index]
     return  if not frameElems or frameElems.length < 1
@@ -228,9 +236,9 @@ class window.CanvasState
     @deHighlightFrame()
 
     @highlighted.frame = index
-    @highlighted.sub = subIndex    
-    boundingBox = @getBoundingBox(index, subIndex)
-    @updateStrokeColor(index, subIndex, colorSelector('highlight'))
+    @highlighted.sub = sub    
+    boundingBox = @getBoundingBox(index, sub)
+    @updateStrokeColor(index, sub, colorSelector('highlight'))
     
     window.triggerEvent({
       type:'highlighted', 
@@ -244,14 +252,14 @@ class window.CanvasState
   # HIGHLIGGHTS END ##############
 
   #### SUMMARY STUFF
-  updateSummary: (frameIndex, subIndex, updateContent)->
-    properties = @allTags[frameIndex][subIndex].getProperties()
-    summaryItem = @summaryManager.getSummary(frameIndex, subIndex)
+  updateSummary: (frame, sub, updateContent)->
+    properties = @allTags[frame][sub].getProperties()
+    summaryItem = @summaryManager.getSummary(frame, sub)
 
     if summaryItem
-      box = @getBoundingBox(frameIndex, subIndex)
+      box = @getBoundingBox(frame, sub)
       summaryItem.attr('class', 'summary')
-        .attr('transform',"translate(#{box.x+box.w},#{box.y})")
+        .attr('transform',"translate(#{box.x+box.w+5},#{box.y-25})")
       if updateContent then @summaryManager.updateSummaryContent(summaryItem, properties)
   ########
 
@@ -309,7 +317,7 @@ class window.CanvasState
 
   moveElement: (elem, movePixel)->
     elem.tag.moveAll movePixel #update points stored in tag
-    @updateSummary(elem.frameIndex, elem.subIndex,false)
+    @updateSummary(elem.frame, elem.sub,false)
     @drawInSvg(@getGraphicSvgElem(elem.graphicTag), elem.tag)
 
     window.triggerEvent({
@@ -318,11 +326,11 @@ class window.CanvasState
     }) #notify moving tag
     
   unsetDraggable: (elem)->
-    return if(elem.frameIndex==@highlighted.frame and elem.subIndex==@highlighted.sub)
-    @updateStrokeColor(elem.frameIndex, elem.subIndex, colorSelector('default'))
+    return if(elem.frame==@highlighted.frame and elem.sub==@highlighted.sub)
+    @updateStrokeColor(elem.frame, elem.sub, colorSelector('default'))
 
   setDraggable: (elem)->
-    @updateStrokeColor(elem.frameIndex, elem.subIndex, colorSelector('highlight'))
+    @updateStrokeColor(elem.frame, elem.sub, colorSelector('highlight'))
 
   #MOVING AROUND STUFF DONE ###########
 
@@ -334,7 +342,7 @@ class window.CanvasState
     while j < l
       if curTagL[j].view is @cur_view_side and curTagL[j].contains(pt.x, pt.y)
         grouper = @svg.select("#tag_#{@highlighted.frame}")
-        return {frameIndex:@highlighted.frame, subIndex:j, tag:curTagL[j], graphicTag:grouper.select("g:nth-child(#{j+1})")}
+        return {frame:@highlighted.frame, sub:j, tag:curTagL[j], graphicTag:grouper.select("g:nth-child(#{j+1})")}
       j++
     return null
 
@@ -351,27 +359,32 @@ class window.CanvasState
   getTagGroup:(frame, sub)->
     grouper = @svg.select("#tag_#{frame}")
     if grouper.empty() then return null
-    grouper.select("g:nth-child(#{sub+1})")
-
+    childNodes = grouper.node().childNodes
+    if childNodes.length<=sub then return null
+    d3.select(childNodes[sub])
+    
   newTag: (tagFrameGroup, grouper, type)->
     strokeColor = colorSelector('default')
 
-    subIndex = grouper.node().childNodes.length
+    sub = grouper.node().childNodes.length
     tagGroup = grouper.append("g")
       .attr('tag_type', type)
     self = @
 
-    @summaryManager.setupSummary(tagGroup, tagFrameGroup, subIndex)
+    @summaryManager.setupSummary(tagGroup, tagFrameGroup, sub)
     elem = null
     switch type
       when 'hand'
         #path tag
         elem = tagGroup.append("path")
+          .attr("fill", "none")
       when 'region'
         elem = tagGroup.append("rect")
+          .attr('fill', strokeColor)
+          .attr('fill-opacity', 0.2)
 
-    elem.style("stroke-width", @strokeWidth)
-      .style("fill", "none").style("stroke", strokeColor)
+    elem.attr("stroke-width", @strokeWidth)
+      .attr("stroke", strokeColor)
       .attr('class', 'tag')
 
   # creates and retuns created drawn element
@@ -382,9 +395,9 @@ class window.CanvasState
   drawInSvg: (elem, dataElem)->
     switch dataElem.type
       when 'hand'
-        elem.attr "d", @line(dataElem.points)
+        elem.attr "d", @line(dataElem.drawData())
       when 'region'
-        box = dataElem.getRectBound()
+        box = dataElem.drawData()
         elem.attr('x', box.x)
           .attr('y', box.y)
           .attr('width', box.w)

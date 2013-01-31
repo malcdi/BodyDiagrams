@@ -33,7 +33,7 @@ class window.EventManager
         .on('click',()->
           _.logEvent(eventTarget, 'click') #LOG
           index = d3.select(this).attr('frame_id')
-          host.highlightWindow(index)
+          host.highlightWindow(+index)
           host.svg = d3.select(this)
           window.triggerEvent(
             {type:'frameChanged', message: index}
@@ -57,8 +57,8 @@ class window.EventManager
         selection.on('click', ()->
           _.logEvent(eventTarget, 'click') #LOG
           frameGroup = d3.select(this).attr('frame')
-          subIndex = d3.select(this).attr('sub')
-          host.canvasState.highlightFrame(+frameGroup, subIndex)
+          sub = d3.select(this).attr('sub')
+          host.canvasState.highlightFrame(+frameGroup, sub)
         )
 
       when 'toolbox'
@@ -77,9 +77,22 @@ class window.EventManager
         .on("mouseover", ->  
           window.triggerEvent({type:'last_undo_mouseover'})
         )
-        .on("mouseleave", -> 
+        .on("mouseout", -> 
           window.triggerEvent({type:'last_undo_mouseout'})
         )
+
+      when 'popup_done'
+        selection.on("click",->
+          window.bigBro.cvState.deHighlightFrame()
+        )
+
+      when 'popup_delete'
+        selection.on("click",->
+          host.closePopup()
+          deletedTag = window.bigBro.cvState.deleteTag()
+          window.bigBro.historyManager.deleteTag deletedTag
+        )
+        
       when 'rotate'
         selection.on("click", -> 
           _.logEvent(eventTarget, this.id) #LOG

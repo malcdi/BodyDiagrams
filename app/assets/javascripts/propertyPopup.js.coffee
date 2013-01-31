@@ -1,6 +1,7 @@
 class window.PropertyPopup
   SEVERITY: ["minor", "moderate", "major", "critical"]
-  FREQS: ["stand", "walk", "sit", "lie"]
+  POSTURES: ["stand", "walk", "sit", "lie"]
+  FREQS: ["very frequent", "few times a day", "once a day", "sometimes in a day"]
 
   # initially sets up and controls the tool box
   constructor: (parent)->
@@ -41,7 +42,7 @@ class window.PropertyPopup
     @property.index = null
 
   getOffset: (d3Bound)->
-    {left:d3Bound.x+d3Bound.w, top:d3Bound.y}
+    {left:d3Bound.x+d3Bound.w, top:d3Bound.y-20}
 
   openPopup: (d3Bound)->
     offset= @getOffset(d3Bound)
@@ -66,7 +67,7 @@ class window.PropertyPopup
           $("#"+prop).multiselect("widget")
           .find(":checkbox").each(()->
             if this.value is v
-              this.click();
+              this.click(); 
           )
 
   setDefaultPropertyValues:()->
@@ -84,14 +85,14 @@ class window.PropertyPopup
   # RETRIEVING VALUES FROM the POPUP
 
   getAllValues: ()->
-    {prop_severity: @getSeverityVal(), prop_posture:@getFreqVal(), prop_annotation:@getAnnotationVal()}
+    {prop_severity: @getSeverityVal(), prop_posture:@getPostureVal(), prop_annotation:@getAnnotationVal()}
 
   getSeverityVal:()->
     selected = @PropControls.severity.select(".tag-selected")
     return "minor" if selected==null or selected.empty()
     selected.attr("id").substring(14)
 
-  getFreqVal:()->
+  getPostureVal:()->
     $.map($("#prop_posture").multiselect("getChecked"), (val, i)->
             val.value)
 
@@ -127,19 +128,52 @@ class window.PropertyPopup
 
     $('#prop_severity_minor').attr('class','opMode tag-selected')
 
-    #FREQ
-
-    @PropControls.freq = @property.append("select")
+    #Posture
+    @PropControls.posture = @property.append("select")
       .attr("id", "prop_posture")
-      .attr("name", "frequency_selection")
+      .attr("name", "posture_selection")
       .attr("multiple", "multiple")
 
-    for freq in @FREQS
-      @PropControls.freq.append("option")
-        .attr("value", freq)
-        .text(freq)
+    for posture in @POSTURES
+      @PropControls.posture.append("option")
+        .attr("value", posture)
+        .text(posture)
 
     $("#prop_posture").multiselect({
         noneSelectedText: 'Select causing postures'
         selectedList: 4
       })
+    ###
+    #posture
+    @PropControls.freq = @property.append("select")
+      .attr("id", "prop_freq")
+      .attr("name", "freq_selection")
+      .attr("multiple", "multiple")
+
+    for freq in @FREQS
+      @PropControls.posture.append("option")
+        .attr("value", freq)
+        .text(freq)
+
+    $("#prop_freq").multiselect({
+        noneSelectedText: 'Select how often symptom occurs'
+        selectedList: 4
+      })
+    ###
+
+    @property.append('img')
+      .attr('class', 'opMode button')
+      .attr('src', '/assets/done.png')
+      .call((selection)->
+          window.eventManager.setup('popup_done', selection, _)
+        )
+
+    @property.append('img')
+      .attr('class', 'opMode button')
+      .attr('src', '/assets/delete.png')
+      .call((selection)->
+          window.eventManager.setup('popup_delete', selection, _)
+        )
+
+
+

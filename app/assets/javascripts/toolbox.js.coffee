@@ -16,9 +16,12 @@ class window.Toolbox
     # rotation
     @setupRotationControls(rotationParent)
     $('#drag').trigger('click')
-
+    @rotation_view = 0
 
   # Helper Functions #
+  getDirectionVal: (curView, nextView)->
+    (nextView-curView+4)%4
+
   getView: (curView, direction) ->
     if direction is "rotation_left"
       return (curView + 3) % 4
@@ -32,6 +35,20 @@ class window.Toolbox
     ""
   # Helper Functions END #
 
+  # Update Functions #
+  updateRotationViews:(view_side)->
+    direction = @getDirectionVal(@rotation_view, view_side)
+    return if direction==0
+    dir = "rotation_left"
+    if direction>0
+      dir = "rotation_right"
+    $("#" + dir)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(@rotation_view, dir))
+    otherDirection = @getOtherView(dir)
+    $("#" + otherDirection)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(@rotation_view, otherDirection))
+    @rotation_view = view_side
+      
+  ##########################
+
   # Event Handlers #
   updateCurrent: (highlight)->
     if highlight
@@ -41,13 +58,16 @@ class window.Toolbox
       @currentMode.control.attr("src", @currentMode.off)
         .attr("class", "opMode")
 
-  rotate: (id)->
-    window.bigBro.currentView = @getView(window.bigBro.currentView, id)
-    $("#" + id)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(window.bigBro.currentView, id))
-    otherDirection = @getOtherView(id)
-    $("#" + otherDirection)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(window.bigBro.currentView, otherDirection))
-    window.triggerEvent({type:'rotated', message:window.bigBro.currentView})
-
+  rotate: (id, rotationCheck)->
+    # check if rotatable
+    if rotationCheck!=undefined or window.bigBro.cvState.rotatable()
+      @rotation_view = @getView(@rotation_view, id)
+      $("#" + id)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(@rotation_view, id))
+      otherDirection = @getOtherView(id)
+      $("#" + otherDirection)[0].src = window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, @getView(@rotation_view, otherDirection))
+      window.triggerEvent({type:'rotated', message:@rotation_view})
+    else
+      alert "Plsease select a new or empty frame to rotate"
 
   # Event Handlers End #
 
@@ -68,7 +88,7 @@ class window.Toolbox
 
     @Modes.rect_draw = {}
     @Modes.rect_draw.on = "/assets/drawRect.png"
-    @Modes.rect_draw.off = "/assets/drawRect.png"
+    @Modes.rect_draw.off = "/assets/drawRectInactive.png"
     @Modes.rect_draw.control = @control.append("img")
       .attr("id", "rect_draw")
       .attr("class", "opMode")

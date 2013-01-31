@@ -53,10 +53,10 @@ class window.Toolbox
   updateCurrent: (highlight)->
     if highlight
       @currentMode.control.attr("src", @currentMode.on)
-        .attr("class", "opMode selected")
+        .attr("class", "opMode tooltip selected")
     else
       @currentMode.control.attr("src", @currentMode.off)
-        .attr("class", "opMode")
+        .attr("class", "opMode tooltip")
 
   rotate: (id, rotationCheck)->
     # check if rotatable
@@ -81,8 +81,9 @@ class window.Toolbox
     @Modes.drag.off = "/assets/dragHandInactive.png"
     @Modes.drag.control = @control.append("img")
       .attr("id", "drag")
-      .attr("class", "opMode")
+      .attr("class", "opMode tooltip")
       .attr("src",  @Modes.drag.off) #TODO
+      .attr("title", "drag")
       .call (selection)-> 
         window.eventManager.setup('toolbox', selection, _)
 
@@ -91,8 +92,9 @@ class window.Toolbox
     @Modes.rect_draw.off = "/assets/drawRectInactive.png"
     @Modes.rect_draw.control = @control.append("img")
       .attr("id", "rect_draw")
-      .attr("class", "opMode")
+      .attr("class", "opMode tooltip")
       .attr("src", @Modes.rect_draw.off)
+      .attr("title", "rectangle")
       .call (selection)-> 
         window.eventManager.setup('toolbox', selection, _)
 
@@ -101,16 +103,18 @@ class window.Toolbox
     @Modes.draw.off = "/assets/drawIconInactive.png"
     @Modes.draw.control = @control.append("img")
       .attr("id", "draw")
-      .attr("class", "opMode")
+      .attr("class", "opMode tooltip")
       .attr("src", @Modes.draw.off) #TODO
+      .attr("title", "pencil")
       .call (selection)-> 
         window.eventManager.setup('toolbox', selection, _)
 
     #undo
     @control.append("img")
       .attr("id", "undo")
-      .attr("class", "opMode")
+      .attr("class", "opMode tooltip")
       .attr("src", "/assets/undo.png")
+      .attr("title", "undo")
       .call (selection)-> 
         window.eventManager.setup('toolbox_undo', selection, _)
 
@@ -120,6 +124,8 @@ class window.Toolbox
     _ = this
     left = d3.select(parent).append("img")
       .attr("id", "rotation_left")
+      .attr("class", "tooltip")
+      .attr("title", "rotate left")
       .attr("src", window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, 3))
       .style("top", (window.bigBro.height - 150)+"px")
       .call (selection)-> 
@@ -127,6 +133,8 @@ class window.Toolbox
 
     right = d3.select(parent).append("img")
       .attr("id", "rotation_right")
+      .attr("class", "tooltip")
+      .attr("title", "rotate right")
       .style("top", (window.bigBro.height - 150)+"px")
       .attr("src", window.bigBro.ImageLoader.getBodyImageSrc(window.bigBro.currentGender, 1))
       .call (selection)-> 

@@ -12,8 +12,8 @@ class window.CanvasEventHandler
     @dragElem = null
 
   isSameElem:(a, b)->
-    return a.frameIndex is b.frameIndex and 
-        a.subIndex is b.subIndex
+    return a.frame is b.frame and 
+        a.sub is b.sub
       
   setDraggable: (elemUnder)->
     if @dragElem is not null

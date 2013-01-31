@@ -27,7 +27,7 @@ class window.SummaryManager
     summaryParent.append('image')
       .attr('class', 'prop_severity')
       .attr('height', iconHeight)
-      .attr('width', iconHeight)
+      .attr('width', iconHeight+10)
       .attr('x', textBoxWidth-iconHeight)
     summaryParent.append('g')
       .attr('class', 'prop_posture')
@@ -36,20 +36,25 @@ class window.SummaryManager
       .attr('class', 'prop_annotation')
       .attr('y', iconHeight)
 
-  hideOrShow: (frameIndex, hide)->
-    newClass = (if hide then 'summary disabled' else 'summary')
-    @getSummary(frameIndex).attr('class', newClass)
+  updateSummaryDisplay: (frame)->
+    @canvasState.svg.selectAll('g.summary')
+      .attr('class', (d)->
+        if +this.attributes.getNamedItem("frame").value==frame
+          return 'summary'
+        else
+          return 'summary disabled'
+        )
 
-  closeSummary:(frameIndex, subIndex)->
-    summaryItem = @getSummary(frameIndex, subIndex)
+  closeSummary:(frame, sub)->
+    summaryItem = @getSummary(frame, sub)
     if summaryItem
       summaryItem.attr('class', 'summary disabled')
 
-  getSummary:(frameIndex, subIndex) ->
-    group = @canvasState.svg.select("#tag_#{frameIndex}")
-    if subIndex is undefined
+  getSummary:(frame, sub) ->
+    group = @canvasState.svg.select("#tag_#{frame}")
+    if sub is undefined
       return group.selectAll('g.summary')
-    d3.select(group.selectAll('g.summary')[0][subIndex])
+    d3.select(group.selectAll('g.summary')[0][sub])
 
   appendingTspan:(target, word)->
     target.append("tspan")
@@ -91,6 +96,6 @@ class window.SummaryManager
             .attr('width', smallIconHeight)
             .attr('x', (d,i)->textBoxWidth-iconHeight-smallIconHeight*(i+1))
             .attr("xlink:href", (d)->"/assets/posture/#{d}.png")
-          images.exit()
+          images.exit().remove()
 
   #  SUMMARY END #################

@@ -11,6 +11,10 @@ class window.TagElem
     }
     @view = view
     @property = {}
+    @frame = -1
+    @sub = -1
+    
+  setIndex:(@frame, @sub)->
 
   getRectBound:->
     {

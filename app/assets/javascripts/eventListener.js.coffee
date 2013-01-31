@@ -9,20 +9,17 @@ window.triggerEvent= (e)->
       
     when 'newTag'
       @bigBro.historyManager.addNewTag(e.message)
-      
-    when 'mousedown'
-      possibleParents = ['#toolbox_property', '.ui-multiselect-menu']
-      if @bigBro.propToolbox.isPoppupOpen()
-        for parent in possibleParents
-          return if $(parent).has(e.target).length!=0 
-        @bigBro.cvState.deHighlightFrame()
+
+    when 'moveTagToNewFrame'
+      tagToMove = @bigBro.cvState.deleteTag(e.message.frame, e.message.sub)
+      @bigBro.cvState.addTagElem(tagToMove, e.message.newFrame)
       
     when 'tagMoving'
       if @bigBro.propToolbox.isPoppupOpen() 
         @bigBro.propToolbox.boxMove(e.message.box)
   
     when 'tagMovingDone'
-      @bigBro.historyManager.moveThumbnailTag(e.message.frameIndex, e.message.subIndex, e.message.dataPoints)
+      @bigBro.historyManager.moveThumbnailTag(e.message.frame, e.message.sub, e.message.type,e.message.data)
       @eventManager.logEvent('tag', 'moved')
       
     when 'imageMovingDone'
@@ -32,12 +29,15 @@ window.triggerEvent= (e)->
       @bigBro.cvState.showNextUndo()
       
     when 'last_undo_click'
-      @bigBro.cvState.deleteTag()
+      deletedTag = @bigBro.cvState.deleteTag()
+      #pass in deleted tag elem
+      @bigBro.historyManager.deleteTag deletedTag
       
     when 'last_undo_mouseout'
       @bigBro.cvState.hideNextUndo()
     
     when 'rotated'
+      @bigBro.cvState.updateViewStatus e.message
       @bigBro.cvState.setView e.message
 
       #rotate the view in historymanager
@@ -45,6 +45,13 @@ window.triggerEvent= (e)->
       
     when 'frameChanged'
       @bigBro.cvState.changeFrame +e.message
+      @bigBro.toolbox.updateRotationViews @bigBro.cvState.getView()
 
-  
+$(window).on('mousedown', (e)->
+  possibleParents = ['#toolbox_property', '.ui-multiselect-menu']
+  if @bigBro.propToolbox.isPoppupOpen()
+    for parent in possibleParents
+      return if $(parent).has(e.target).length!=0 
+    @bigBro.cvState.deHighlightFrame()
+    )
     

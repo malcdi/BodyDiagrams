@@ -19,8 +19,7 @@ class window.CanvasDrawHandler extends CanvasEventHandler
 
     #find out the frame it belongs to
     tagFrameGroup = @canvasState.highlighted.frame
-    @handSelection.frameIndex = tagFrameGroup
-    @handSelection.tagIndex = @canvasState.addTagElem(@handSelection, tagFrameGroup)
+    @handSelection.setIndex(tagFrameGroup, @canvasState.addTagElem(@handSelection, tagFrameGroup))
 
     #create the element in svg
     @curElem = @canvasState.createInSvg(tagFrameGroup, @handSelection.type)
@@ -38,15 +37,19 @@ class window.CanvasDrawHandler extends CanvasEventHandler
     if @mouseDownForFreeHand
       @mouseDownForFreeHand = false
       unless @handSelection.isValidElem()
-        @canvasState.deleteTag(@handSelection.frameIndex, @handSelection.tagIndex)
+        @canvasState.deleteTag(@handSelection.frame, @handSelection.sub)
       else
         @canvasState.drawInSvg(@curElem, @handSelection)
         window.triggerEvent({
           type:'newTag', 
-          message:{type:@handSelection.type, data:@handSelection.points}
+          message:{
+            frame:@handSelection.frame
+            sub:@handSelection.sub
+            type:@handSelection.type
+            data:@handSelection.drawData()}
         })
 
         #highlight frame
-        @canvasState.highlightFrame @handSelection.frameIndex, @handSelection.tagIndex
+        @canvasState.highlightFrame @handSelection.frame, @handSelection.sub
         
       return

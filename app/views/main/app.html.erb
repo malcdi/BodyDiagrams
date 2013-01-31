@@ -103,7 +103,6 @@
 
   $(document).ready(function(){
     bigBro.ImageLoader = new window.ImageLoader();
-    bigBro.currentView = 0;
     bigBro.currentGender = getURLParameter("gender"); 
 
     /* Canvas State */
@@ -120,13 +119,12 @@
       height:bigBro.height,
       margin:20,
       currentGender:bigBro.currentGender,
-      currentView:bigBro.currentView,
       mode:"drag",
       imageLoader:bigBro.ImageLoader
     });
 
     bigBro.historyManager = new window.HistoryManager('#history_container');
-    var toolbox = new window.Toolbox("#toolboxes", "#rotation_toolbox");
+    bigBro.toolbox = new window.Toolbox("#toolboxes", "#rotation_toolbox");
     
     
     /* Setting up Zoom Control*/

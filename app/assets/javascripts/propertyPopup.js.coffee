@@ -105,7 +105,7 @@ class window.PropertyPopup
     _ = this
     #annotation box
     @property.append('textarea')
-      .attr('id', 'prop_annotation_text tooltip')
+      .attr('id', 'prop_annotation_text')
       .attr('placeholder', 'Describe your symptom here...')
       .attr('rows',3)
 

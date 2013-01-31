@@ -27,13 +27,13 @@
     <div id="zoomControl">
       <div style="position: absolute; width: 90px; height: 90px; " id="compassHolder" class="tooltip"><div style="position: absolute; left: 16px; top: 17px; width:48px; height: 47px; overflow: hidden; "><img style="position: absolute; left: 0px; top: 0px; border: 0px; padding: 0px; margin: 0px;width:48px; height:370px " src="/assets/mapcontrols.png"></div></div>
       
-      <div style="position: absolute; width: 90px; height: 90px; " id="compass" class="tooltip"><div style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " title="Pan down"></div></div>
+      <div style="position: absolute; width: 90px; height: 90px; " id="compass" class="tooltip"><div id="pan_up" style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " id="pan_left"  title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " id="pan_right" title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " id="pan_down" title="Pan down"></div></div>
       
-      <div style="position: absolute; width: 22px; height: 22px; overflow: hidden; z-index: 101; " id="lmczoom" class="tooltip"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In" class="tooltip"></div></div>
+      <div style="position: absolute; width: 22px; height: 22px; overflow: hidden; z-index: 101; " id="lmczoom" class="tooltip"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div class="tooltip zoom_button" id="zoom_in" style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
       
       <div style="position: absolute; width: 59px; height: 146px; overflow: hidden; " id="lmcslider" class="tooltip"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
       
-      <div style="position: absolute; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo" class="tooltip"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out" class="tooltip"></div></div>
+      <div style="position: absolute; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo" class="tooltip"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out" class="tooltip zoom_button" id="zoom_out" ></div></div>
       
       <div style="position: absolute; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar" class="tooltip"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom" class="tooltip"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
     </div>
@@ -138,7 +138,7 @@
       bigBro.cvState.submitAll();
     });
     $('.tooltip').tooltip({ 
-      position: { my: "left center", at: "center top" },
+      position: { my: "left center", at: "center+10 top" },
       show: {delay:400} });
   });
 </script>

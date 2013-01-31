@@ -1,7 +1,7 @@
 class window.ZoomControl
   constructor:()->
     @moveFactor = 5
-    @zoomFactor = 1.0
+    @zoomFactor = 1.2
 
   setupControls: (left, top)->
     _ = this
@@ -19,13 +19,8 @@ class window.ZoomControl
     sliderElem = $("#lmczbg")[0]
 
     #zoom in/out
-    d3.select("div[title=\"Zoom In\"]").call (selection)-> 
+    d3.selectAll(".zoom_button").call (selection)-> 
       window.eventManager.setup('zoom_button', selection, _, sliderElem)
-
-
-    d3.select("div[title=\"Zoom Out\"]").call (selection)-> 
-      window.eventManager.setup('zoom_button', selection, _, sliderElem)
-
 
     #slider zoom
     d3.select("#lmczb").call (selection)-> 

@@ -30,6 +30,9 @@ class window.PropertyPopup
 
   isPoppupOpen:()->
     @property.index!=null
+    
+  openPopupIndex:()->
+    @property.index
 
   closePopup: ()->
     @property.attr('class', 'disabled')

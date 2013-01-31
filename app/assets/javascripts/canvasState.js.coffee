@@ -129,8 +129,8 @@ class window.CanvasState
     elemDeleted = null
     curLen = @allTags[frame].length
     if curLen > 0
-      if sub is undefined
-        sub = curLen-1
+      if sub is undefined then sub = curLen-1
+      if sub is @highlighted.sub then @highlighted.sub=-1
       elemDeleted = @allTags[frame].splice(sub, 1)
       tagGroup = @getTagGroup(frame, sub)
       tagGroup.remove()  unless tagGroup.empty()
@@ -276,41 +276,52 @@ class window.CanvasState
   #MOVING AROUND STUFF ###########
 
   findCenter:(sx, sy, tx, ty)->
-    centerX = (tx+(+@srcImg.attr('x'))+(+@srcImg.attr('width')/2))
-    centerY = (ty+(+@srcImg.attr('y'))+(+@srcImg.attr('height')/2))
+    centerX = sx*(tx+(+@srcImg.attr('x'))+(+@srcImg.attr('width')/2))
+    centerY = sy*(ty+(+@srcImg.attr('y'))+(+@srcImg.attr('height')/2))
     {x:centerX, y:centerY}
 
   imgBoundWDrag:(center, dragX, dragY, dragCheck)->
-    xOUB = (center.x-60<0 and (!dragCheck or dragX<0)) or (center.x+60>+$('svg').attr('width') and (!dragCheck or dragX>0))
-    yOUB = (center.y<0 and (!dragCheck or dragY<0)) or (center.y>+$('svg').attr('height') and (!dragCheck or dragY>0))
+    xOUB = (center.x+20<0 and (!dragCheck or dragX<0)) or (center.x-20>+$('svg').attr('width') and (!dragCheck or dragX>0))
+    yOUB = (center.y+160<0 and (!dragCheck or dragY<0)) or (center.y-60>+$('svg').attr('height') and (!dragCheck or dragY>0))
     {x:!xOUB, y:!yOUB}
 
   imageInBound: (dragX, dragY)->
     mat = @svg.attr('transform')
     if mat
       matchedStr = mat.match /matrix\((.*),(.*),(.*),(.*),(.*),(.*)\)/
-    return true if matchedStr is null or matchedStr is undefined
+    return {x:true, y:true} if matchedStr is null or matchedStr is undefined
     center = @findCenter(+matchedStr[1], +matchedStr[4], +matchedStr[5], +matchedStr[6])
+    console.log @imgBoundWDrag(center, dragX, dragY, true)
     return @imgBoundWDrag(center, dragX, dragY, true)
     
-
+  pan: (deltaX, deltaY)->
+    boundness = @imageInBound(deltaX, deltaY)
+    if boundness.x and boundness.y
+      newMat = @tracker.translate deltaX, deltaY
+      @svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
+      
   zoom: (clicks) ->
+    oldTransform = @tracker.getTransform()
     pt = @tracker.transformedPoint(@lastZoom.x, @lastZoom.y)
     factor = Math.pow(1.1, clicks)
     @tracker.scale factor, factor
     newMat = @tracker.getTransform()
     center = @findCenter(newMat.a, newMat.d, newMat.e, newMat.f)
-    boundness = @imgBoundWDrag(center, 0, 0, false)
+    console.log clicks
+    boundness = @imgBoundWDrag(center, clicks, clicks, true)
+    console.log boundness
     if boundness.x and boundness.y
       @svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
       return true
+    else
+      @tracker.setTransformMat(oldTransform)
     false
 
   setZoomPan: (deltaX, deltaY, deltaZoom) ->
-    @tracker.translate deltaX, deltaY
+    @pan(deltaX, deltaY)
     @lastZoom.x = @canvas.width / 2
     @lastZoom.y = @canvas.height / 2
-    return @zoom deltaZoom
+    return @zoom deltaZoom, deltaX, deltaY
 
   getGraphicSvgElem:(parent)->
     parent.select('.tag')

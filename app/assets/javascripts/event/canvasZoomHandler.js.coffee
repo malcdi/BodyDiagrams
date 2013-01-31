@@ -27,12 +27,8 @@ class window.CanvasZoomHandler extends CanvasEventHandler
       pt = @canvasState.tracker.transformedPoint(@canvasState.lastZoom)
       dragX = pt.x - @dragStart.x
       dragY = pt.y - @dragStart.y
-      dragOK = @canvasState.imageInBound(dragX, dragY)
-      dragX = if dragOK.x then dragX else 0
-      dragY = if dragOK.y then dragY else 0
-
-      newMat = @canvasState.tracker.translate(dragX, dragY)
-      @canvasState.svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
+      @canvasState.pan(dragX, dragY)
+      
     else if @draggedAmt>=0
       #moving around the element
       movePixel = {mx:tPoint.x - @dragOff.x, my:tPoint.y - @dragOff.y}

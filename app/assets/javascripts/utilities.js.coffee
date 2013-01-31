@@ -49,6 +49,10 @@ window.trackSVGTransforms = (tracker, svg) ->
     xform.f = f
     xform
 
+  setTransform = tracker.setTransform
+  tracker.setTransformMat = (newmat) ->
+    xform = newmat
+
   pt = svg.createSVGPoint()
   tracker.transformedPoint = (point) ->
     pt.x = point.x

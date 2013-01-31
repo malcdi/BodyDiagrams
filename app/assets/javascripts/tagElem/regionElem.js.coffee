@@ -7,8 +7,9 @@ class window.RegionElem extends window.TagElem
     @origin_y =0
 
   toJSON: ->
-    rect:@getRectBound()
+    rect: @getRectBound()
     view: @view
+    type: @type
     property: @property
 
   setOrigin: (pt) ->
@@ -18,8 +19,11 @@ class window.RegionElem extends window.TagElem
     @box.y_min =  @origin_y
 
   isValidElem: ->
-    true
+    (@box.x_max-@box.x_min)>2 and (@box.y_max-@box.y_min)>2
 
+  drawData: ->
+    @getRectBound()
+    
   updateRegion:(pt)->
     if pt.x < @origin_x
       @box.x_max = @origin_x

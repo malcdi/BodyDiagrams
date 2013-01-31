@@ -52,10 +52,10 @@ class window.CanvasZoomHandler extends CanvasEventHandler
     if @draggedAmt>0
       window.triggerEvent({
         type:'tagMovingDone', 
-        message:{ frameIndex:@dragElem.frameIndex, subIndex:@dragElem.subIndex, dataPoints:@dragElem.tag.points}
+        message:{ frame:@dragElem.frame, sub:@dragElem.sub, type: @dragElem.tag.type, data:@dragElem.tag.drawData()}
       })
     else if @draggedAmt==0
-      @canvasState.highlightFrame(@dragElem.frameIndex, @dragElem.subIndex)
+      @canvasState.highlightFrame(@dragElem.frame, @dragElem.sub)
     else 
       window.triggerEvent({type:'imageMovingDone'})
 

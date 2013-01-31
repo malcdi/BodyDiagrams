@@ -19,8 +19,7 @@ class window.CanvasRectDrawHandler extends CanvasEventHandler
 
     #find out the frame it belongs to
     tagFrameGroup = @canvasState.highlighted.frame
-    @regionSelection.frameIndex = tagFrameGroup
-    @regionSelection.tagIndex = @canvasState.addTagElem(@regionSelection, tagFrameGroup)
+    @regionSelection.setIndex(tagFrameGroup, @canvasState.addTagElem(@regionSelection, tagFrameGroup))
 
     #create the element in svg
     @curElem = @canvasState.createInSvg(tagFrameGroup, @regionSelection.type)
@@ -38,15 +37,19 @@ class window.CanvasRectDrawHandler extends CanvasEventHandler
     if @mouseDown
       @mouseDown = false
       unless @regionSelection.isValidElem()
-        @canvasState.deleteTag(@regionSelection.frameIndex, @regionSelection.tagIndex)
+        @canvasState.deleteTag(@regionSelection.frame, @regionSelection.sub)
       else
         @canvasState.drawInSvg(@curElem, @regionSelection)
         window.triggerEvent({
           type:'newTag', 
-          message:{type:@regionSelection.type, data:@regionSelection.getRectBound()}
+          message:{
+            frame:@regionSelection.frame
+            sub:@regionSelection.sub
+            type:@regionSelection.type
+            data:@regionSelection.getRectBound()}
         })
 
         #highlight frame
-        @canvasState.highlightFrame @regionSelection.frameIndex, @regionSelection.tagIndex
+        @canvasState.highlightFrame @regionSelection.frame, @regionSelection.sub
         
       return

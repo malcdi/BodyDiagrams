@@ -28,11 +28,23 @@ class MainController < ApplicationController
 				@tag.tag_group=tagGroupIndex
 				if @tag.valid?
 					@tag.save()
-					#save points
-					handTag = HandTag.new()
-					handTag.points=tagInfo["points"].to_s()
-					handTag.tag_id=@tag.id
-					handTag.save()
+					type = tagInfo["type"]
+					if type=="hand"
+						#save points
+						handTag = HandTag.new()
+						handTag.points=tagInfo["points"].to_s()
+						handTag.tag_id=@tag.id
+						handTag.save()
+					elsif type=="region"
+						rectTag = RegionTag.new()
+						rect = tagInfo["rect"]
+						rectTag.x = rect["x"]
+						rectTag.y = rect["y"]
+						rectTag.w = rect["w"]
+						rectTag.h = rect["h"]
+						rectTag.tag_id=@tag.id
+						rectTag.save()
+					end
 				end
 			end
 		end

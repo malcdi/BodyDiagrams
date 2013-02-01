@@ -3,6 +3,42 @@ class MainController < ApplicationController
 		@user = User.create(:gender=>params[:gender])
 		session[:user_id] = @user.id
 	end
+
+	def review
+		user = User.find(params[:user_id])
+		@gender = user.gender
+		allTags = Tag.order("id").find(:all, :conditions=> 'user_id='+params[:user_id])
+		@result_arr =[]
+		allTags.each do |tag|
+			gId = tag.tag_group
+			if @result_arr[gId]==nil
+				@result_arr[gId] = []
+			end
+			t ={}
+			t["properties"] = {}
+			t["properties"]["prop_annotation"] = tag.annotate
+			t["properties"]["prop_severity"] = tag.severity
+			t["properties"]["prop_posture"] = tag.posture
+			t["view_side"] = tag.view_side
+
+			if HandTag.exists?(:tag_id=>tag.id) 
+				graphTag = HandTag.find(:all, :conditions=>'tag_id='+tag.id.to_s)[0]
+				ar = eval(graphTag.points)
+				t["data"] = ar.map do |d| 
+					{"x"=>d[0], "y"=>d[1]}
+				end
+				t["type"] = "hand"
+			elsif RegionTag.exists?(:tag_id=>tag.id) 
+				graphTag = RegionTag.find(:all, :conditions=>'tag_id='+tag.id.to_s)[0]
+				t["data"] = {"x"=>graphTag.x, "y"=>graphTag.y, "w"=>graphTag.w, "h"=>graphTag.h}
+			
+				t["type"] = "region"
+			end
+			@result_arr[gId].push(t)
+		end
+		# result:
+		# [[{type, data, view_side, properties:{}}, {}, {}(tag)],[],[](frame)](all)
+	end
 	
 	def postTag
 		puts "*******"

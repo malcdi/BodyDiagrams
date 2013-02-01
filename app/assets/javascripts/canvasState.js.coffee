@@ -219,7 +219,7 @@ class window.CanvasState
       })
       @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector('default'))
       #open up summary
-      @updateSummary(@highlighted.frame, @highlighted.sub, true)
+      @summaryManager.updateSummary(@highlighted.frame, @highlighted.sub, true)
 
     @highlighted.sub = -1
 
@@ -252,15 +252,6 @@ class window.CanvasState
   # HIGHLIGGHTS END ##############
 
   #### SUMMARY STUFF
-  updateSummary: (frame, sub, updateContent)->
-    properties = @allTags[frame][sub].getProperties()
-    summaryItem = @summaryManager.getSummary(frame, sub)
-
-    if summaryItem
-      box = @getBoundingBox(frame, sub)
-      summaryItem.attr('class', 'summary')
-        .attr('transform',"translate(#{box.x+box.w+5},#{box.y-25})")
-      if updateContent then @summaryManager.updateSummaryContent(summaryItem, properties)
   ########
 
   setMode: (modeName) ->

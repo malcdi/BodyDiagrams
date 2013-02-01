@@ -16,6 +16,12 @@ class window.TagElem
     
   setIndex:(@frame, @sub)->
 
+  setBound: (box)->
+    @box.x_min = box.x
+    @box.x_max = box.w + box.x
+    @box.y_min = box.y
+    @box.y_max = box.y + box.h 
+
   getRectBound:->
     {
       x:@box.x_min

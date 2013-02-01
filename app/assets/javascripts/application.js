@@ -33,4 +33,5 @@
 //= require canvasState
 //= require imageLoader
 //= require eventListener
+//= require regenerator
 

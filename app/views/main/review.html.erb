@@ -1,0 +1,117 @@
+
+<!--Description of the application
+<div id="instructions">
+<p> FREE HAND: mouse down and drag </p>
+<p> REGION SELECT: double click & resize </p>
+</div>-->
+
+
+<div style="position: relative; margin-left: 40px; margin-right: 10px;">
+  <div id="content-panel">
+    <div id="canvasDiv" style="z-index: 1000"></div>
+
+  <!-- Zoom/Drag Control -->
+    <div id="toolboxes">
+      <!--
+      <div id="drawBrush" style="width:80px;height:30px;display:inline-block;">
+        <img src="/assets/paint_brush.png" style="width:20px;height:20px;"/>
+        <div style="width:60px;margin:0px 10px;display:inline-block;"></div>
+      </div>
+      -->
+    </div>
+
+    <!-- Rotate left right image -->
+    <div id="rotation_toolbox"> </div>
+
+    <!-- Zoom Control -->
+    <div id="zoomControl">
+      <div style="position: absolute; width: 90px; height: 90px; " id="compassHolder" class="tooltip"><div style="position: absolute; left: 16px; top: 17px; width:48px; height: 47px; overflow: hidden; "><img style="position: absolute; left: 0px; top: 0px; border: 0px; padding: 0px; margin: 0px;width:48px; height:370px " src="/assets/mapcontrols.png"></div></div>
+      
+      <div style="position: absolute; width: 90px; height: 90px; " id="compass" class="tooltip"><div id="pan_up" style="position: absolute; left: 30px; top: 17px; width: 18px; height: 18px; cursor: pointer; " title="Pan up"></div><div style="position: absolute; left: 16px; top: 30px; width: 18px; height: 18px; cursor: pointer; " id="pan_left"  title="Pan left"></div><div style="position: absolute; left: 46px; top: 30px; width: 18px; height: 18px; cursor: pointer; " id="pan_right" title="Pan right" ></div><div style="position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; cursor: pointer; " id="pan_down" title="Pan down"></div></div>
+      
+      <div style="position: absolute; width: 22px; height: 22px; overflow: hidden; z-index: 101; " id="lmczoom" class="tooltip"><div style="width: 22px; height: 22px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -428px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div class="tooltip zoom_button" id="zoom_in" style="position: absolute; left: 0px; top: 0px; width: 22px; height: 22px; cursor: pointer; " title="Zoom In"></div></div>
+      
+      <div style="position: absolute; width: 59px; height: 146px; overflow: hidden; " id="lmcslider" class="tooltip"><div style="width: 59px; height: 277px; overflow: hidden; "><img style="position: absolute; left: 0px; top: -84px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+      
+      <div style="position: absolute; width: 59px; height: 22px; text-align: left; z-index: 103; " guidedhelpid="zoom_out" id="lmczo" class="tooltip"><div style="width: 59px; height: 22px; overflow: hidden; position: absolute; "><img style="position: absolute; left: 0px; top: -361px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div><div style="position: absolute; left: 16px; top: -4px; width: 26px; height: 26px; cursor: pointer; " title="Zoom Out" class="tooltip zoom_button" id="zoom_out" ></div></div>
+      
+      <div style="position: absolute; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar" class="tooltip"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom" class="tooltip"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
+    </div>
+
+  </div>
+</div>
+<ul id="history_container"></ul>
+  
+<div id="instruction_container" style="position:absolute;top:10px;left:600px;width:400px">
+
+  <h1><font color="#990000">INSTRUCTIONS</font></h1>
+  <h2>1. Read this Prompt</h2>
+      <font size="3">
+      Hello,<br/>
+      I was wondering if someone can help me figure out what is going on. For the past week I've been experiencing some serious joint pain. My joints ache all over my body at night; it is worst in my knees and shoulders. The pain is a dull but constant throbbing. Also, when I woke up this morning, my knees and ankles were swollen.<br/>
+      <br/>
+      I'm 21 years old, very active -- I love sports and especially hiking -- so I doubt this is arthritis. About a month ago I came back from a camping trip with the flu -- chills, fever etc.My muscles ached as though I had been lifting weights, and my neck was really stiff. It took longer than usual to clear (3 weeks). I don't know if this has anything to do with how I'm feeling now, but figured it was worth mentioning.<br/>
+      <br/>
+      Thanks, peace<br/>
+      -MZ
+      <br/>
+      </font>
+
+      <h2>2. Draw the condition</h2>
+      <font size="3">Imagine that you wrote this prompt. Now use the BodyDiagrams interface to communicate the prompt condition. Imagine that you will submit your final result, *excluding the original prompt*, to an online community so that they can give you advice.<br/>
+      </font>
+
+      <h2>3. Click on "SUBMIT" to take our survey</h2>
+      <font size="3">
+      You will be issued a unique number; please keep this number to enter into the survey and into the original MTurk HIT. Thank you!
+      
+      </font>
+</div>
+
+<%= javascript_tag do %> 
+  window.allTags = <%= (JSON @result_arr).html_safe %>
+  window.gender = '<%= @gender %>'
+<% end %>
+
+<script type="text/javascript">
+  var bigBro={};
+  var eventManager;
+
+  var userID = "<%=session[:user_id]%>"
+
+  $(document).ready(function(){
+    bigBro.ImageLoader = new window.ImageLoader();
+    bigBro.currentGender = window.gender
+
+    /* Canvas State */
+    //current view side {0:front, 1: right, 2: back, 3: left}
+    bigBro.width = 500;
+    bigBro.height = 700;
+    $('#content-panel').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
+    $('#canvasDiv').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
+
+    eventManager = new window.EventManager();
+    bigBro.propToolbox = new window.PropertyPopup("#toolboxes");
+    bigBro.cvState = new CanvasState("#canvasDiv", {
+      width:bigBro.width,
+      height:bigBro.height,
+      margin:20,
+      currentGender:bigBro.currentGender,
+      mode:"drag",
+      imageLoader:bigBro.ImageLoader
+    });
+
+    bigBro.historyManager = new window.HistoryManager('#history_container');
+    bigBro.toolbox = new window.Toolbox("#toolboxes", "#rotation_toolbox");
+    
+    /* Setting up Zoom Control*/
+    var zoomController = new window.ZoomControl();
+    zoomController.setupControls(-20, 150);
+
+    $('.tooltip').tooltip({ 
+      position: { my: "left center", at: "center+10 top" },
+      show: {delay:400} });
+
+    window.regenerate()
+  });
+</script>

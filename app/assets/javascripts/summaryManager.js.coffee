@@ -44,7 +44,16 @@ class window.SummaryManager
         else
           return 'summary disabled'
         )
+  updateSummary: (frame, sub, updateContent)->
+    properties = @canvasState.allTags[frame][sub].getProperties()
+    summaryItem = @getSummary(frame, sub)
 
+    if summaryItem
+      box = @canvasState.getBoundingBox(frame, sub)
+      summaryItem.attr('class', 'summary')
+        .attr('transform',"translate(#{box.x+box.w+5},#{box.y-25})")
+      if updateContent then @updateSummaryContent(summaryItem, properties)
+  
   closeSummary:(frame, sub)->
     summaryItem = @getSummary(frame, sub)
     if summaryItem

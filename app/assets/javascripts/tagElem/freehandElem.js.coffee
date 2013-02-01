@@ -29,6 +29,14 @@ class window.FreehandElem extends window.TagElem
     else if y_t > @box.y_max
       @box.y_max = y_t
     
+  setAllPoints: (@points)->
+    x_arr = @points.map (d)->d.x
+    y_arr= @points.map (d)->d.y
+    @box.x_min = d3.min(x_arr)
+    @box.x_max = d3.min(x_arr)
+    @box.y_min = d3.min(y_arr)
+    @box.y_max = d3.min(y_arr)
+    
   addPoint: (x_t, y_t) ->
     @updateBound(x_t, y_t)
     

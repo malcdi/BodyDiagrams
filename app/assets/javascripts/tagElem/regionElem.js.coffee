@@ -12,12 +12,6 @@ class window.RegionElem extends window.TagElem
     type: @type
     property: @property
 
-  setOrigin: (pt) ->
-    @origin_x = pt.x
-    @origin_y = pt.y
-    @box.x_min =  @origin_x
-    @box.y_min =  @origin_y
-
   isValidElem: ->
     (@box.x_max-@box.x_min)>2 and (@box.y_max-@box.y_min)>2
 

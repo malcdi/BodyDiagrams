@@ -29,33 +29,60 @@ class window.CanvasState
     @cur_view_side = 0
     @lastZoom ={"x": options.width / 2, "y":options.height / 2}
     @tracker = {}
+    width = options.width
+    height = options.height
     trackSVGTransforms @tracker, document.createElementNS("http://www.w3.org/2000/svg", "svg")
 
     # registering mouse events 
     cv = this
     @svg = d3.select("#canvasDiv").append("svg")
-      .attr("width", options.width).attr("height", options.height)
+      .attr("width", @width).attr("height",@height)
+      
+    # add image
+    imgRatio = 3/7
+    scW = options.scW
+
+    imgH = height - options.margin*2
+    imgW = imgH*imgRatio
+    imgMargin = (width - imgW) / 2
+    if imgMargin<scW
+      imgW = (width-scW*2)
+      imgH = imgW/imgRatio
+      imgMargin = scW
+      options.margin = (height-imgH)/2
+
+    @svg.append('g')
+      .append('rect')
+      .attr('class', 'summary_container')
+      .attr('x',0).attr('y',0)
+      .attr('width', imgMargin).attr('height',height)
+
+    @svg.append('g')
+      .append('rect')
+      .attr('class', 'summary_container')
+      .attr('x',width-imgMargin).attr('y',0)
+      .attr('width', imgMargin).attr('height',height)
+
+    svgOrig = @svg
 
     @svg = @svg.append("g")
+      .attr('fill-rule', 'nonzero')
       .call((selection)->
         window.eventManager.setup('svgCanvas', selection, cv)
       )
-   
-    # add image
-    imgRatio = 3/7
-    imgH = options.height - options.margin*2
 
-    @srcImg = @svg.append("image").attr("x", (options.width - imgH*imgRatio) / 2)
+    @srcImg = @svg.append("image").attr("x", imgMargin)
       .attr("y", options.margin)
-      .attr("width", imgH*imgRatio)
+      .attr("width", imgW)
       .attr("height", imgH)
       .attr("xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side))
 
     @dragEventHandler = new window.CanvasZoomHandler(this)
     @drawEventHandler = new window.CanvasDrawHandler(this)
     @rectDrawEventHandler = new window.CanvasRectDrawHandler(this)
+    @fillEventHandler = new window.CanvasFillHandler(this)
 
-    @summaryManager = new window.SummaryManager(this)
+    @summaryManager = new window.SummaryManager(this, imgMargin, width-imgMargin)
 
   # View Side related #
 
@@ -92,6 +119,8 @@ class window.CanvasState
           _.drawEventHandler[name] d3.event
         when "rect_draw"
           _.rectDrawEventHandler[name] d3.event
+        when "fill"
+          _.fillEventHandler[name] d3.event
 
   setStrokeWidth: (width) ->
     @strokeWidth = width
@@ -263,6 +292,8 @@ class window.CanvasState
         @canvas.style.cursor = "url('/assets/drawHand.png'), auto"
       when "rect_draw"
         @canvas.style.cursor = "crosshair"
+      when "fill"
+        @canvas.style.cursor = "url('/assets/fill_cursor.png'), auto"
 
   #MOVING AROUND STUFF ###########
 
@@ -319,7 +350,7 @@ class window.CanvasState
 
   moveElement: (elem, movePixel)->
     elem.tag.moveAll movePixel #update points stored in tag
-    @updateSummary(elem.frame, elem.sub,false)
+    @summaryManager.updateSummary(elem.frame, elem.sub,false)
     @drawInSvg(@getGraphicSvgElem(elem.graphicTag), elem.tag)
 
     window.triggerEvent({
@@ -333,6 +364,25 @@ class window.CanvasState
 
   setDraggable: (elem)->
     @updateStrokeColor(elem.frame, elem.sub, colorSelector('highlight'))
+
+  setFilled: (elem)->
+    pathElem = @getGraphicSvgElem(elem.graphicTag)
+    return if pathElem is null or pathElem.empty() 
+    #toggle fill
+    oldFill = pathElem.style('fill')
+    newFill = ''
+    if oldFill!="none"
+      newFill = "none"
+      elem.tag.filled = false
+    else
+      newFill = colorSelector('fill')
+      elem.tag.filled = true
+    pathElem.style('fill', newFill)
+
+    window.triggerEvent({
+      type:'tagFill',
+      message:{ frame:elem.frame, sub:elem.sub, filled:elem.tag.filled}
+      })
 
   #MOVING AROUND STUFF DONE ###########
 
@@ -373,13 +423,13 @@ class window.CanvasState
       .attr('tag_type', type)
     self = @
 
-    @summaryManager.setupSummary(tagGroup, tagFrameGroup, sub)
+    @summaryManager.setupSummary(tagFrameGroup, sub)
     elem = null
     switch type
       when 'hand'
         #path tag
         elem = tagGroup.append("path")
-          .attr("fill", "none")
+          .attr("fill", 'none')
       when 'region'
         elem = tagGroup.append("rect")
           .attr('fill', strokeColor)

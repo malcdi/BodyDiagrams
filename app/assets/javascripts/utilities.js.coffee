@@ -4,6 +4,8 @@ window.colorSelector = (option) ->
       "#FFB6C1"
     when 'highlight'
       "#996d73"
+    when 'fill'
+      "#FFB6C1"
 
 window.trackSVGTransforms = (tracker, svg) ->
   xform = svg.createSVGMatrix()

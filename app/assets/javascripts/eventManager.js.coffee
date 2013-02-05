@@ -45,6 +45,7 @@ class window.EventManager
         selection.on("mousewheel", host.getEventHandler('mousewheel'))
           .on("mousedown", host.getEventHandler('mousedown'))
           .on("mousemove", host.getEventHandler('mousemove'))
+          .on("click", host.getEventHandler('click'))
 
       when 'severityPropIcon'
         selection.on('click', ()-> 

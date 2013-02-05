@@ -30,6 +30,7 @@
 //= require event/canvasDrawHandler
 //= require event/canvasRectDrawHandler
 //= require event/canvasZoomHandler
+//= require event/canvasFillHandler
 //= require canvasState
 //= require imageLoader
 //= require eventListener

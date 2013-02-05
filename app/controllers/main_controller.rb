@@ -55,6 +55,15 @@ class MainController < ApplicationController
 
 				tagProperty = tagInfo["property"]
 				if !tagProperty.empty?
+					if tagProperty["prop_annotation"]==nil
+						tagProperty["prop_annotation"] = ""
+					end
+					if tagProperty["prop_severity"]==nil
+						tagProperty["prop_severity"] = -1
+					end
+					if tagProperty["prop_posture"]==nil
+						tagProperty["prop_posture"] = ","
+					end
 					@tag.annotate=tagProperty["prop_annotation"]
 					@tag.severity=tagProperty["prop_severity"]
 					@tag.posture=tagProperty["prop_posture"].join(",")

@@ -21,7 +21,11 @@ window.triggerEvent= (e)->
     when 'tagMovingDone'
       @bigBro.historyManager.moveThumbnailTag(e.message.frame, e.message.sub, e.message.type,e.message.data)
       @eventManager.logEvent('tag', 'moved')
-      
+
+    when 'tagFill'
+      @bigBro.historyManager.fillThumbnailTag(e.message.frame, e.message.sub, e.message.filled)
+      @eventManager.logEvent('tag', 'filled')
+
     when 'imageMovingDone'
       @eventManager.logEvent('image', 'panned')
       

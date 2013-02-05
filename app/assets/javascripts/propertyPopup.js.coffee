@@ -9,6 +9,7 @@ class window.PropertyPopup
       .attr("id", "toolbox_property")
       .attr("class", "disabled")
     @property.index = null
+    @props = window.bigBro.activatedProp
 
   # property
     @setupPropertyControls()
@@ -40,8 +41,10 @@ class window.PropertyPopup
       type:'updateProperty', 
       message:{properties: @getAllValues(), index:@property.index}
     })
-    $('#prop_annotation_text').removeClass('open')
-    $("#prop_posture").multiselect("uncheckAll")
+    if @props.prop_annotation
+      $('#prop_annotation_text').removeClass('open')
+    if @props.prop_posture
+      $("#prop_posture").multiselect("uncheckAll")
     @property.index = null
 
   getOffset: (d3Bound)->
@@ -74,9 +77,12 @@ class window.PropertyPopup
           )
 
   setDefaultPropertyValues:()->
-    @setPropertyValueInControl("prop_severity", "")
-    @setPropertyValueInControl("prop_posture", [])
-    @setPropertyValueInControl("prop_annotation", "")
+    if @props.prop_severity
+      @setPropertyValueInControl("prop_severity", "")
+    if @props.prop_posture
+      @setPropertyValueInControl("prop_posture", [])
+    if @props.prop_annotation
+      @setPropertyValueInControl("prop_annotation", "")
     
   updateProperty:(properties, index)->
     @property.index = index
@@ -88,7 +94,14 @@ class window.PropertyPopup
   # RETRIEVING VALUES FROM the POPUP
 
   getAllValues: ()->
-    {prop_severity: @getSeverityVal(), prop_posture:@getPostureVal(), prop_annotation:@getAnnotationVal()}
+    allVal = {}
+    if @props.prop_annotation
+      allVal.prop_severity= @getSeverityVal() 
+    if @props.prop_posture
+      allVal.prop_posture = @getPostureVal()
+    if @props.prop_annotation
+      allVal.prop_annotation = @getAnnotationVal()
+    return allVal
 
   getSeverityVal:()->
     selected = @PropControls.severity.select(".tag-selected")
@@ -106,65 +119,69 @@ class window.PropertyPopup
 
   setupPropertyControls: ->
     _ = this
-    #annotation box
-    @property.append('textarea')
-      .attr('id', 'prop_annotation_text')
-      .attr('placeholder', 'Describe your symptom here...')
-      .attr('rows',3)
+    if window.bigBro.activatedProp.prop_annotation
+      #annotation box
+      @property.append('textarea')
+        .attr('id', 'prop_annotation_text')
+        .attr('placeholder', 'Describe your symptom here...')
+        .attr('rows',3)
 
     @PropControls = {}
 
-    #SEVERITY 
-    @PropControls.severity = @property.append("div")
-      .attr("id", "prop_severity")
-    @PropControls.severity.append("span")
-      .text("Symptom Severity : ")
+    if window.bigBro.activatedProp.prop_severity
+      #SEVERITY 
+      @PropControls.severity = @property.append("div")
+        .attr("id", "prop_severity")
+      @PropControls.severity.append("span")
+        .text("Symptom Severity : ")
 
-    for severity in @SEVERITY
-      @PropControls.severity.append('img')
-        .attr('class', 'opMode tooltip')
-        .attr('id', 'prop_severity_'+severity)
-        .attr('src', '/assets/property/severity_'+severity+'.png')
-        .attr("title", "#{severity}")
-        .call((selection)->
-          window.eventManager.setup('severityPropIcon', selection, _)
-        )
+      for severity in @SEVERITY
+        @PropControls.severity.append('img')
+          .attr('class', 'opMode tooltip')
+          .attr('id', 'prop_severity_'+severity)
+          .attr('src', '/assets/property/severity_'+severity+'.png')
+          .attr("title", "#{severity}")
+          .call((selection)->
+            window.eventManager.setup('severityPropIcon', selection, _)
+          )
 
-    $('#prop_severity_minor').attr('class','opMode tag-selected tooltip')
+      $('#prop_severity_minor').attr('class','opMode tag-selected tooltip')
 
-    #Posture
-    @PropControls.posture = @property.append("select")
-      .attr("id", "prop_posture")
-      .attr("name", "posture_selection")
-      .attr("title", "Postures that cause the symptom")
-      .attr("multiple", "multiple")
+    
+    if window.bigBro.activatedProp.prop_posture
+      #Posture
+      @PropControls.posture = @property.append("select")
+        .attr("id", "prop_posture")
+        .attr("name", "posture_selection")
+        .attr("title", "Postures that cause the symptom")
+        .attr("multiple", "multiple")
 
-    for posture in @POSTURES
-      @PropControls.posture.append("option")
-        .attr("value", posture) 
-        .text(posture)
+      for posture in @POSTURES
+        @PropControls.posture.append("option")
+          .attr("value", posture) 
+          .text(posture)
 
-    $("#prop_posture").multiselect({
-        noneSelectedText: 'Select causing postures'
-        selectedList: 4
-      })
-    ###
-    #posture
-    @PropControls.freq = @property.append("select")
-      .attr("id", "prop_freq")
-      .attr("name", "freq_selection")
-      .attr("multiple", "multiple")
+      $("#prop_posture").multiselect({
+          noneSelectedText: 'Select causing postures'
+          selectedList: 4
+        })
 
-    for freq in @FREQS
-      @PropControls.posture.append("option")
-        .attr("value", freq)
-        .text(freq)
+    if window.bigBro.activatedProp.prop_freq
+      #freq
+      @PropControls.freq = @property.append("select")
+        .attr("id", "prop_freq")
+        .attr("name", "freq_selection")
+        .attr("multiple", "multiple")
 
-    $("#prop_freq").multiselect({
-        noneSelectedText: 'Select how often symptom occurs'
-        selectedList: 4
-      })
-    ###
+      for freq in @FREQS
+        @PropControls.posture.append("option")
+          .attr("value", freq)
+          .text(freq)
+
+      $("#prop_freq").multiselect({
+          noneSelectedText: 'Select how often symptom occurs'
+          selectedList: 4
+        })
 
     @property.append('img')
       .attr('class', 'opMode button tooltip')

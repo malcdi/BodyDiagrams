@@ -109,6 +109,17 @@ class window.Toolbox
       .call (selection)-> 
         window.eventManager.setup('toolbox', selection, _)
 
+    @Modes.fill = {}
+    @Modes.fill.on = "/assets/fill.png"
+    @Modes.fill.off = "/assets/fill.png"
+    @Modes.fill.control = @control.append("img")
+      .attr("id", "fill")
+      .attr("class", "opMode tooltip")
+      .attr("src", @Modes.fill.off) #TODO
+      .attr("title", "fill")
+      .call (selection)-> 
+        window.eventManager.setup('toolbox', selection, _)
+
     #undo
     @control.append("img")
       .attr("id", "undo")

@@ -7,6 +7,13 @@ class window.CanvasEventHandler
     @dragOff={"x":0, "y":0}
     @mouseDownForFreeHand=false
 
+  click:(e)->
+  mousedown:(e)->
+  mouseup:(e)->
+  mousemove:(e)->
+    e.preventDefault()
+  mousewheel:(e)->
+
   unsetDraggable: ()->
     if @dragElem then @canvasState.unsetDraggable(@dragElem)
     @dragElem = null

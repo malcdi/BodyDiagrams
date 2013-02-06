@@ -1,0 +1,14 @@
+
+#summary_container{
+  background-color:steelblue;
+  opacity:0.1;
+}
+.summary_content{
+  position:absolute;  
+}
+.summary_content img{
+  display:block;
+}
+.disabled{
+  opacity:0.0;
+}

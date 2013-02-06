@@ -49,39 +49,41 @@
 	}
 	vertical-align:top; 
 	position: absolute; 
-	top: 15px; left: 0px;
-
-	#toolbox_property{
-		&.disabled{
-			display:none;
-		}
-		position:absolute;
-		-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
-		-webkit-border-radius: 5px;
-		border:solid 2px white;
-		background-color:white;
-		img{
-			width:30px;
-			height:30px;
-			display:inline-block;
-			&.button{
-				width:20px;
-				height:20px;
-				-webkit-border-radius: 10px;
-				float:right;
-			}
-		}
-		textarea{
-			height:30px;padding:5px 8px;
-			width:240px;
-			display:inline-block;
-		}
-		z-index:1000;
-	}
+	top: 15px; left: 350px;
 }
+
 button.ui-multiselect{
 	display:block;
 }
+
+#toolbox_property{
+	&.disabled{
+		display:none;
+	}
+	position:absolute;
+	-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+	-webkit-border-radius: 5px;
+	border:solid 2px white;
+	background-color:white;
+	img{
+		width:30px;
+		height:30px;
+		display:block;
+		&.button{
+			width:20px;
+			height:20px;
+			-webkit-border-radius: 10px;
+			float:right;
+		}
+	}
+	textarea{
+		height:30px;padding:5px 8px;
+		width:200px;
+		display:block;
+	}
+	z-index:1000;
+}
+
 /**/
 #rotation_toolbox img{
 	width:20px;

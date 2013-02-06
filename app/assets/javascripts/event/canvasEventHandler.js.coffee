@@ -12,7 +12,11 @@ class window.CanvasEventHandler
   mouseup:(e)->
   mousemove:(e)->
     e.preventDefault()
-  mousewheel:(e)->
+  
+  mousewheel: (e) ->
+    delta = (if e.wheelDelta then e.wheelDelta / 200 else (if e.detail then e.detail else 0))
+    @canvasState.zoom delta if delta
+    e.preventDefault() and false
 
   unsetDraggable: ()->
     if @dragElem then @canvasState.unsetDraggable(@dragElem)

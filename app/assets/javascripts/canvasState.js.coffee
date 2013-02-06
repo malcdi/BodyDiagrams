@@ -29,52 +29,43 @@ class window.CanvasState
     @cur_view_side = 0
     @lastZoom ={"x": options.width / 2, "y":options.height / 2}
     @tracker = {}
-    width = options.width
+    width = options.width - options.scW*2
     height = options.height
     trackSVGTransforms @tracker, document.createElementNS("http://www.w3.org/2000/svg", "svg")
 
-    # registering mouse events 
-    cv = this
-    @svg = d3.select("#canvasDiv").append("svg")
-      .attr("width", @width).attr("height",@height)
+    #summary container
+
+    parent = d3.select(cv)
+    summary_container = parent.append('div')
+      .attr('id', 'summary_container')
+      .style('position','absolute')
+      .style('left','0px').style('top','0px')
+      .style('width', "#{options.width}px").style('height',"#{height}px")
+
+    @svg = parent.append("svg")
+      .style('position','absolute')
+      .style('left',"#{options.scW}px").style('top','0px')
+      .attr("width", width).attr("height",height)
+      .style('background-color','white')
       
     # add image
     imgRatio = 3/7
-    scW = options.scW
-
-    imgH = height - options.margin*2
-    imgW = imgH*imgRatio
-    imgMargin = (width - imgW) / 2
-    if imgMargin<scW
-      imgW = (width-scW*2)
-      imgH = imgW/imgRatio
-      imgMargin = scW
-      options.margin = (height-imgH)/2
-
-    @svg.append('g')
-      .append('rect')
-      .attr('class', 'summary_container')
-      .attr('x',0).attr('y',0)
-      .attr('width', imgMargin).attr('height',height)
-
-    @svg.append('g')
-      .append('rect')
-      .attr('class', 'summary_container')
-      .attr('x',width-imgMargin).attr('y',0)
-      .attr('width', imgMargin).attr('height',height)
-
-    svgOrig = @svg
+    @imgY = options.marginTop
+    @imgH = height - @imgY*2
+    @imgW = @imgH*imgRatio
+    @imgMargin = (width - @imgW)/2
+    @imgX = @imgMargin
 
     @svg = @svg.append("g")
       .attr('fill-rule', 'nonzero')
-      .call((selection)->
-        window.eventManager.setup('svgCanvas', selection, cv)
+      .call((selection)=>
+        window.eventManager.setup('svgCanvas', selection, @)
       )
 
-    @srcImg = @svg.append("image").attr("x", imgMargin)
-      .attr("y", options.margin)
-      .attr("width", imgW)
-      .attr("height", imgH)
+    @srcImg = @svg.append("image").attr("x", @imgX)
+      .attr("y", @imgY)
+      .attr("width", @imgW)
+      .attr("height", @imgH)
       .attr("xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side))
 
     @dragEventHandler = new window.CanvasZoomHandler(this)
@@ -82,7 +73,7 @@ class window.CanvasState
     @rectDrawEventHandler = new window.CanvasRectDrawHandler(this)
     @fillEventHandler = new window.CanvasFillHandler(this)
 
-    @summaryManager = new window.SummaryManager(this, imgMargin, width-imgMargin)
+    @summaryManager = new window.SummaryManager(this, summary_container, options.width-options.scW, options.scW)
 
   # View Side related #
 
@@ -168,7 +159,7 @@ class window.CanvasState
   # DELETE END ###################
 
   getPoint: (e) ->
-    element = @canvas
+    element = @svg.node()
     offsetX = 0
     offsetY = 0
     mx = undefined
@@ -247,7 +238,6 @@ class window.CanvasState
         message:{highlight:false}
       })
       @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector('default'))
-      #open up summary
       @summaryManager.updateSummary(@highlighted.frame, @highlighted.sub, true)
 
     @highlighted.sub = -1
@@ -257,8 +247,8 @@ class window.CanvasState
     frameElems[sub].getRectBound()
 
   highlightFrame: (index, sub) ->
-    @summaryManager.closeSummary(index, sub)
-    index = @allTags.length - 1  if index < 0
+    index = @allTags.length - 1  if index is undefined or index<0
+    sub = @allTags[index].length - 1  if sub is undefined or sub<0
     frameElems = @allTags[index]
     return  if not frameElems or frameElems.length < 1
     return  unless frameElems[0].view is @cur_view_side
@@ -268,10 +258,12 @@ class window.CanvasState
     @highlighted.sub = sub    
     boundingBox = @getBoundingBox(index, sub)
     @updateStrokeColor(index, sub, colorSelector('highlight'))
-    
+    #open up summary
+    summary_pos = @summaryManager.updateSummary(@highlighted.frame, @highlighted.sub, false)
+
     window.triggerEvent({
       type:'highlighted', 
-      message: {highlight:true, box:boundingBox, 
+      message: {highlight:true, box:summary_pos, 
       properties: @getHighlightedTagProperties(),index: @highlighted}
     })
 
@@ -303,8 +295,9 @@ class window.CanvasState
     {x:centerX, y:centerY}
 
   imgBoundWDrag:(center, dragX, dragY, dragCheck)->
-    xOUB = (center.x+20<0 and (!dragCheck or dragX<0)) or (center.x-20>+$('svg').attr('width') and (!dragCheck or dragX>0))
-    yOUB = (center.y+160<0 and (!dragCheck or dragY<0)) or (center.y-60>+$('svg').attr('height') and (!dragCheck or dragY>0))
+    room = 30
+    xOUB = (center.x+room*2<0 and (!dragCheck or dragX<0)) or (center.x-room>@imgW+@imgX*2 and (!dragCheck or dragX>0))
+    yOUB = (center.y+room<@imgY and (!dragCheck or dragY<0)) or (center.y-room>@imgH+@imgY*2 and (!dragCheck or dragY>0))
     {x:!xOUB, y:!yOUB}
 
   imageInBound: (dragX, dragY)->
@@ -313,7 +306,6 @@ class window.CanvasState
       matchedStr = mat.match /matrix\((.*),(.*),(.*),(.*),(.*),(.*)\)/
     return {x:true, y:true} if matchedStr is null or matchedStr is undefined
     center = @findCenter(+matchedStr[1], +matchedStr[4], +matchedStr[5], +matchedStr[6])
-    console.log @imgBoundWDrag(center, dragX, dragY, true)
     return @imgBoundWDrag(center, dragX, dragY, true)
     
   pan: (deltaX, deltaY)->
@@ -328,10 +320,12 @@ class window.CanvasState
     factor = Math.pow(1.1, clicks)
     @tracker.scale factor, factor
     newMat = @tracker.getTransform()
+    if newMat.a<0.7 or newMat.a>1.8 
+      #min max zoomlevel
+      @tracker.setTransformMat(oldTransform)
+      return false
     center = @findCenter(newMat.a, newMat.d, newMat.e, newMat.f)
-    console.log clicks
     boundness = @imgBoundWDrag(center, clicks, clicks, true)
-    console.log boundness
     if boundness.x and boundness.y
       @svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
       return true

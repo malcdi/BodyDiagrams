@@ -59,8 +59,3 @@ class window.CanvasZoomHandler extends CanvasEventHandler
     @draggedAmt = -1
     @unsetDraggable()
 
-  mousewheel: (e) ->
-    delta = (if e.originalEvent.wheelDelta then e.originalEvent.wheelDelta / 40 else (if e.originalEvent.detail then e.originalEvent.detail else 0))
-    zoom delta, @canvasState  if delta
-    e.preventDefault() and false
-

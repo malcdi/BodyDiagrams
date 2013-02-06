@@ -21,10 +21,10 @@ class window.PropertyPopup
       .style('top', offset.top+"px")
       .attr('class', '')
 
-  activatePropertyControls: (activate, d3Box, properties, index) ->
+  activatePropertyControls: (activate, position, properties, index) ->
     if activate
       @updateProperty properties,index
-      @openPopup(d3Box)
+      @openPopup(position)
     else
       @closePopup()
       @setDefaultPropertyValues()
@@ -50,8 +50,8 @@ class window.PropertyPopup
   getOffset: (d3Bound)->
     {left:d3Bound.x+d3Bound.w, top:d3Bound.y-20}
 
-  openPopup: (d3Bound)->
-    offset= @getOffset(d3Bound)
+  openPopup: (offset)->
+    console.log offset.left
     @property.attr("class","")
       .style('left', offset.left+"px")
       .style('top', offset.top+"px")
@@ -95,7 +95,7 @@ class window.PropertyPopup
 
   getAllValues: ()->
     allVal = {}
-    if @props.prop_annotation
+    if @props.prop_severity
       allVal.prop_severity= @getSeverityVal() 
     if @props.prop_posture
       allVal.prop_posture = @getPostureVal()

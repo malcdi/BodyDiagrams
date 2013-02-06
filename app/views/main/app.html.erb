@@ -6,7 +6,7 @@
 </div>-->
 
 
-<div style="position: relative; margin-left: 100px; margin-right: 10px;">
+<div style="position: relative; margin-left: 0px; margin-right: 10px;">
   <div id="content-panel">
     <div id="canvasDiv" style="z-index: 1000"></div>
 
@@ -43,11 +43,10 @@
 </div>
 <ul id="history_container" style="display:none"></ul>
   
-<div id="instruction_container" style="display:none;position:absolute;top:10px;left:600px;width:400px">
+<div id="instruction_container" style="position:absolute;top:10px;left:960px;width:350px;font-size:13px;">
 
   <h1><font color="#990000">INSTRUCTIONS</font></h1>
   <h2>1. Read this Prompt</h2>
-      <font size="3">
       Hello,<br/>
       I was wondering if someone can help me figure out what is going on. For the past week I've been experiencing some serious joint pain. My joints ache all over my body at night; it is worst in my knees and shoulders. The pain is a dull but constant throbbing. Also, when I woke up this morning, my knees and ankles were swollen.<br/>
       <br/>
@@ -56,18 +55,14 @@
       Thanks, peace<br/>
       -MZ
       <br/>
-      </font>
 
       <h2>2. Draw the condition</h2>
-      <font size="3">Imagine that you wrote this prompt. Now use the BodyDiagrams interface to communicate the prompt condition. Imagine that you will submit your final result, *excluding the original prompt*, to an online community so that they can give you advice.<br/>
-      </font>
+      Imagine that you wrote this prompt. Now use the BodyDiagrams interface to communicate the prompt condition. Imagine that you will submit your final result, *excluding the original prompt*, to an online community so that they can give you advice.<br/>
 
       <h2>3. Click on "SUBMIT" to take our survey</h2>
-      <font size="3">
       You will be issued a unique number; please keep this number to enter into the survey and into the original MTurk HIT. Thank you!
       
       <button type="button" id="submitTask">SUBMIT</button>
-      </font>
 </div>
 
 <script type="text/javascript">
@@ -86,6 +81,9 @@
   $(document).ready(function(){
     bigBro.ImageLoader = new window.ImageLoader();
     bigBro.currentGender = getURLParameter("gender"); 
+    var prop_severity = getURLParameter("ps");
+    if(prop_severity!="null")
+      bigBro["activatedProp"]['prop_severity'] = false
 
     /* Canvas State */
     //current view side {0:front, 1: right, 2: back, 3: left}
@@ -95,12 +93,13 @@
     $('#canvasDiv').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
 
     eventManager = new window.EventManager();
-    bigBro.propToolbox = new window.PropertyPopup("#toolboxes");
+    bigBro.propToolbox = new window.PropertyPopup("#content-panel");
     bigBro.cvState = new CanvasState("#canvasDiv", {
       width:bigBro.width,
       height:bigBro.height,
-      margin:20,
-      scW: 150,
+      marginTop:20,
+      marginLeft:50,
+      scW: 200,
       currentGender:bigBro.currentGender,
       mode:"drag",
       imageLoader:bigBro.ImageLoader

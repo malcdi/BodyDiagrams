@@ -2,6 +2,7 @@ class window.ZoomControl
   constructor:()->
     @moveFactor = 5
     @zoomFactor = 1.2
+    @sliderFactor = 20
 
   setupControls: (left, top)->
     _ = this

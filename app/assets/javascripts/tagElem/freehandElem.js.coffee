@@ -8,12 +8,14 @@ class window.FreehandElem extends window.TagElem
     super(strokeStyle,view)
     @points = []
     @type = 'hand'
+    @filled = false
   
   drawData: ->
     @points
     
   toJSON: ->
     points: @points.map (d)-> [d.x, d.y]
+    fill: @filled
     view: @view
     type: @type
     property: @property

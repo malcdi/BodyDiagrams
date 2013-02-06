@@ -6,6 +6,12 @@ class window.RegionElem extends window.TagElem
     @origin_x =0
     @origin_y =0
 
+  setOrigin: (pt) ->
+    @origin_x = pt.x
+    @origin_y = pt.y
+    @box.x_min =  @origin_x
+    @box.y_min =  @origin_y
+    
   toJSON: ->
     rect: @getRectBound()
     view: @view

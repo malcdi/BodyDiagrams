@@ -3,7 +3,7 @@ class window.HistoryManager
   constructor:(parent)->
     @container=d3.select(parent)
     @width = 125
-    @height = window.innerHeight-window.bigBro.height-25
+    @height = Math.max(0, window.innerHeight-window.bigBro.height-25)
     @imgRatio = 3/7
     @imgH = @height
     @imgW = @imgH*@imgRatio 
@@ -85,6 +85,14 @@ class window.HistoryManager
           .attr('y', scaledBox.y)
           .attr('width', scaledBox.w)
           .attr('height', scaledBox.h)
+
+  fillThumbnailTag: (frame, sub, filled)->
+    thumbTag = @findThumbnailTag(frame, sub)
+    return if thumbTag==null
+    if filled
+      thumbTag.style('fill', colorSelector('fill'))
+    else
+      thumbTag.style('fill', 'none')
 
 
   addNew: ()->

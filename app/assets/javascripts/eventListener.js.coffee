@@ -16,12 +16,16 @@ window.triggerEvent= (e)->
       
     when 'tagMoving'
       if @bigBro.propToolbox.isPoppupOpen() 
-        @bigBro.propToolbox.boxMove(e.message.box)
+        @bigBro.propToolbox.boxMove(e.message.position)
   
     when 'tagMovingDone'
       @bigBro.historyManager.moveThumbnailTag(e.message.frame, e.message.sub, e.message.type,e.message.data)
       @eventManager.logEvent('tag', 'moved')
-      
+
+    when 'tagFill'
+      @bigBro.historyManager.fillThumbnailTag(e.message.frame, e.message.sub, e.message.filled)
+      @eventManager.logEvent('tag', 'filled')
+
     when 'imageMovingDone'
       @eventManager.logEvent('image', 'panned')
       
@@ -30,9 +34,10 @@ window.triggerEvent= (e)->
       
     when 'last_undo_click'
       deletedTag = @bigBro.cvState.deleteTag()
-      #pass in deleted tag elem
-      @bigBro.historyManager.deleteTag deletedTag
-      
+      unless deletedTag is null
+        #pass in deleted tag elem
+        @bigBro.historyManager.deleteTag deletedTag
+    
     when 'last_undo_mouseout'
       @bigBro.cvState.hideNextUndo()
     
@@ -42,13 +47,16 @@ window.triggerEvent= (e)->
 
       #rotate the view in historymanager
       @bigBro.historyManager.setView e.message
-      
+
+    when 'severity_value_change'
+      @bigBro.cvState.updateSeverityValue e.message
+
     when 'frameChanged'
       @bigBro.cvState.changeFrame +e.message
       @bigBro.toolbox.updateRotationViews @bigBro.cvState.getView()
 
 $(window).on('mousedown', (e)->
-  possibleParents = ['#toolbox_property', '.ui-multiselect-menu']
+  possibleParents = ['#toolbox_property', '.ui-multiselect-menu', 'g.frameGroup']
   if @bigBro.propToolbox.isPoppupOpen()
     for parent in possibleParents
       return if $(parent).has(e.target).length!=0 

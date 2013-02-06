@@ -73,7 +73,7 @@ class window.CanvasState
     @rectDrawEventHandler = new window.CanvasRectDrawHandler(this)
     @fillEventHandler = new window.CanvasFillHandler(this)
 
-    @summaryManager = new window.SummaryManager(this, summary_container, options.width-options.scW, options.scW)
+    @summaryManager = new window.SummaryManager(this, summary_container, width, options.width-options.scW, options.scW)
 
   # View Side related #
 
@@ -116,11 +116,17 @@ class window.CanvasState
   setStrokeWidth: (width) ->
     @strokeWidth = width
 
+  updateSeverityValue:(severityVal)->
+    @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector(severityVal))
+
   updateStrokeColor:(frame, sub, col)->
     tagGroup = @getTagGroup(frame, sub)
-    unless tagGroup.empty()
+    unless tagGroup==null or tagGroup.empty()
+      tag = @allTags[frame][sub]
       svgTagElem = tagGroup.select('.tag')
         .style('stroke', col)
+      if tag.type=="region" or tag.filled
+        svgTagElem.style('fill',col)
 
   addTagElem: (elem, frame) ->
     list = @allTags[frame]
@@ -138,7 +144,9 @@ class window.CanvasState
     if @allTags[@highlighted.frame]
       curLen = @allTags[@highlighted.frame].length
       if curLen > 0
-        @updateStrokeColor(@highlighted.frame, curLen-1, colorSelector('default'))
+        tag = @allTags[@highlighted.frame][curLen-1]
+        severe_color = colorSelector(tag.property.prop_severity)
+        @updateStrokeColor(@highlighted.frame, curLen-1, severe_color)
 
   #deletes the tag at frame and sub index from the data and SVG
   # returns deleted
@@ -151,10 +159,11 @@ class window.CanvasState
     if curLen > 0
       if sub is undefined then sub = curLen-1
       if sub is @highlighted.sub then @highlighted.sub=-1
-      elemDeleted = @allTags[frame].splice(sub, 1)
+      elemDeleted = @allTags[frame].splice(sub, 1)[0]
       tagGroup = @getTagGroup(frame, sub)
       tagGroup.remove()  unless tagGroup.empty()
-    elemDeleted[0]
+      @summaryManager.tagDeleted elemDeleted.frame, elemDeleted.sub
+    elemDeleted
 
   # DELETE END ###################
 
@@ -227,6 +236,7 @@ class window.CanvasState
   uploadTagProperties: (properties, index) ->
     frameElems = @allTags[index.frame]
     frameElems[index.sub].saveProperties(properties)
+    @summaryManager.updateSummary(index.frame, index.sub, true)
   # END ##########
 
   #  Highlights #################
@@ -237,8 +247,9 @@ class window.CanvasState
         type:'highlighted', 
         message:{highlight:false}
       })
-      @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector('default'))
-      @summaryManager.updateSummary(@highlighted.frame, @highlighted.sub, true)
+      tag = @allTags[@highlighted.frame][@highlighted.sub]
+      severe_color = colorSelector(tag.property.prop_severity)
+      @updateStrokeColor(@highlighted.frame, @highlighted.sub, severe_color)
 
     @highlighted.sub = -1
 
@@ -297,7 +308,7 @@ class window.CanvasState
   imgBoundWDrag:(center, dragX, dragY, dragCheck)->
     room = 30
     xOUB = (center.x+room*2<0 and (!dragCheck or dragX<0)) or (center.x-room>@imgW+@imgX*2 and (!dragCheck or dragX>0))
-    yOUB = (center.y+room<@imgY and (!dragCheck or dragY<0)) or (center.y-room>@imgH+@imgY*2 and (!dragCheck or dragY>0))
+    yOUB = (center.y+room*3.5<@imgY and (!dragCheck or dragY<0)) or (center.y-room>@imgH+@imgY*2 and (!dragCheck or dragY>0))
     {x:!xOUB, y:!yOUB}
 
   imageInBound: (dragX, dragY)->
@@ -337,6 +348,13 @@ class window.CanvasState
     @pan(deltaX, deltaY)
     @lastZoom.x = @canvas.width / 2
     @lastZoom.y = @canvas.height / 2
+    @allTags.forEach (frame_arr, frame)=>
+      frame_arr.forEach (tag, sub)=>
+        pos = @summaryManager.updateSummary(frame,sub,false)
+        window.triggerEvent({
+          type:'tagMoving', 
+          message:{ position:pos}
+        })
     return @zoom deltaZoom, deltaX, deltaY
 
   getGraphicSvgElem:(parent)->
@@ -344,17 +362,18 @@ class window.CanvasState
 
   moveElement: (elem, movePixel)->
     elem.tag.moveAll movePixel #update points stored in tag
-    @summaryManager.updateSummary(elem.frame, elem.sub,false)
+    pos = @summaryManager.updateSummary(elem.frame, elem.sub,false)
     @drawInSvg(@getGraphicSvgElem(elem.graphicTag), elem.tag)
 
     window.triggerEvent({
       type:'tagMoving', 
-      message:{ box:elem.tag.getRectBound()}
+      message:{ position:pos}
     }) #notify moving tag
     
   unsetDraggable: (elem)->
     return if(elem.frame==@highlighted.frame and elem.sub==@highlighted.sub)
-    @updateStrokeColor(elem.frame, elem.sub, colorSelector('default'))
+    severe_color = colorSelector(elem.tag.property.prop_severity)
+    @updateStrokeColor(elem.frame, elem.sub, severe_color)
 
   setDraggable: (elem)->
     @updateStrokeColor(elem.frame, elem.sub, colorSelector('highlight'))
@@ -369,7 +388,7 @@ class window.CanvasState
       newFill = "none"
       elem.tag.filled = false
     else
-      newFill = colorSelector('fill')
+      newFill = colorSelector(elem.tag.property.prop_severity)
       elem.tag.filled = true
     pathElem.style('fill', newFill)
 
@@ -427,7 +446,6 @@ class window.CanvasState
       when 'region'
         elem = tagGroup.append("rect")
           .attr('fill', strokeColor)
-          .attr('fill-opacity', 0.2)
 
     elem.attr("stroke-width", @strokeWidth)
       .attr("stroke", strokeColor)

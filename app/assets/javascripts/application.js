@@ -14,6 +14,7 @@
 //= require jquery/jquery-ui-1.10.0.custom.min
 //= require jquery/jquery.multiselect.min
 //= require jquery/jquery.ui.tooltip
+//= require jquery/jquery.autosize-min
 //= require jquery_ujs
 //= require d3.v2.min
 //= require utilities

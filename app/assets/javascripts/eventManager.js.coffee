@@ -126,7 +126,7 @@ class window.EventManager
           if zoomMaxedCheck
             zoomOK = window.bigBro.cvState.setZoomPan 0, 0, zoomDirection*host.zoomFactor
             if zoomOK
-              newY = parseInt(arg.style.top) - zoomDirection*15*host.zoomFactor
+              newY = parseInt(arg.style.top) - zoomDirection*host.sliderFactor*host.zoomFactor
               newY = Math.max(Math.min(137, newY), 0)
               arg.style.top = newY + "px"
         )            
@@ -137,7 +137,7 @@ class window.EventManager
           d3.event.preventDefault()
           oldY = parseInt(arg.style.top)
           newY = (d3.event.pageY - offsetTop)
-          zoomOK = window.bigBro.cvState.setZoomPan 0, 0, (oldY - newY)*15*host.zoomFactor/137
+          zoomOK = window.bigBro.cvState.setZoomPan 0, 0, (oldY - newY)*host.sliderFactor*host.zoomFactor/137
           if zoomOK
             arg.style.top = Math.max(Math.min(137, newY), 0) + "px"
             host.dragStart = true
@@ -148,7 +148,7 @@ class window.EventManager
             newY = (d3.event.pageY - offsetTop)
             newY = Math.max(Math.min(137, newY), 0)
             lastY = parseInt(arg.style.top)
-            zoomOK = window.bigBro.cvState.setZoomPan 0, 0, (lastY - newY)*15*host.zoomFactor/137
+            zoomOK = window.bigBro.cvState.setZoomPan 0, 0, (lastY - newY)*host.sliderFactor*host.zoomFactor/137
             if zoomOK
               arg.style.top = newY + "px"
         )

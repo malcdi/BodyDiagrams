@@ -65,21 +65,28 @@ button.ui-multiselect{
 	-webkit-border-radius: 5px;
 	border:solid 2px white;
 	background-color:white;
-	img{
-		width:30px;
-		height:30px;
-		display:block;
-		&.button{
-			width:20px;
-			height:20px;
-			-webkit-border-radius: 10px;
-			float:right;
-		}
-	}
 	textarea{
 		height:30px;padding:5px 8px;
 		width:200px;
 		display:block;
+		margin:5px;
+	}
+	span{
+		margin:5px;
+	}
+	img{
+		width:20px;
+		height:20px;
+	}
+	.button{
+		float:right;
+		-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.8);
+		-webkit-border-radius: 7px;
+		margin:3px;
+	}
+	.ui-slider{
+		width:120px;
+		display:inline-block;
 	}
 	z-index:1000;
 }

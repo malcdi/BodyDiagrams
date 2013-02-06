@@ -1,11 +1,10 @@
 class window.SummaryManager
-  constructor:(@canvasState, @summary_contents, @right_border, @left_border)->
+  constructor:(@canvasState, @summary_contents, @canvas_width, @right_border, @left_border)->
     @activated = window.bigBro.activatedProp
     @summary_line_container = d3.select("#canvasDiv").select("svg").append('g')
-    @canvas_width = +@canvasState.srcImg.attr('width')
     
   textBoxHeight = 20
-  textBoxWidth = 150
+  textBoxWidth = 140
   iconHeight = 25
   smallIconHeight = 20
   boxMargin = 5
@@ -27,25 +26,18 @@ class window.SummaryManager
       .call((selection)->
         window.eventManager.setup('summary', selection, _)
       )
-      
-    if @activated.prop_severity
-      summaryContent.append('img')
-        .attr('class', 'prop_severity')
-        .style('height', iconHeight+"px")
-        .style('width', (iconHeight)+"px")
-        .style('left', (textBoxWidth-iconHeight)+"px")
+
     if @activated.prop_posture
       summaryContent.append('div')
         .attr('class', 'prop_posture')
         .attr('top', (iconHeight-smallIconHeight)+"px")
     if @activated.prop_annotation
-      summaryContent.append('textarea')
+      summaryContent.append('div')
         .attr('class', 'prop_annotation')
         .attr('top', (iconHeight+'px'))
 
   updateSummaryDisplay: (frame)->
     summaryItems = @getSummary()
-    console.log 'update'
     linkItems = @getLink()
 
     summaryItems.attr('class', (d)->
@@ -62,9 +54,19 @@ class window.SummaryManager
         return 'summary_link disabled'
       )
 
+  getProperlyTransformed:(frame,sub)->
+    box = @canvasState.getBoundingBox(frame, sub)    
+    transformed_xy = @canvasState.tracker.inverseTransformPoint box
+
+    box.x = transformed_xy.x
+    box.y = transformed_xy.y
+    box.w = @canvasState.tracker.inverseTransformSize box.w
+    box.h = @canvasState.tracker.inverseTransformSize box.h
+    box
+
   updateSummary: (frame, sub, updateContent)->
     summaryItem = @getSummary(frame, sub)
-    box = @canvasState.getBoundingBox(frame, sub)
+    box = @getProperlyTransformed(frame,sub)
     newPos = {left: box.x+box.w, top:box.y}
     
     if summaryItem
@@ -90,8 +92,7 @@ class window.SummaryManager
 
       summaryItem.attr('class', 'summary_content')
         .style('left',"#{x_content}px")
-        .style('top', "#{y}px")
-      console.log x_content
+        .style('top', "#{y-10}px")
       newPos = {left: x_content, top:y-iconHeight}
       
     properties = @canvasState.allTags[frame][sub].getProperties()
@@ -106,6 +107,12 @@ class window.SummaryManager
     linkItem = @getLink(frame, sub)
     if linkItem
       linkItem.attr('class', 'summary_link disabled')
+
+  tagDeleted: (frame, sub)->
+    summaryItem = @getSummary(frame, sub)
+    summaryItem.remove()
+    linkItem = @getLink(frame, sub)
+    linkItem.remove()
 
   getLink:(frame, sub)->
     if frame is undefined
@@ -129,9 +136,7 @@ class window.SummaryManager
         when "prop_annotation"
           unless v
             v= ""
-          element.node().value= v
-        when "prop_severity"
-          element.attr("src", "/assets/property/severity_#{v}.png")
+          element.html(v)
         when "prop_posture"
           images = element.selectAll('img').data(v)
           images.enter()

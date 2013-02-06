@@ -44,10 +44,14 @@ body {
   background-color:#ffda98;
 }
 
-.centeredImage
-  {
+.centeredImage{
   text-align:center;
   margin-top:0px;
   margin-bottom:0px;
   padding:0px;
   }
+#instruction_container{
+  -webkit-border-radius: 5px;
+  border:solid 2px #4c6983;
+  padding:10px;
+}

@@ -23,7 +23,7 @@
     <!-- Rotate left right image -->
     <div id="rotation_toolbox" style="display:none"> </div>
 
-    <!-- Zoom Control 
+    <!-- Zoom Control -->
     <div id="zoomControl">
       <div style="position: absolute; width: 90px; height: 90px; " id="compassHolder" class="tooltip"><div style="position: absolute; left: 16px; top: 17px; width:48px; height: 47px; overflow: hidden; "><img style="position: absolute; left: 0px; top: 0px; border: 0px; padding: 0px; margin: 0px;width:48px; height:370px " src="/assets/mapcontrols.png"></div></div>
       
@@ -37,7 +37,7 @@
       
       <div style="position: absolute; width: 22px; height: 150px; z-index: 102; cursor: pointer; " id="lmczb" guidedhelpid="zoom_bar" class="tooltip"><div style="width: 22px; height: 14px; overflow: hidden; position: absolute; cursor: url('/assets/dragCursor.cur'), default; left: 0px; top: 120px; " guidedhelpid="zoom_slider" id="lmczbg" title="Drag to zoom" class="tooltip"><img style="position: absolute; left: 0px; top: -384px; border: 0px; padding: 0px; margin: 0px; " src="/assets/mapcontrols.png"></div></div>
     </div>
-    -->
+
   </div>
 
 </div>
@@ -65,6 +65,14 @@
       <button type="button" id="submitTask">SUBMIT</button>
 </div>
 
+
+<% if @review %>
+  <%= javascript_tag do %> 
+    window.allTags = <%= (JSON @result_arr).html_safe %>
+    window.gender = '<%= @gender %>'
+  <% end %>
+<% end %>
+
 <script type="text/javascript">
   var bigBro={};
   bigBro["activatedProp"] = {'prop_annotation':true, 'prop_severity':true, 'prop_posture':false, 'prop_freq':false}
@@ -87,8 +95,8 @@
 
     /* Canvas State */
     //current view side {0:front, 1: right, 2: back, 3: left}
-    bigBro.width = window.innerWidth*2/3;
-    bigBro.height = window.innerHeight;
+    bigBro.width = Math.max(900, window.innerWidth*2/3)
+    bigBro.height = Math.max(700, window.innerHeight)
     $('#content-panel').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
     $('#canvasDiv').css({"width":bigBro.width+"px", "height":bigBro.height+"px"})
 
@@ -110,10 +118,11 @@
     
     
     /* Setting up Zoom Control*/
-    //var zoomController = new window.ZoomControl();
-    //zoomController.setupControls(-20, 200);
+    var zoomController = new window.ZoomControl();
+    zoomController.setupControls(200, 0);
 
     /* Submission */
+    $('#instruction_container').css({left:(bigBro.width+20)+"px"})
 
     $( "#submitTask" ).click(function(){
       bigBro.cvState.userID = userID;
@@ -122,5 +131,7 @@
     $('.tooltip').tooltip({ 
       position: { my: "left center", at: "center+10 top" },
       show: {delay:400} });
+    if(getURLParameter("review")!="null")
+      window.regenerate()
   });
 </script>

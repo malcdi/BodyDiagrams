@@ -27,7 +27,7 @@ class window.CanvasZoomHandler extends CanvasEventHandler
       pt = @canvasState.tracker.transformedPoint(@canvasState.lastZoom)
       dragX = pt.x - @dragStart.x
       dragY = pt.y - @dragStart.y
-      @canvasState.pan(dragX, dragY)
+      @canvasState.setZoomPan(dragX, dragY,0)
       
     else if @draggedAmt>=0
       #moving around the element

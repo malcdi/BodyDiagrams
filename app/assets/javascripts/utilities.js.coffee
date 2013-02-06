@@ -1,9 +1,29 @@
 window.colorSelector = (option) ->
   switch option
+    when 1
+      "#ffd3d9"
+    when 2
+      "#ffc4cd"
+    when 3
+      "#FFB6C1"
+    when 4
+      "#e5a3ad"
+    when 5
+      "#b27f87"
+    when 6
+      "#996d73"
+    when 7
+      "#7f5b60"
+    when 8
+      "#66484d"
+    when 9
+      "#4c3639"
+    when 10
+      "#332426"
     when 'default'
       "#FFB6C1"
     when 'highlight'
-      "#996d73"
+      "steelblue"
     when 'fill'
       "#FFB6C1"
 
@@ -60,3 +80,11 @@ window.trackSVGTransforms = (tracker, svg) ->
     pt.x = point.x
     pt.y = point.y
     pt.matrixTransform xform.inverse()
+
+  tracker.inverseTransformSize = (a) ->
+    a*xform.a
+
+  tracker.inverseTransformPoint = (point) ->
+    pt.x = point.x
+    pt.y = point.y
+    pt.matrixTransform xform

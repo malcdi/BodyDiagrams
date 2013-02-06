@@ -1,0 +1,22 @@
+
+#summary_container{
+  background-color:#d8e7f4;
+}
+.summary_content{
+  position:absolute;  
+  .prop_annotation{
+    -webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+    -webkit-border-radius: 2px;
+    padding:10px;
+    margin:0px 5px 5px 5px;
+    min-width: 120px;
+    max-width: 140px;
+    background-color:#f2f7fb
+  }
+}
+.summary_content img{
+  display:block;
+}
+.disabled{
+  opacity:0.0;
+} 

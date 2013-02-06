@@ -1,5 +1,4 @@
 class window.PropertyPopup
-  SEVERITY: ["minor", "moderate", "major", "critical"]
   POSTURES: ["stand", "walk", "sit", "lie"]
   FREQS: ["very frequent", "few times a day", "once a day", "sometimes in a day"]
 
@@ -14,8 +13,7 @@ class window.PropertyPopup
   # property
     @setupPropertyControls()
 
-  boxMove: (d3Box, data)->
-    offset= @getOffset(d3Box)
+  boxMove: (offset)->
     @property.attr("class","")
       .style('left', offset.left+"px")
       .style('top', offset.top+"px")
@@ -36,7 +34,8 @@ class window.PropertyPopup
     @property.index
 
   closePopup: ()->
-    @property.attr('class', 'disabled')
+    return if @property.attr('class')=="disabled"
+    @property.attr('class','disabled')
     window.triggerEvent({
       type:'updateProperty', 
       message:{properties: @getAllValues(), index:@property.index}
@@ -51,7 +50,6 @@ class window.PropertyPopup
     {left:d3Bound.x+d3Bound.w, top:d3Bound.y-20}
 
   openPopup: (offset)->
-    console.log offset.left
     @property.attr("class","")
       .style('left', offset.left+"px")
       .style('top', offset.top+"px")
@@ -61,13 +59,9 @@ class window.PropertyPopup
   #SETTING VALUES INTO THE POPUP
   setPropertyValueInControl: (prop, value)->
     if prop is "prop_annotation"
-      $('#prop_annotation_text').val(value)
+      $('#prop_annotation_text').val(value).trigger('autosize');
     else if prop is "prop_severity"
-      $('#prop_severity').find(".tag-selected").toggleClass("tag-selected")
-      if value
-        $('#prop_severity_'+value).toggleClass("tag-selected")
-      else
-        $('#prop_severity_minor').toggleClass("tag-selected")
+      $(@PropControls.severity.node()).slider('value', value)
     else if prop is "prop_posture"
       for v in value
           $("#"+prop).multiselect("widget")
@@ -78,7 +72,7 @@ class window.PropertyPopup
 
   setDefaultPropertyValues:()->
     if @props.prop_severity
-      @setPropertyValueInControl("prop_severity", "")
+      @setPropertyValueInControl("prop_severity", 3)
     if @props.prop_posture
       @setPropertyValueInControl("prop_posture", [])
     if @props.prop_annotation
@@ -88,7 +82,8 @@ class window.PropertyPopup
     @property.index = index
     @setDefaultPropertyValues
     for k,v of properties
-      @setPropertyValueInControl(k,v)
+      if @props["#{k}"]
+        @setPropertyValueInControl(k,v)
   ##############
 
   # RETRIEVING VALUES FROM the POPUP
@@ -104,9 +99,16 @@ class window.PropertyPopup
     return allVal
 
   getSeverityVal:()->
-    selected = @PropControls.severity.select(".tag-selected")
-    return "minor" if selected==null or selected.empty()
-    selected.attr("id").substring(14)
+    severity_slider = @PropControls.severity.node()
+    $(severity_slider).slider("value")
+
+  severity_val_slided:(e, ui)=>
+    window.triggerEvent({
+      type:'severity_value_change'
+      message:ui.value
+    })
+    @PropControls.severity.select('.ui-slider-handle')
+      .style('background-color',colorSelector(ui.value))
 
   getPostureVal:()->
     $.map($("#prop_posture").multiselect("getChecked"), (val, i)->
@@ -121,32 +123,38 @@ class window.PropertyPopup
     _ = this
     if window.bigBro.activatedProp.prop_annotation
       #annotation box
-      @property.append('textarea')
+      annotationBox = @property.append('textarea')
         .attr('id', 'prop_annotation_text')
         .attr('placeholder', 'Describe your symptom here...')
         .attr('rows',3)
+      $(annotationBox.node()).autosize()
 
     @PropControls = {}
 
     if window.bigBro.activatedProp.prop_severity
       #SEVERITY 
-      @PropControls.severity = @property.append("div")
+      container = @property.append("div")
         .attr("id", "prop_severity")
-      @PropControls.severity.append("span")
+      container.append("span")
         .text("Symptom Severity : ")
 
-      for severity in @SEVERITY
-        @PropControls.severity.append('img')
-          .attr('class', 'opMode tooltip')
-          .attr('id', 'prop_severity_'+severity)
-          .attr('src', '/assets/property/severity_'+severity+'.png')
-          .attr("title", "#{severity}")
-          .call((selection)->
-            window.eventManager.setup('severityPropIcon', selection, _)
-          )
-
-      $('#prop_severity_minor').attr('class','opMode tag-selected tooltip')
-
+      @PropControls.severity = container.append('div')
+      @PropControls.severity.append('span')
+        .style('margin','-5px 0px 0px -5px')
+        .html('1')
+      @PropControls.severity.append('span')
+        .style('margin','-3px -7px 0px 0px')
+        .style('float','right')
+        .html('10')
+      $(@PropControls.severity.node()).slider({
+        orientation: "horizontal",
+        min:1
+        max: 10,
+        value:3,
+        slide: @severity_val_slided
+      })
+      @PropControls.severity.select('.ui-slider-handle')
+        .style('background-color',colorSelector(3))
     
     if window.bigBro.activatedProp.prop_posture
       #Posture

@@ -68,9 +68,11 @@
       </font>
 </div>
 
-<%= javascript_tag do %> 
-  window.allTags = <%= (JSON @result_arr).html_safe %>
-  window.gender = '<%= @gender %>'
+<% if true %>
+  <%= javascript_tag do %> 
+    window.allTags = <%= (JSON @result_arr).html_safe %>
+    window.gender = '<%= @gender %>'
+  <% end %>
 <% end %>
 
 <script type="text/javascript">

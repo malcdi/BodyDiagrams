@@ -15,7 +15,7 @@ class window.CanvasEventHandler
   
   mousewheel: (e) ->
     delta = (if e.wheelDelta then e.wheelDelta / 200 else (if e.detail then e.detail else 0))
-    @canvasState.zoom delta if delta
+    @canvasState.setZoomPan(0,0,delta) if delta
     e.preventDefault() and false
 
   unsetDraggable: ()->

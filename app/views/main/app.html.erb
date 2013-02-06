@@ -89,6 +89,8 @@
   $(document).ready(function(){
     bigBro.ImageLoader = new window.ImageLoader();
     bigBro.currentGender = getURLParameter("gender"); 
+    if(bigBro.currentGender=="null")
+      bigBro.currentGender=window.gender
     var prop_severity = getURLParameter("ps");
     if(prop_severity!="null")
       bigBro["activatedProp"]['prop_severity'] = false

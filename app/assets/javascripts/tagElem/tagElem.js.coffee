@@ -10,7 +10,7 @@ class window.TagElem
       y_max:0
     }
     @view = view
-    @property = {}
+    @property = {prop_severity:3, prop_posture:[], prop_annotation:""}
     @frame = -1
     @sub = -1
     

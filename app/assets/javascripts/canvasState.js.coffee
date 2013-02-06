@@ -29,33 +29,51 @@ class window.CanvasState
     @cur_view_side = 0
     @lastZoom ={"x": options.width / 2, "y":options.height / 2}
     @tracker = {}
+    width = options.width - options.scW*2
+    height = options.height
     trackSVGTransforms @tracker, document.createElementNS("http://www.w3.org/2000/svg", "svg")
 
-    # registering mouse events 
-    cv = this
-    @svg = d3.select("#canvasDiv").append("svg")
-      .attr("width", options.width).attr("height", options.height)
+    #summary container
 
-    @svg = @svg.append("g")
-      .call((selection)->
-        window.eventManager.setup('svgCanvas', selection, cv)
-      )
-   
+    parent = d3.select(cv)
+    summary_container = parent.append('div')
+      .attr('id', 'summary_container')
+      .style('position','absolute')
+      .style('left','0px').style('top','0px')
+      .style('width', "#{options.width}px").style('height',"#{height}px")
+
+    @svg = parent.append("svg")
+      .style('position','absolute')
+      .style('left',"#{options.scW}px").style('top','0px')
+      .attr("width", width).attr("height",height)
+      .style('background-color','white')
+      
     # add image
     imgRatio = 3/7
-    imgH = options.height - options.margin*2
+    @imgY = options.marginTop
+    @imgH = height - @imgY*2
+    @imgW = @imgH*imgRatio
+    @imgMargin = (width - @imgW)/2
+    @imgX = @imgMargin
 
-    @srcImg = @svg.append("image").attr("x", (options.width - imgH*imgRatio) / 2)
-      .attr("y", options.margin)
-      .attr("width", imgH*imgRatio)
-      .attr("height", imgH)
+    @svg = @svg.append("g")
+      .attr('fill-rule', 'nonzero')
+      .call((selection)=>
+        window.eventManager.setup('svgCanvas', selection, @)
+      )
+
+    @srcImg = @svg.append("image").attr("x", @imgX)
+      .attr("y", @imgY)
+      .attr("width", @imgW)
+      .attr("height", @imgH)
       .attr("xlink:href", @imageLoader.getBodyImageSrc(@gender, @cur_view_side))
 
     @dragEventHandler = new window.CanvasZoomHandler(this)
     @drawEventHandler = new window.CanvasDrawHandler(this)
     @rectDrawEventHandler = new window.CanvasRectDrawHandler(this)
+    @fillEventHandler = new window.CanvasFillHandler(this)
 
-    @summaryManager = new window.SummaryManager(this)
+    @summaryManager = new window.SummaryManager(this, summary_container, width, options.width-options.scW, options.scW)
 
   # View Side related #
 
@@ -92,15 +110,23 @@ class window.CanvasState
           _.drawEventHandler[name] d3.event
         when "rect_draw"
           _.rectDrawEventHandler[name] d3.event
+        when "fill"
+          _.fillEventHandler[name] d3.event
 
   setStrokeWidth: (width) ->
     @strokeWidth = width
 
+  updateSeverityValue:(severityVal)->
+    @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector(severityVal))
+
   updateStrokeColor:(frame, sub, col)->
     tagGroup = @getTagGroup(frame, sub)
-    unless tagGroup.empty()
+    unless tagGroup==null or tagGroup.empty()
+      tag = @allTags[frame][sub]
       svgTagElem = tagGroup.select('.tag')
         .style('stroke', col)
+      if tag.type=="region" or tag.filled
+        svgTagElem.style('fill',col)
 
   addTagElem: (elem, frame) ->
     list = @allTags[frame]
@@ -118,7 +144,9 @@ class window.CanvasState
     if @allTags[@highlighted.frame]
       curLen = @allTags[@highlighted.frame].length
       if curLen > 0
-        @updateStrokeColor(@highlighted.frame, curLen-1, colorSelector('default'))
+        tag = @allTags[@highlighted.frame][curLen-1]
+        severe_color = colorSelector(tag.property.prop_severity)
+        @updateStrokeColor(@highlighted.frame, curLen-1, severe_color)
 
   #deletes the tag at frame and sub index from the data and SVG
   # returns deleted
@@ -131,15 +159,16 @@ class window.CanvasState
     if curLen > 0
       if sub is undefined then sub = curLen-1
       if sub is @highlighted.sub then @highlighted.sub=-1
-      elemDeleted = @allTags[frame].splice(sub, 1)
+      elemDeleted = @allTags[frame].splice(sub, 1)[0]
       tagGroup = @getTagGroup(frame, sub)
       tagGroup.remove()  unless tagGroup.empty()
-    elemDeleted[0]
+      @summaryManager.tagDeleted elemDeleted.frame, elemDeleted.sub
+    elemDeleted
 
   # DELETE END ###################
 
   getPoint: (e) ->
-    element = @canvas
+    element = @svg.node()
     offsetX = 0
     offsetY = 0
     mx = undefined
@@ -207,6 +236,7 @@ class window.CanvasState
   uploadTagProperties: (properties, index) ->
     frameElems = @allTags[index.frame]
     frameElems[index.sub].saveProperties(properties)
+    @summaryManager.updateSummary(index.frame, index.sub, true)
   # END ##########
 
   #  Highlights #################
@@ -217,9 +247,9 @@ class window.CanvasState
         type:'highlighted', 
         message:{highlight:false}
       })
-      @updateStrokeColor(@highlighted.frame, @highlighted.sub, colorSelector('default'))
-      #open up summary
-      @summaryManager.updateSummary(@highlighted.frame, @highlighted.sub, true)
+      tag = @allTags[@highlighted.frame][@highlighted.sub]
+      severe_color = colorSelector(tag.property.prop_severity)
+      @updateStrokeColor(@highlighted.frame, @highlighted.sub, severe_color)
 
     @highlighted.sub = -1
 
@@ -228,8 +258,8 @@ class window.CanvasState
     frameElems[sub].getRectBound()
 
   highlightFrame: (index, sub) ->
-    @summaryManager.closeSummary(index, sub)
-    index = @allTags.length - 1  if index < 0
+    index = @allTags.length - 1  if index is undefined or index<0
+    sub = @allTags[index].length - 1  if sub is undefined or sub<0
     frameElems = @allTags[index]
     return  if not frameElems or frameElems.length < 1
     return  unless frameElems[0].view is @cur_view_side
@@ -239,10 +269,12 @@ class window.CanvasState
     @highlighted.sub = sub    
     boundingBox = @getBoundingBox(index, sub)
     @updateStrokeColor(index, sub, colorSelector('highlight'))
-    
+    #open up summary
+    summary_pos = @summaryManager.updateSummary(@highlighted.frame, @highlighted.sub, false)
+
     window.triggerEvent({
       type:'highlighted', 
-      message: {highlight:true, box:boundingBox, 
+      message: {highlight:true, box:summary_pos, 
       properties: @getHighlightedTagProperties(),index: @highlighted}
     })
 
@@ -263,6 +295,8 @@ class window.CanvasState
         @canvas.style.cursor = "url('/assets/drawHand.png'), auto"
       when "rect_draw"
         @canvas.style.cursor = "crosshair"
+      when "fill"
+        @canvas.style.cursor = "url('/assets/fill_cursor.png'), auto"
 
   #MOVING AROUND STUFF ###########
 
@@ -272,8 +306,9 @@ class window.CanvasState
     {x:centerX, y:centerY}
 
   imgBoundWDrag:(center, dragX, dragY, dragCheck)->
-    xOUB = (center.x+20<0 and (!dragCheck or dragX<0)) or (center.x-20>+$('svg').attr('width') and (!dragCheck or dragX>0))
-    yOUB = (center.y+160<0 and (!dragCheck or dragY<0)) or (center.y-60>+$('svg').attr('height') and (!dragCheck or dragY>0))
+    room = 30
+    xOUB = (center.x+room*2<0 and (!dragCheck or dragX<0)) or (center.x-room>@imgW+@imgX*2 and (!dragCheck or dragX>0))
+    yOUB = (center.y+room*3.5<@imgY and (!dragCheck or dragY<0)) or (center.y-room>@imgH+@imgY*2 and (!dragCheck or dragY>0))
     {x:!xOUB, y:!yOUB}
 
   imageInBound: (dragX, dragY)->
@@ -282,7 +317,6 @@ class window.CanvasState
       matchedStr = mat.match /matrix\((.*),(.*),(.*),(.*),(.*),(.*)\)/
     return {x:true, y:true} if matchedStr is null or matchedStr is undefined
     center = @findCenter(+matchedStr[1], +matchedStr[4], +matchedStr[5], +matchedStr[6])
-    console.log @imgBoundWDrag(center, dragX, dragY, true)
     return @imgBoundWDrag(center, dragX, dragY, true)
     
   pan: (deltaX, deltaY)->
@@ -297,10 +331,12 @@ class window.CanvasState
     factor = Math.pow(1.1, clicks)
     @tracker.scale factor, factor
     newMat = @tracker.getTransform()
+    if newMat.a<0.7 or newMat.a>1.8 
+      #min max zoomlevel
+      @tracker.setTransformMat(oldTransform)
+      return false
     center = @findCenter(newMat.a, newMat.d, newMat.e, newMat.f)
-    console.log clicks
     boundness = @imgBoundWDrag(center, clicks, clicks, true)
-    console.log boundness
     if boundness.x and boundness.y
       @svg.attr "transform", "matrix(" + newMat.a + "," + newMat.b + "," + newMat.c + "," + newMat.d + "," + newMat.e + "," + newMat.f + ")"
       return true
@@ -312,6 +348,13 @@ class window.CanvasState
     @pan(deltaX, deltaY)
     @lastZoom.x = @canvas.width / 2
     @lastZoom.y = @canvas.height / 2
+    @allTags.forEach (frame_arr, frame)=>
+      frame_arr.forEach (tag, sub)=>
+        pos = @summaryManager.updateSummary(frame,sub,false)
+        window.triggerEvent({
+          type:'tagMoving', 
+          message:{ position:pos}
+        })
     return @zoom deltaZoom, deltaX, deltaY
 
   getGraphicSvgElem:(parent)->
@@ -319,20 +362,40 @@ class window.CanvasState
 
   moveElement: (elem, movePixel)->
     elem.tag.moveAll movePixel #update points stored in tag
-    @updateSummary(elem.frame, elem.sub,false)
+    pos = @summaryManager.updateSummary(elem.frame, elem.sub,false)
     @drawInSvg(@getGraphicSvgElem(elem.graphicTag), elem.tag)
 
     window.triggerEvent({
       type:'tagMoving', 
-      message:{ box:elem.tag.getRectBound()}
+      message:{ position:pos}
     }) #notify moving tag
     
   unsetDraggable: (elem)->
     return if(elem.frame==@highlighted.frame and elem.sub==@highlighted.sub)
-    @updateStrokeColor(elem.frame, elem.sub, colorSelector('default'))
+    severe_color = colorSelector(elem.tag.property.prop_severity)
+    @updateStrokeColor(elem.frame, elem.sub, severe_color)
 
   setDraggable: (elem)->
     @updateStrokeColor(elem.frame, elem.sub, colorSelector('highlight'))
+
+  setFilled: (elem)->
+    pathElem = @getGraphicSvgElem(elem.graphicTag)
+    return if pathElem is null or pathElem.empty() 
+    #toggle fill
+    oldFill = pathElem.style('fill')
+    newFill = ''
+    if oldFill!="none"
+      newFill = "none"
+      elem.tag.filled = false
+    else
+      newFill = colorSelector(elem.tag.property.prop_severity)
+      elem.tag.filled = true
+    pathElem.style('fill', newFill)
+
+    window.triggerEvent({
+      type:'tagFill',
+      message:{ frame:elem.frame, sub:elem.sub, filled:elem.tag.filled}
+      })
 
   #MOVING AROUND STUFF DONE ###########
 
@@ -373,17 +436,16 @@ class window.CanvasState
       .attr('tag_type', type)
     self = @
 
-    @summaryManager.setupSummary(tagGroup, tagFrameGroup, sub)
+    @summaryManager.setupSummary(tagFrameGroup, sub)
     elem = null
     switch type
       when 'hand'
         #path tag
         elem = tagGroup.append("path")
-          .attr("fill", "none")
+          .attr("fill", 'none')
       when 'region'
         elem = tagGroup.append("rect")
           .attr('fill', strokeColor)
-          .attr('fill-opacity', 0.2)
 
     elem.attr("stroke-width", @strokeWidth)
       .attr("stroke", strokeColor)

@@ -16,6 +16,7 @@ window.regenerate = ()->
       else
         tagElem = new FreehandElem("#F89393", tag.view_side)
         tagElem.setAllPoints(tag.data)
+        tagElem.filled = tag.fill
 
       subIndex = _.cvState.addTagElem(tagElem, frameIndex)
       tagElem.setIndex(frameIndex, subIndex)

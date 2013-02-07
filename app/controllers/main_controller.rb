@@ -25,6 +25,7 @@ class MainController < ApplicationController
 						{"x"=>d[0], "y"=>d[1]}
 					end
 					t["type"] = "hand"
+					t["fill"] = graphTag.fill
 				elsif RegionTag.exists?(:tag_id=>tag.id) 
 					graphTag = RegionTag.find(:all, :conditions=>'tag_id='+tag.id.to_s)[0]
 					t["data"] = {"x"=>graphTag.x, "y"=>graphTag.y, "w"=>graphTag.w, "h"=>graphTag.h}
@@ -81,6 +82,11 @@ class MainController < ApplicationController
 						#save points
 						handTag = HandTag.new()
 						handTag.points=tagInfo["points"].to_s()
+						if tagInfo["fill"].to_s()=="false"
+							handTag.fill=false
+						else
+							handTag.fill=true
+						end
 						handTag.tag_id=@tag.id
 						handTag.save()
 					elsif type=="region"

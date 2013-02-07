@@ -1,31 +1,31 @@
 window.colorSelector = (option) ->
   switch option
     when 1
-      "#ffd3d9"
+      "#FEE0D2"
     when 2
-      "#ffc4cd"
+      "#FEE0D2"
     when 3
-      "#FFB6C1"
+      "#FCBBA1"
     when 4
-      "#e5a3ad"
+      "#FC9272"
     when 5
-      "#b27f87"
+      "#FB6A4A"
     when 6
-      "#996d73"
+      "#EF3B2C"
     when 7
-      "#7f5b60"
+      "#CB181D"
     when 8
-      "#66484d"
+      "#A50F15"
     when 9
-      "#4c3639"
+      "#67000D"
     when 10
-      "#332426"
+      "#67000D"
     when 'default'
-      "#FFB6C1"
+      "#FCBBA1"
     when 'highlight'
       "steelblue"
     when 'fill'
-      "#FFB6C1"
+      "#FCBBA1"
 
 window.trackSVGTransforms = (tracker, svg) ->
   xform = svg.createSVGMatrix()

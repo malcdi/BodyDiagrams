@@ -70,6 +70,7 @@
   <%= javascript_tag do %> 
     window.allTags = <%= (JSON @result_arr).html_safe %>
     window.gender = '<%= @gender %>'
+    window.test = '<%= @test %>'
   <% end %>
 <% end %>
 
@@ -93,6 +94,8 @@
       bigBro.currentGender=window.gender
     var prop_severity = getURLParameter("ps");
     if(prop_severity!="null")
+      bigBro["activatedProp"]['prop_severity'] = false
+    else if (window.test && window.test=="text")
       bigBro["activatedProp"]['prop_severity'] = false
 
     /* Canvas State */

@@ -4,6 +4,7 @@ class MainController < ApplicationController
 		if @review
 			user = User.find(params[:user_id])
 			@gender = user.gender
+			@test = user.test
 			allTags = Tag.order("id").find(:all, :conditions=> 'user_id='+params[:user_id])
 			@result_arr =[]
 			allTags.each do |tag|
@@ -40,6 +41,13 @@ class MainController < ApplicationController
 		else
 			@user = User.create(:gender=>params[:gender])
 			session[:user_id] = @user.id
+			simple = params[:ps]
+			if simple
+				@user.test = "text"
+			else
+				@user.test = "text,severity"
+			end
+			@user.save()
 		end
 
 	end
